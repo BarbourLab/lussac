@@ -16,4 +16,4 @@ Information on how to install and use can be found in the [wiki page](https://gi
 
 We tested our algorithm using a **synthetic** data set simulating cortical pyramidal cell and interneurone activity ([Jun et al. 2017](https://www.biorxiv.org/content/10.1101/101030v2)) available through [SpikeForest](https://spikeforest.flatironinstitute.org/). Since all spike times of all neurones are known, we could easily compare our algorithm to standard runs of a single spike-sorting algorithms in terms of recovery and contaminating events.
 
-[[https://github.com/BarbourLab/lussac/blob/master/img/results_synthetic.png|alt=lussac_results_synthetic]]
+[[https://github.com/BarbourLab/lussac/blob/main/img/results_synthetic.png|alt=lussac_results_synthetic]]
