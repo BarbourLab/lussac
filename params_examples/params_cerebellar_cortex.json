@@ -310,7 +310,7 @@
 							"ms_after": 1.2,
 							"max_spikes_per_unit": 5000,
 							"max_channels_per_waveforms": 5
-						},						},
+						},
 						"n_process": 6
 					},
 					"plot_units": {
