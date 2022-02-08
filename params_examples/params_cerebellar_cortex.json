@@ -207,10 +207,12 @@
 					"waveform_validation": {
 						"similarity": 0.5,
 						"filter": [2, 300, 6000],
-						"ms_before": 1.2,
-						"ms_after": 1.2,
-						"max_spikes_per_unit": 10000,
-						"max_channels_per_waveforms": 5,
+						"waveforms": {
+							"ms_before": 1.2,
+							"ms_after": 1.2,
+							"max_spikes_per_unit": 10000,
+							"max_channels_per_waveforms": 5
+						},
 						"n_process": 6
 					},
 					"plot_similarity": true
