@@ -1,0 +1,1 @@
+g++ -std=c++17 -Wsign-conversion -shared -o postprocessing/utils_cpp.so -fPIC postprocessing/utils.cpp
