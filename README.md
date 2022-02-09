@@ -9,7 +9,7 @@ Please note that this project is still in its beta phase.
 
 ## Installation and usage
 
-Information on how to install and use Lussac can be found in the [wiki page](https://github.com/BarbourLab/lussac/wiki).
+Information on how to install and use Lussac can be found on the [wiki page](https://github.com/BarbourLab/lussac/wiki).
 
 
 ## Results
