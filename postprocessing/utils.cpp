@@ -154,27 +154,27 @@ std::uint32_t* compute_firing_rate(std::uint64_t* spike_train, std::uint32_t n_s
  *
  * @param spike_train Unit's spikes' time (in sampling time)
  * @param n_spikes Number of spikes in the unit
- * @param lower_bound Refractory period's lower bound (in sampling time)
- * @param upper_bound Refractory period's upper bound (in sampling time)
+ * @param t_r Refractory period (in sampling time)
  * @return unsigned int = number of pairs of spikes in refractory period.
  */
-std::uint32_t compute_spikes_refractory_period(std::uint64_t* spike_train, std::uint32_t n_spikes, std::uint32_t lower_bound, std::uint32_t upper_bound) {
+std::uint32_t compute_spikes_refractory_period(std::uint64_t* spike_train, std::uint32_t n_spikes, std::uint32_t t_r) {
 	std::uint32_t nb_pairs = 0;
+	std::uint32_t nb_half_pairs = 0;
 
 	for(std::uint32_t i = 0; i < n_spikes; i++) {
 		for(std::uint32_t j = i+1; j < n_spikes; j++) {
 			std::uint32_t diff = spike_train[j] - spike_train[i];
 
-			if(diff <= lower_bound)
-				continue;
-			if(diff >= upper_bound)
+			if(diff > t_r)
 				break;
-
-			nb_pairs++;
+			if(diff == t_r)
+				nb_half_pairs++;
+			else
+				nb_pairs++;
 		}
 	}
 
-	return nb_pairs;
+	return nb_pairs + (nb_half_pairs/2);
 }
 
 

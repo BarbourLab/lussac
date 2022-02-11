@@ -2,7 +2,7 @@
 # Lussac (Beta version)
 
 Lussac is an **automated** and **configurable** analysis pipeline for post-processing and merging multiple spike-sorting analyses. The goal is to improve the yield and quality of data from multielectrode extracellular recordings by merging the outputs of different spike-sorting algorithms and/or multiple runs with different parameters.
-For more information, check out our preprint: link to come.
+For more information, check out our [preprint](https://www.biorxiv.org/content/10.1101/2022.02.08.479192v1).
 
 Please note that this project is still in its beta phase.
 

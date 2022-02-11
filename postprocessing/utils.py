@@ -21,7 +21,7 @@ cpp.compute_ISI.argtypes			= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctype
 cpp.compute_autocorr.argtypes		= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
 cpp.compute_crosscorr.argtypes		= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int32, ctypes.c_int32
 cpp.compute_firing_rate.argtypes	= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
-cpp.compute_spikes_refractory_period.argtypes	= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
+cpp.compute_spikes_refractory_period.argtypes	= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32
 cpp.compute_nb_coincident_spikes.argtypes	= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int32
 cpp.compute_cross_refractory_period.argtypes= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
 
@@ -296,15 +296,17 @@ def estimate_spike_train_contamination(spike_train: np.ndarray, refractory_perio
 	lower_b = int(round(refractory_period[0] * 1e-3 * sampling_f))
 	upper_b = int(round(refractory_period[1] * 1e-3 * sampling_f))
 	t_r = upper_b - lower_b
+	t_c = lower_b
+	N = len(spike_train)
+	t_max = t_max - 2*N*t_c
 
-	nb_refract = cpp.compute_spikes_refractory_period(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(lower_b), ctypes.c_uint32(upper_b))
+	n_v = cpp.compute_spikes_refractory_period(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(upper_b))
 
-	A = -t_r
-	B = 2 * t_r * (len(spike_train) - 1)
-	C = -nb_refract * t_max
-	D = B**2 - 4*A*C
+	A = n_v * t_max / (N**2 * t_r)
+	if A > 1:
+		return 1.0
 
-	return 1.0 if D<0 else (-B + math.sqrt(D)) / (2*A * len(spike_train))
+	return 1.0 - math.sqrt(1.0 - A)
 
 
 def estimate_units_contamination(data, unit_ids: list, refractory_period: tuple=(0.0, 1.0)):
