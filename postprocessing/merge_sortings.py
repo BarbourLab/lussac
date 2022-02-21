@@ -363,7 +363,7 @@ def perform_final_merging(data: PhyData, similar_units: list, shifts: list, para
 				spike_train = np.delete(spike_train, duplicates+1)
 
 				F = len(spike_train) / t_max * data.sampling_f
-				C = utils.estimate_spike_train_contamination(spike_train, params['refractory_period'], t_max, data.sampling_f)
+				C = utils.estimate_spike_train_contamination(spike_train, tuple(params['refractory_period']), t_max, data.sampling_f)
 				S = F * (1 - 3.5*C)
 				logs.write("\tCombination {0} -->\n\tScore = {1:.2f}\n\t-----------------\n".format(np.array(combination).tolist(), S))
 				if np.sum(spike_train < 0) > 0:
@@ -459,7 +459,7 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 		for i in range(2):
 			spike_train = data.merged_sorting.get_unit_spike_train(shared_cluster[i])
 			F = len(spike_train) / t_max * data.sampling_f
-			C = utils.estimate_spike_train_contamination(spike_train, params['refractory_period'], t_max, data.sampling_f)
+			C = utils.estimate_spike_train_contamination(spike_train, tuple(params['refractory_period']), t_max, data.sampling_f)
 			scores[i] = F * (1 - 5*C)
 
 		best_unit = shared_cluster[np.argmax(scores)]

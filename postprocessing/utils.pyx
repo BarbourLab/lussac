@@ -1,29 +1,16 @@
 import os
-from pathlib import Path
 import math
 import itertools
-import ctypes
 import numpy as np
+cimport numpy as np
+cimport cython
 import scipy.interpolate
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 import postprocessing.filter as filter
 
-
-folder = Path(__file__).resolve().parent
-cpp_file = "{0}/utils_cpp.so".format(folder)
-assert os.path.exists(cpp_file), "The cpp code has not been compiled!\nRun the compile file in the main folder."
-cpp = ctypes.CDLL(cpp_file)
-c_uint64_p = ctypes.POINTER(ctypes.c_uint64)
-
-cpp.compute_ISI.argtypes			= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
-cpp.compute_autocorr.argtypes		= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
-cpp.compute_crosscorr.argtypes		= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int32, ctypes.c_int32
-cpp.compute_firing_rate.argtypes	= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
-cpp.compute_spikes_refractory_period.argtypes	= c_uint64_p, ctypes.c_uint32, ctypes.c_uint32
-cpp.compute_nb_coincident_spikes.argtypes	= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int32
-cpp.compute_cross_refractory_period.argtypes= c_uint64_p, c_uint64_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32
+ctypedef np.uint64_t DTYPE_t
 
 
 def get_ISI(data, unit_id: int, bin_size: float=1.0, max_time: float=50.0):
@@ -69,15 +56,38 @@ def get_ISI_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0, max_ti
 	if spike_train.dtype != np.uint64:
 		spike_train = spike_train.astype(np.uint64)
 
-	bin_size = int(round(bin_size * 1e-3 * sampling_f))
-	max_time = int(round(max_time * 1e-3 * sampling_f))
-	max_time -= max_time % bin_size
-	bins = np.arange(0, max_time+bin_size, bin_size) * 1e3 / sampling_f
+	return _compute_ISI(spike_train, bin_size, max_time, sampling_f)
 
-	cpp.compute_ISI.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_uint32, shape=(len(bins)-1,))
-	ISI = cpp.compute_ISI(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(bin_size), ctypes.c_uint32(max_time))
+
+def _compute_ISI(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
+	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
+	max_time -= max_time % bin_size
+	cdef int n_bins = max_time_c / bin_size_c
+
+	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(0, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
+	cdef np.ndarray[DTYPE_t, ndim=1] ISI = np.zeros([n_bins], dtype=np.uint64)
+
+	cdef unsigned long* train = <unsigned long*> spike_train.data
+	cdef unsigned long* hist = <unsigned long*> ISI.data
+
+	_compute_ISI_c(hist, train, len(spike_train), bin_size_c, max_time_c)
 
 	return (ISI, bins)
+
+
+cdef void _compute_ISI_c(unsigned long* ISI, unsigned long* spike_train, int N, int bin_size, int max_time):
+	cdef int i, j, bin, diff
+
+	for i in range(N-1):
+		diff = spike_train[i+1] - spike_train[i]
+
+		if diff >= max_time:
+			continue
+
+		bin = diff / bin_size
+		ISI[bin] += 1
+
 
 
 def get_autocorr(data, unit_id: int, bin_size: float=1.0/3.0, max_time: float=50.0):
@@ -123,15 +133,40 @@ def get_autocorr_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0/3.
 	if spike_train.dtype != np.uint64:
 		spike_train = spike_train.astype(np.uint64)
 
-	bin_size = int(round(bin_size * 1e-3 * sampling_f))
-	max_time = int(round(max_time * 1e-3 * sampling_f))
-	max_time -= max_time % bin_size
-	bins = np.arange(-max_time, max_time+bin_size, bin_size) * 1e3 / sampling_f
+	return _compute_autocorr(spike_train, bin_size, max_time, sampling_f)
 
-	cpp.compute_autocorr.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_uint32, shape=(len(bins)-1,))
-	auto_corr = cpp.compute_autocorr(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(bin_size), ctypes.c_uint32(max_time))
+
+def _compute_autocorr(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
+	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
+	max_time -= max_time % bin_size
+	cdef int n_bins = 2 * (max_time_c / bin_size_c)
+
+	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
+	cdef np.ndarray[DTYPE_t, ndim=1] auto_corr = np.zeros([n_bins], dtype=np.uint64)
+
+	cdef unsigned long* train = <unsigned long*> spike_train.data
+	cdef unsigned long* corr = <unsigned long*> auto_corr.data
+
+	_compute_autocorr_c(corr, train, len(spike_train), n_bins, bin_size_c, max_time_c)
 
 	return (auto_corr, bins)
+
+
+cdef void _compute_autocorr_c(unsigned long* auto_corr, unsigned long* spike_train, int N, int n_bins, int bin_size, int max_time):
+	cdef int i, j, bin, diff
+
+	for i in range(N):
+		for j in range(i+1, N):
+			diff = spike_train[j] - spike_train[i]
+
+			if diff >= max_time:
+				break
+
+			bin = diff / bin_size
+			auto_corr[n_bins/2 - bin - 1] += 1
+			auto_corr[n_bins/2 + bin] += 1
+
 
 
 def get_crosscorr(data, unit1_id: int, unit2_id: int, bin_size: float=1.0/3.0, max_time: float=30.0):
@@ -186,15 +221,45 @@ def get_crosscorr_from_spiketrain(spike_train1: np.ndarray, spike_train2: np.nda
 	if spike_train2.dtype != np.uint64:
 		spike_train2 = spike_train2.astype(np.uint64)
 
-	bin_size = int(round(bin_size * 1e-3 * sampling_f))
-	max_time = int(round(max_time * 1e-3 * sampling_f))
-	max_time -= max_time % bin_size
-	bins = np.arange(-max_time, max_time+bin_size, bin_size) * 1e3 / sampling_f
+	return _compute_crosscorr(spike_train1, spike_train2, bin_size, max_time, sampling_f)
 
-	cpp.compute_crosscorr.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_uint32, shape=(len(bins)-1,))
-	cross_corr = cpp.compute_crosscorr(spike_train1.ctypes.data_as(c_uint64_p), spike_train2.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train1)), ctypes.c_uint32(len(spike_train2)), ctypes.c_int32(bin_size), ctypes.c_int32(max_time))
+
+def _compute_crosscorr(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float bin_size, float max_time, float sampling_f):
+	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
+	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	max_time -= max_time % bin_size
+	cdef int n_bins = 2 * (max_time_c / bin_size_c)
+
+	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
+	cdef np.ndarray[DTYPE_t, ndim=1] cross_corr = np.zeros([n_bins], dtype=np.uint64)
+
+	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
+	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
+	cdef unsigned long* corr = <unsigned long*> cross_corr.data
+
+	_compute_crosscorr_c(corr, train1, train2, len(spike_train1), len(spike_train2), n_bins, bin_size_c, max_time_c)
 
 	return (cross_corr, bins)
+
+
+cdef void _compute_crosscorr_c(unsigned long* cross_corr, unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int n_bins, int bin_size, int max_time):
+	cdef int i, j, bin, diff
+
+	cdef int start_j = 0
+	for i in range(N1):
+		for j in range(start_j, N2):
+			diff = spike_train1[i] - spike_train2[j]
+
+			if diff >= max_time:
+				start_j += 1
+				continue
+			if diff <= -max_time:
+				break
+
+			#bin = floor(diff / bin_size)
+			bin = diff / bin_size - (0 if diff >= 0 else 1)
+			cross_corr[n_bins/2 + bin] += 1
+
 
 
 def get_firing_rate(data, unit_id: int, bin_size: float=2.0, as_Hz: bool=False):
@@ -242,16 +307,38 @@ def get_firing_rate_from_spiketrain(spike_train: np.ndarray, t_max: int, bin_siz
 	if spike_train.dtype != np.uint64:
 		spike_train = spike_train.astype(np.uint64)
 
-	bin_size_c = int(round(bin_size * sampling_f))
-	bins = (np.arange(0, t_max+bin_size_c, bin_size_c, dtype=np.uint64) / sampling_f).astype(np.float64)
+	return _compute_firing_rate(spike_train, bin_size, t_max, as_Hz, sampling_f)
 
-	cpp.compute_firing_rate.restype = np.ctypeslib.ndpointer(dtype=ctypes.c_uint32, shape=(len(bins)-1,))
-	firing_rate = cpp.compute_firing_rate(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(bin_size_c), ctypes.c_uint32(len(bins)-1))
+
+def _compute_firing_rate(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, int t_max, bint as_Hz, float sampling_f):
+	cdef bin_size_c = round(bin_size * sampling_f)
+
+	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(0, t_max+bin_size_c, bin_size_c) / sampling_f
+	cdef np.ndarray[DTYPE_t, ndim=1] firing_rate = np.zeros([len(bins)-1], dtype=np.uint64)
+
+	cdef unsigned long* train = <unsigned long*> spike_train.data
+	cdef unsigned long* hist = <unsigned long*> firing_rate.data
+
+	_compute_firing_rate_c(hist, train, len(spike_train), len(bins)-1, bin_size_c)
 
 	if as_Hz:
-		firing_rate = firing_rate.astype(np.float64) / bin_size
+		return (firing_rate / bin_size, bins)
+	else:
+		return (firing_rate, bins)
 
-	return (firing_rate, bins)
+
+cdef void _compute_firing_rate_c(unsigned long* firing_rate, unsigned long* spike_train, int N, int n_bins, int bin_size):
+	cdef int i, bin
+
+	for i in range(N):
+		bin = spike_train[i] / bin_size
+		if bin >= n_bins:
+			print("ERROR: in utils.pyx.compute_firing_rate_c()")
+			print("\tSpike timing exceeds t_max.")
+			break
+
+		firing_rate[bin] += 1
+
 
 
 def estimate_unit_contamination(data, unit_id: int, refractory_period: tuple=(0.0, 1.0)):
@@ -300,7 +387,7 @@ def estimate_spike_train_contamination(spike_train: np.ndarray, refractory_perio
 	N = len(spike_train)
 	t_max = t_max - 2*N*t_c
 
-	n_v = cpp.compute_spikes_refractory_period(spike_train.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train)), ctypes.c_uint32(upper_b))
+	n_v = _compute_nb_violations(spike_train, refractory_period[1], sampling_f)
 
 	A = n_v * t_max / (N**2 * t_r)
 	if A > 1:
@@ -309,7 +396,7 @@ def estimate_spike_train_contamination(spike_train: np.ndarray, refractory_perio
 	return 1.0 - math.sqrt(1.0 - A)
 
 
-def estimate_units_contamination(data, unit_ids: list, refractory_period: tuple=(0.0, 1.0)):
+def estimate_units_contamination(data, unit_ids, refractory_period: tuple=(0.0, 1.0)):
 	"""
 	Analog to estimate_contamination, but merges the spike train of multiple units
 	to evaluate what the contamination ratio would be if those units were to me merged.
@@ -320,6 +407,34 @@ def estimate_units_contamination(data, unit_ids: list, refractory_period: tuple=
 	t_max = data.recording.get_num_frames()
 
 	return estimate_spike_train_contamination(spike_train, refractory_period, t_max, data.sampling_f)
+
+
+def _compute_nb_violations(np.ndarray[DTYPE_t, ndim=1] spike_train, float t_r, float sampling_f):
+	cdef int t_r_c = round(t_r * 1e-3 * sampling_f)
+	cdef unsigned long* train = <unsigned long*> spike_train.data
+
+	n_v = _compute_nb_violations_c(train, len(spike_train), t_r_c)
+
+	return n_v
+
+cdef int _compute_nb_violations_c(unsigned long* spike_train, int N, int t_r):
+	cdef int i, j, diff
+	cdef int nb_pairs = 0
+	cdef int nb_half_pairs = 0
+
+	for i in range(N):
+		for j in range(i+1, N):
+			diff = spike_train[j] - spike_train[i]
+
+			if diff > t_r:
+				break
+			if diff == t_r:
+				nb_half_pairs += 1
+			else:
+				nb_pairs += 1
+
+	return nb_pairs + (nb_half_pairs/2)
+
 
 
 def get_nb_coincident_spikes(spike_train1: np.ndarray, spike_train2: np.ndarray, window: int=5):
@@ -342,7 +457,37 @@ def get_nb_coincident_spikes(spike_train1: np.ndarray, spike_train2: np.ndarray,
 	if spike_train2.dtype != np.uint64:
 		spike_train2 = spike_train2.astype(np.uint64)
 
-	return cpp.compute_nb_coincident_spikes(spike_train1.ctypes.data_as(c_uint64_p), spike_train2.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train1)), ctypes.c_uint32(len(spike_train2)), ctypes.c_int32(window))
+	return _compute_nb_coincident_spikes(spike_train1, spike_train2, window)
+
+
+def _compute_nb_coincident_spikes(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, int max_time):
+	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
+	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
+
+	nb_coincident = _compute_nb_coincident_spikes_c(train1, train2, len(spike_train1), len(spike_train2), max_time)
+
+	return nb_coincident
+
+
+cdef int _compute_nb_coincident_spikes_c(unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int max_time):
+	cdef int i, j, diff
+	cdef int nb_pairs = 0
+
+	cdef int start_j = 0
+	for i in range(N1):
+		for j in range(start_j, N2):
+			diff = spike_train1[i] - spike_train2[j]
+
+			if diff > max_time:
+				start_j += 1
+				continue
+			if diff < -max_time:
+				break
+
+			nb_pairs += 1
+
+	return nb_pairs
+
 
 
 def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_train2: np.ndarray, refractory_period: tuple, t_max: int, sampling_f: float):
@@ -372,12 +517,45 @@ def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_tra
 	t_r = upper_b - lower_b
 
 	C = estimate_spike_train_contamination(spike_train2, refractory_period, t_max, sampling_f)
-	nb_refract = cpp.compute_cross_refractory_period(spike_train1.ctypes.data_as(c_uint64_p), spike_train2.ctypes.data_as(c_uint64_p), ctypes.c_uint32(len(spike_train1)), ctypes.c_uint32(len(spike_train2)), ctypes.c_uint32(lower_b), ctypes.c_uint32(upper_b))
+	nb_refract = _compute_cross_violations(spike_train1, spike_train2, refractory_period[1], sampling_f)
 
 	estimate1 = len(spike_train1) * len(spike_train2)*C * 2*t_r / t_max
 	estimate2 = len(spike_train1) * len(spike_train2)*(1-C) * 2*t_r / t_max
 
 	return (nb_refract - estimate1) / estimate2
+
+
+def _compute_cross_violations(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float t_r, float sampling_f):
+	cdef int t_r_c = round(t_r * 1e-3 * sampling_f)
+	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
+	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
+
+	n_v = _compute_cross_violations_c(train1, train2, len(spike_train1), len(spike_train2), t_r_c)
+
+	return n_v
+
+cdef int _compute_cross_violations_c(unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int t_r):
+	cdef int i, j, diff
+	cdef int nb_pairs = 0
+	cdef int nb_half_pairs = 0
+
+	cdef int start_j = 0
+	for i in range(N1):
+		for j in range(start_j, N2):
+			diff = spike_train1[i] - spike_train2[j]
+
+			if diff > t_r:
+				start_j += 1
+				continue
+			if diff < -t_r:
+				break
+			if diff == t_r or diff == -t_r:
+				nb_half_pairs += 1
+			else:
+				nb_pairs += 1
+
+	return nb_pairs + (nb_half_pairs/2)
+
 
 
 def get_unit_supression_period(data, unit_id: int, contamination: float, **kwargs):

@@ -78,7 +78,7 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 		idx1 = np.where(unit_ids == potential_merges[i, 1])[0][0]
 		shifts2[i] = shifts[idx0, idx1]
 	potential_merges = _waveform_validation(data, potential_merges, shifts2, kwargs['max_reshift'], kwargs['waveform_validation'], plot_folder)
-	new_potential_merges = _score_validation(data, potential_merges, kwargs['refractory_period'], kwargs['score_validation'], plot_folder)
+	new_potential_merges = _score_validation(data, potential_merges, tuple(kwargs['refractory_period']), kwargs['score_validation'], plot_folder)
 
 	k = 1 + kwargs['score_validation']['good_noise_ratio']
 	for potential_merge in potential_merges:
@@ -87,8 +87,8 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 
 		f1 = data.get_unit_firing_rate(potential_merge[0])
 		f2 = data.get_unit_firing_rate(potential_merge[1])
-		C1 = utils.estimate_unit_contamination(data, potential_merge[0], kwargs['refractory_period'])
-		C2 = utils.estimate_unit_contamination(data, potential_merge[1], kwargs['refractory_period'])
+		C1 = utils.estimate_unit_contamination(data, potential_merge[0], tuple(kwargs['refractory_period']))
+		C2 = utils.estimate_unit_contamination(data, potential_merge[1], tuple(kwargs['refractory_period']))
 		score_1 = f1 * (1 - k*C1)
 		score_2 = f2 * (1 - k*C2)
 
@@ -838,8 +838,8 @@ def _plot_result(data: PhyData, potential_merges: np.ndarray, shifts: np.ndarray
 
 		freq1 = data.get_unit_firing_rate(unit1)
 		freq2 = data.get_unit_firing_rate(unit2)
-		cont1 = utils.estimate_unit_contamination(data, unit1, params['refractory_period'])
-		cont2 = utils.estimate_unit_contamination(data, unit2, params['refractory_period'])
+		cont1 = utils.estimate_unit_contamination(data, unit1, tuple(params['refractory_period']))
+		cont2 = utils.estimate_unit_contamination(data, unit2, tuple(params['refractory_period']))
 
 		best_channels = np.argsort(np.max(np.abs(waveforms[idx1]+waveforms[idx2]), axis=1))[::-1]
 

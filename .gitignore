@@ -1,4 +1,8 @@
 __pycache__/
 */__pycache__/
+build/
+*/build/
 *.log
 *.so
+*.dat
+*.c

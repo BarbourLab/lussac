@@ -41,7 +41,7 @@ def rm_bad_units(data: PhyData, unit_ids: list, params: dict, plot_folder: str):
 				continue
 
 		if 'contamination' in params:
-			contamination = utils.estimate_unit_contamination(data, unit_id, params['contamination']['refractory_period'])
+			contamination = utils.estimate_unit_contamination(data, unit_id, tuple(params['contamination']['refractory_period']))
 
 			if contamination > params['contamination']['max']:
 				bad_units[unit_id] = -1
