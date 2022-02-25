@@ -1,3 +1,6 @@
+# distutils: language = c++
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+
 import os
 import math
 import itertools
@@ -588,7 +591,7 @@ def get_spiketrain_supression_period(spike_train: np.ndarray, contamination: flo
 	if suppression_period < bin_size or suppression_period > max_time-bin_size:
 		return suppression_period
 
-	xaxis = (bins[half_point+1:] + bins[half_point:-1]) / 2
+	xaxis = (bins[half_point+1:] + bins[half_point:len(bins)-1]) / 2
 	f = scipy.interpolate.interp1d(xaxis, correlogram)
 	for t in np.linspace(suppression_period-bin_size, suppression_period+bin_size, 100):
 		if f(t) > threshold:
@@ -694,7 +697,7 @@ def plot_unit_correlograms(unit_id: int, save_folder: str, ISI: tuple, auto_corr
 
 	w = ISI[1][1] - ISI[1][0]
 	fig.add_trace(go.Bar(
-		x=ISI[1][:-1] + w/2,
+		x=ISI[1][:len(ISI[1])-1] + w/2,
 		y=ISI[0],
 		width=w,
 		name="ISI"
@@ -703,7 +706,7 @@ def plot_unit_correlograms(unit_id: int, save_folder: str, ISI: tuple, auto_corr
 
 	w = auto_corr[1][1] - auto_corr[1][0]
 	fig.add_trace(go.Bar(
-		x=auto_corr[1][:-1] + w/2,
+		x=auto_corr[1][:len(auto_corr[1])-1] + w/2,
 		y=auto_corr[0],
 		width=w,
 		name="Auto-correlogram"
@@ -712,7 +715,7 @@ def plot_unit_correlograms(unit_id: int, save_folder: str, ISI: tuple, auto_corr
 
 	w = firing_rate[1][1] - firing_rate[1][0]
 	fig.add_trace(go.Bar(
-		x=firing_rate[1][:-1] + w/2,
+		x=firing_rate[1][:len(firing_rate[1])-1] + w/2,
 		y=firing_rate[0],
 		width=w,
 		name="Firing rate"
@@ -877,7 +880,7 @@ def plot_units_correlograms(unit_ids: list, save_folder: str, ISI: tuple, auto_c
 
 		w = ISI[1][1] - ISI[1][0]
 		fig.add_trace(go.Bar(
-			x=ISI[1][:-1] + w/2,
+			x=ISI[1][:len(ISI[1])-1] + w/2,
 			y=ISI[0][i],
 			width=w,
 			name="ISI",
@@ -886,7 +889,7 @@ def plot_units_correlograms(unit_ids: list, save_folder: str, ISI: tuple, auto_c
 
 		w = auto_corr[1][1] - auto_corr[1][0]
 		fig.add_trace(go.Bar(
-			x=auto_corr[1][:-1] + w/2,
+			x=auto_corr[1][:len(auto_corr[1])-1] + w/2,
 			y=auto_corr[0][i],
 			width=w,
 			name="Auto-correlogram",
@@ -895,7 +898,7 @@ def plot_units_correlograms(unit_ids: list, save_folder: str, ISI: tuple, auto_c
 
 		w = firing_rate[1][1] - firing_rate[1][0]
 		fig.add_trace(go.Bar(
-			x=firing_rate[1][:-1] + w/2,
+			x=firing_rate[1][:len(firing_rate[1])-1] + w/2,
 			y=firing_rate[0][i],
 			width=w,
 			name="Firing rate",
