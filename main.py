@@ -11,6 +11,7 @@ import spike_sorting.kilosort25
 import spike_sorting.kilosort3
 import spike_sorting.mountainsort3
 import spike_sorting.mountainsort4
+import spike_sorting.spykingcircus
 
 
 
@@ -23,7 +24,7 @@ if __name__ == "__main__":
 	# 
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("params_file", help="path to the json file containing pipeline parameters")
+	parser.add_argument("params_file", help="path to the json file containing Lussac's parameters")
 	args = parser.parse_args()
 
 	params_folder = args.params_file[:args.params_file.rindex('/')] if '/' in args.params_file else "./"
@@ -54,6 +55,8 @@ if __name__ == "__main__":
 			spike_sorter = spike_sorting.mountainsort3.MountainSort3(params['recording'], output_folder)
 		elif name == "MountainSort4":
 			spike_sorter = spike_sorting.mountainsort4.MountainSort4(params['recording'], output_folder)
+		elif name == "SpykingCircus":
+			spike_sorter = spike_sorting.spykingcircus.SpykingCircus(params['recording'], output_folder)
 		else:
 			assert False, "Could not find spike sorter \"{0}\"".format(name)
 
