@@ -1,4 +1,5 @@
 import os
+import shutil
 import spikesorters
 import spiketoolkit
 
@@ -6,12 +7,6 @@ from .spike_sorter import SpikeSorter
 
 
 class SpykingCircus(SpikeSorter):
-	"""
-	NOT TESTED YET!!
-	(My version of OpenMPI is too high apparently).
-
-	If you've tested this, I'd really like some feedback: aurelien.wyngaard@ens.fr
-	"""
 
 	def launch(self, name: str, params: dict={}):
 		"""
