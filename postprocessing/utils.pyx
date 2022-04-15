@@ -588,7 +588,7 @@ def get_spiketrain_supression_period(spike_train: np.ndarray, contamination: flo
 	threshold = threshold * baseline
 
 	suppression_period = bin_size * np.argmax(np.array([np.all(correlogram[i:] > threshold) for i in range(len(correlogram))], dtype=bool))
-	if suppression_period < bin_size or suppression_period > max_time-bin_size:
+	if suppression_period <= bin_size or suppression_period > max_time-bin_size:
 		return suppression_period
 
 	xaxis = (bins[half_point+1:] + bins[half_point:len(bins)-1]) / 2
