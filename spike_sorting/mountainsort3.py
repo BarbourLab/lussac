@@ -33,6 +33,8 @@ class MountainSort3(SpikeSorter):
 		self._create_pipeline(tmp_folder)
 		output, error = self._run_ms3(tmp_folder)
 
+		# TODO: check that firings.mda was created. If not, mountainsort3 failed (on my computer, it randomly fails 1/20th of the time).
+
 		with open("{0}/logs.txt".format(output_folder), 'w') as logs_file:
 			if output != None:
 				logs_file.write("Output:\n")
@@ -142,7 +144,7 @@ class MountainSort3(SpikeSorter):
 
 		bash = "mlp-run mountainsort3.mlp sort --raw=data.mda --geom=geom.csv --firings_out=firings.mda --_params=params.json".format(tmp_folder)
 
-		process = subprocess.Popen(bash.split(), cwd=tmp_folder, stdout=subprocess.PIPE)
+		process = subprocess.Popen(bash.split(), cwd=tmp_folder, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		output, error = process.communicate()
 
 		return output, error
