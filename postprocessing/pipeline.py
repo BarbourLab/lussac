@@ -2,7 +2,6 @@ import os
 import time
 import math
 import numpy as np
-import spikeextractors
 import spiketoolkit
 
 from phy_data import PhyData

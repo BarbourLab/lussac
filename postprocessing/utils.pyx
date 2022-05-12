@@ -76,7 +76,7 @@ def _compute_ISI(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float 
 
 	_compute_ISI_c(hist, train, len(spike_train), bin_size_c, max_time_c)
 
-	return (ISI, bins)
+	return ISI, bins
 
 
 cdef void _compute_ISI_c(unsigned long* ISI, unsigned long* spike_train, int N, int bin_size, int max_time):
@@ -153,7 +153,7 @@ def _compute_autocorr(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, f
 
 	_compute_autocorr_c(corr, train, len(spike_train), n_bins, bin_size_c, max_time_c)
 
-	return (auto_corr, bins)
+	return auto_corr, bins
 
 
 cdef void _compute_autocorr_c(unsigned long* auto_corr, unsigned long* spike_train, int N, int n_bins, int bin_size, int max_time):
@@ -242,7 +242,7 @@ def _compute_crosscorr(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYP
 
 	_compute_crosscorr_c(corr, train1, train2, len(spike_train1), len(spike_train2), n_bins, bin_size_c, max_time_c)
 
-	return (cross_corr, bins)
+	return cross_corr, bins
 
 
 cdef void _compute_crosscorr_c(unsigned long* cross_corr, unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int n_bins, int bin_size, int max_time):
@@ -325,9 +325,9 @@ def _compute_firing_rate(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size
 	_compute_firing_rate_c(hist, train, len(spike_train), len(bins)-1, bin_size_c)
 
 	if as_Hz:
-		return (firing_rate / bin_size, bins)
+		return firing_rate / bin_size, bins
 	else:
-		return (firing_rate, bins)
+		return firing_rate, bins
 
 
 cdef void _compute_firing_rate_c(unsigned long* firing_rate, unsigned long* spike_train, int N, int n_bins, int bin_size):

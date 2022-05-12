@@ -608,7 +608,7 @@ def _get_cross_cluster_shift(data: PhyData, unit_ids: list, params: dict):
 
 
 
-def _plot_correlogram_checks(correlograms: np.ndarray, unit_ids: list, pairs: list, diff: float, passed: list, max_time: float, windows: list, plot_folder: str):
+def _plot_correlogram_checks(correlograms: np.ndarray, unit_ids: list, pairs: list, diff: np.ndarray, passed: list, max_time: float, windows: list, plot_folder: str):
 	"""
 	Plots the result of the _get_potential_merges function.
 
@@ -618,7 +618,7 @@ def _plot_correlogram_checks(correlograms: np.ndarray, unit_ids: list, pairs: li
 		The ID of all units units.
 	@param pairs (list of np.ndarray[int]) [n_pairs, 2]:
 		The index (not ID!) of units by pair.
-	@param diff (float):
+	@param diff (np.ndarray) []:
 		The computed difference between the two correlograms.
 	@param passed (list of bool) [n_pairs]:
 		Did the correlogram check pass (i.e is it a potential unit?).

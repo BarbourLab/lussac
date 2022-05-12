@@ -1,12 +1,7 @@
-import time
-import math
 import numpy as np
-import scipy.stats
-import matplotlib.pyplot as plt
 
 from phy_data import PhyData
 import postprocessing.filter as filter
-import postprocessing.utils as utils
 
 
 def remove_duplicated_spikes(data: PhyData, unit_ids: list, params: dict, plot_folder: str):

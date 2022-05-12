@@ -2,6 +2,7 @@ import os
 from multiprocessing import Pool
 import numpy as np
 import scipy.signal
+import scipy.stats
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -223,29 +224,6 @@ def center_waveforms_on_ref(waveforms: np.ndarray, reference: np.ndarray, params
 		_plot_center_on_ref(waveforms[:20, 0], reference[0], conv, threshold, unit_id, centers, params, plot_folder)
 
 	return centers
-
-	"""conv_1 = compute_convolution(waveforms, reference, substract_baseline=True)
-	conv_2 = compute_convolution(waveforms, reference, substract_baseline=False)
-
-	centers = np.argmin(conv_1, axis=1) - prev_center
-	threshold = _compute_convolution_threshold(conv_1, centers)
-
-	centers = _update_centers_threshold(conv_1, threshold, prev_center)
-	new_centers = np.zeros([len(centers)], dtype=np.int16)
-	starts = np.zeros([len(centers)], dtype=np.int16)
-	ends = np.zeros([len(centers)], dtype=np.int16)
-
-	for i in range(len(waveforms)): # TODO: 20 should be a parameter.
-		starts[i] = max(0, centers[i] + prev_center - 20)
-		ends[i] = min(conv_2.shape[1], centers[i] + prev_center + 20)
-
-		conv = conv_2[i, starts[i]:ends[i]]
-		new_centers[i] = np.argmax(conv[:-1]) + starts[i] - prev_center
-
-	if plot_folder != None and unit_id != None:
-		_plot_center_on_ref(waveforms[:20, 0], reference[0], conv_1, conv_2, threshold, unit_id, centers, new_centers, params, plot_folder)
-
-	return new_centers"""
 
 
 def compute_convolution(waveforms: np.ndarray, reference: np.ndarray, substract_baseline: bool=False):

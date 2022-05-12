@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 class WaveformExtractor:
 
 	def __init__(self, data):
@@ -237,6 +236,6 @@ class WaveformExtractor:
 		waveforms = waveforms[:, channels_idx]
 
 		if params['return_idx']:
-			return (waveforms, channels_idx)
+			return waveforms, channels_idx
 		else:
 			return waveforms
