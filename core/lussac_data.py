@@ -11,9 +11,10 @@ class LussacData:
 		sortings	A list of SpikeInterface sorting objects.
 	"""
 
-	__slots__ = "recording", "sortings"
+	__slots__ = "recording", "sortings", "params"
 	recording: si.BaseRecording
 	sortings: list[si.BaseSorting]
+	params: dict
 
 	def __init__(self, params: dict) -> None:
 		"""
@@ -24,6 +25,7 @@ class LussacData:
 			The params.json file containing everything we need to know.
 		"""
 
+		self.params = params
 		self.recording = si.BinaryRecordingExtractor(params['recording']['file'], sampling_frequency=params['recording']['sampling_rate'],
 													 num_chan=params['recording']['n_channels'], dtype=params['recording']['dtype'])
 		self.sortings = []
