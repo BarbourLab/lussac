@@ -3,7 +3,7 @@ from core.lussac_data import LussacData
 
 
 @dataclass(slots=True)
-class Pipeline:
+class LussacPipeline:
 	"""
 
 	"""

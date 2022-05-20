@@ -1,3 +1,4 @@
+import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.extractors as se
 
@@ -28,6 +29,8 @@ class LussacData:
 		self.params = params
 		self.recording = si.BinaryRecordingExtractor(params['recording']['file'], sampling_frequency=params['recording']['sampling_rate'],
 													 num_chan=params['recording']['n_channels'], dtype=params['recording']['dtype'])
+		self._setup_probe(params['recording']['probe_file'])
+
 		self.sortings = []
 		for path in params['phy_folders']:
 			self.sortings.append(se.PhySortingExtractor(path))
@@ -41,3 +44,15 @@ class LussacData:
 		"""
 
 		return self.recording.get_sampling_frequency()
+
+	def _setup_probe(self, filename: str) -> None:
+		"""
+		Loads the probe geometry into the 'recording' attribute.
+
+		@param filename: str
+			Path to the JSON file containing the probe geometry (ProbeInterface format).
+		@return: None
+		"""
+
+		probe_group = probeinterface.io.read_probeinterface(filename)
+		self.recording = self.recording.set_probegroup(probe_group)

@@ -2,7 +2,7 @@ import argparse
 import json
 import jsmin
 from core.lussac_data import LussacData
-from core.pipeline import Pipeline
+from core.pipeline import LussacPipeline
 
 
 def parse_arguments() -> str:
@@ -30,10 +30,10 @@ def load_json(filename: str) -> dict:
 		Lussac's parameters.
 	"""
 
-	params_folder = filename[:filename.rindex('/')] if '/' in filename else "./"
+	folder = filename[:filename.rindex('/')] if '/' in filename else "./"
 	with open(filename) as json_file:
-		minified = jsmin.jsmin(json_file.read())  # Parses out comments
-		minified = minified.replace("$PARAMS_FOLDER", params_folder)
+		minified = jsmin.jsmin(json_file.read())  # Parses out comments.
+		minified = minified.replace("$PARAMS_FOLDER", folder)
 		return json.loads(minified)
 
 
@@ -41,11 +41,11 @@ if __name__ == "__main__":
 	# STEP 0: Loading the parameters
 	params_file = parse_arguments()
 	params = load_json(params_file)
+	data = LussacData(params)
 
 	# STEP 1: Running the spike sorting.
 	pass
 
 	# STEP 2: Running the pipeline.
-	data = LussacData(params)
-	pipeline = Pipeline(data)
+	pipeline = LussacPipeline(data)
 	pipeline.launch()
