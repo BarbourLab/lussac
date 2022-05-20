@@ -1,3 +1,5 @@
+import pathlib
+import tempfile
 import numpy as np
 import probeinterface.io
 import spikeinterface.core as si
@@ -13,10 +15,11 @@ class LussacData:
 		sortings	A list of SpikeInterface sorting objects.
 	"""
 
-	__slots__ = "recording", "sortings", "params"
+	__slots__ = "recording", "sortings", "params", "_tmp_directory"
 	recording: si.BaseRecording
 	sortings: list[si.BaseSorting]
 	params: dict
+	_tmp_directory: tempfile.TemporaryDirectory
 
 	def __init__(self, params: dict) -> None:
 		"""
@@ -35,9 +38,17 @@ class LussacData:
 													 gain_to_uV=params['recording']['gain_uV'], offset_to_uV=params['recording']['offset_uV'])
 		self._setup_probe(params['recording']['probe_file'])
 
-		self.sortings = []
-		for path in params['phy_folders']:
-			self.sortings.append(se.PhySortingExtractor(path))
+		self.sortings = self._load_sortings(params['phy_folders'])
+		self._tmp_directory = self._setup_tmp_directory(params['post_processing']['tmp_folder'])
+
+	@property
+	def tmp_folder(self) -> str:
+		"""
+
+		@return:
+		"""
+
+		return self._tmp_directory.name
 
 	@property
 	def sampling_f(self) -> float:
@@ -75,3 +86,28 @@ class LussacData:
 
 		probe_group = probeinterface.io.read_probeinterface(filename)
 		self.recording = self.recording.set_probegroup(probe_group)
+
+	@staticmethod
+	def _load_sortings(phy_folders: list[str]) -> list[si.BaseSorting]:
+		"""
+
+		@param phy_folders:
+		@return:
+		"""
+
+		sortings = []
+		for path in phy_folders:
+			sortings.append(se.PhySortingExtractor(path))
+
+		return sortings
+
+	@staticmethod
+	def _setup_tmp_directory(folder_path: str) -> tempfile.TemporaryDirectory:
+		"""
+
+		@param folder_path:
+		@return:
+		"""
+
+		folder_path = pathlib.Path(folder_path)
+		return tempfile.TemporaryDirectory(prefix=folder_path.name + '_', dir=folder_path.parent)
