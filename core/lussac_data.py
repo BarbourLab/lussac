@@ -11,8 +11,10 @@ class LussacData:
 	The main data object for Lussac.
 
 	Attributes:
-		recording 	A SpikeInterface recording object.
-		sortings	A list of SpikeInterface sorting objects.
+		recording 		A SpikeInterface recording object.
+		sortings		A list of SpikeInterface sorting objects.
+		params			A dictionary containing all of Lussac's parameters.
+		_tmp_directory	The TemporaryDirectory object for Lussac.
 	"""
 
 	__slots__ = "recording", "sortings", "params", "_tmp_directory"
@@ -44,8 +46,11 @@ class LussacData:
 	@property
 	def tmp_folder(self) -> str:
 		"""
+		Returns the path to the temporary folder.
+		This folder is deleted when Lussac exists (normally or because of a crash).
 
-		@return:
+		@return tmp_folder: str
+			Path to the folder that store temporary files.
 		"""
 
 		return self._tmp_directory.name
@@ -88,11 +93,14 @@ class LussacData:
 		self.recording = self.recording.set_probegroup(probe_group)
 
 	@staticmethod
-	def _load_sortings(phy_folders: list[str]) -> list[si.BaseSorting]:
+	def _load_sortings(phy_folders: list[str]) -> list[se.PhySortingExtractor]:
 		"""
+		Loads all the sortings (in Phy format) and return
 
-		@param phy_folders:
-		@return:
+		@param phy_folders: list[str]
+			List containing the path to all the phy folders containing the spike sorted data.
+		@return sortings: list[PhySortingExtractor]
+			List containing the Phy sorting objects.
 		"""
 
 		sortings = []
@@ -104,9 +112,13 @@ class LussacData:
 	@staticmethod
 	def _setup_tmp_directory(folder_path: str) -> tempfile.TemporaryDirectory:
 		"""
+		Created a directory for temporary files.
+		This directory is deleted when Lussac exists (whether normally or because of a crash).
 
-		@param folder_path:
-		@return:
+		@param folder_path: str
+			Path for the temporary directory.
+		@return temporary_directory: TemporaryDirectory
+			The temporary directory object (from tempfile library).
 		"""
 
 		folder_path = pathlib.Path(folder_path)
