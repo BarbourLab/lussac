@@ -18,7 +18,7 @@ class MountainSort3(SpikeSorter):
 		"""
 
 		if os.path.exists(self.output_folder + "/output"):
-			assert False, "Error: output folder '{0}/output' already exists, and would have been overwritten!".format(output_folder)
+			assert False, "Error: output folder '{0}/output' already exists, and would have been overwritten!".format(self.output_folder)
 
 		tmp_folder = "{0}/tmp".format(self.output_folder)
 		output_folder = "{0}/{1}".format(self.output_folder, name)
