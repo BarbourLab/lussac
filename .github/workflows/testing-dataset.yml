@@ -25,11 +25,11 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies
       run: |
-        sudo apt install wget unzip gcc
+        sudo apt install wget unzip build-essential
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements.txt
-    - name: Compaling Cython code
+    - name: Compiling Cython code
       run: |
         python setup.py build_ext --inplace
     - name: Lint with flake8
