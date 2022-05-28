@@ -29,6 +29,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements.txt
+    - name: Compaling Cython code
+      run: |
+        python setup.py build_ext --inplace
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -37,8 +40,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Downloading testing dataset
       run: |
-        wget zenodo.org/record/6226056/files/lussac_test_dataset.zip
-        unzip lussac_test_dataset.zip
+        wget --no-verbose zenodo.org/record/6226056/files/lussac_test_dataset.zip
+        unzip -q lussac_test_dataset.zip
     - name: Running Lussac on test dataset
       run: |
         python main.py lussac_test_dataset/params.json
