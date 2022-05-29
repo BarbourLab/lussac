@@ -1,5 +1,5 @@
 
-[![Build Status](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg) [![Python version](https://img.shields.io/badge/python-3.10-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
+[![Build Status](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg) [![Python version](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
 
 # Lussac (Beta version)
 
