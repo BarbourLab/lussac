@@ -14,7 +14,7 @@ directives = {
 }
 
 setup(
-	ext_modules = cythonize("postprocessing/utils.pyx", compiler_directives=directives)
+	ext_modules = cythonize("postprocessing/utils.pyx", compiler_directives=directives, gdb_debug=True)
 )
 
 name = glob.glob("utils.cpython*")[0]
