@@ -45,8 +45,5 @@ jobs:
         rm lussac_test_dataset.zip
     - name: Running Lussac on test dataset
       run: |
-        pwd
-        ls
-        ls lussac_test_dataset
-        python main.py lussac_test_dataset/params.json
+        python main.py lussac_test/params.json
 
