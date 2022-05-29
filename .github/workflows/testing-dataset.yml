@@ -31,8 +31,6 @@ jobs:
         pip install -r requirements.txt
     - name: Compiling Cython code
       run: |
-        pwd
-        ls
         python setup.py build_ext --inplace
     - name: Lint with flake8
       run: |
@@ -44,7 +42,11 @@ jobs:
       run: |
         wget --no-verbose zenodo.org/record/6226056/files/lussac_test_dataset.zip
         unzip -q lussac_test_dataset.zip
+        rm lussac_test_dataset.zip
     - name: Running Lussac on test dataset
       run: |
+        pwd
+        ls
+        ls lussac_test_dataset
         python main.py lussac_test_dataset/params.json
 
