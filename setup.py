@@ -1,5 +1,6 @@
 import os
 import glob
+import numpy as np
 from setuptools import setup
 from Cython.Build import cythonize
 
@@ -14,7 +15,8 @@ directives = {
 }
 
 setup(
-	ext_modules = cythonize("postprocessing/utils.pyx", compiler_directives=directives, gdb_debug=True)
+	ext_modules = cythonize("postprocessing/utils.pyx", compiler_directives=directives, gdb_debug=True),
+	include_dirs=[np.get_include()]
 )
 
 name = glob.glob("utils.cpython*")[0]
