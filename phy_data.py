@@ -6,6 +6,7 @@ import spiketoolkit
 import postprocessing.utils
 from postprocessing.wvf_extractor import WaveformExtractor
 
+
 class PhyData:
 
 	def __init__(self, params: dict):

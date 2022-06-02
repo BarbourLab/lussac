@@ -31,7 +31,8 @@ def center_units(data: PhyData, unit_ids: list, params: dict, plot_folder: str):
 			"max_channels_per_waveforms": 5
 		},
 		"filter": [2, 300, 6000],
-		"threshold_std": 1.5
+		"threshold_std": 1.5,
+		"check_next": 10
 	}
 	kwargs.update(params)
 
@@ -71,7 +72,7 @@ def get_shift_unit(mean_waveform: np.ndarray, params: dict, sampling_f: float, p
 	"""
 
 	threshold = params['threshold_std'] * np.std(mean_waveform)
-	center = compute_center(mean_waveform, threshold)
+	center = compute_center(mean_waveform, threshold, check_next=params['check_next'])
 
 	return int(round(center - params['waveforms']['ms_before'] * sampling_f * 1e-3))
 

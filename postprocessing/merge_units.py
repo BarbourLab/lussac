@@ -175,8 +175,16 @@ def _get_potential_merges(data: PhyData, unit_ids: list, shifts: np.ndarray, par
 			window = int(round((N[i]*W[i] + N[j]*W[j]) / (N[i]+N[j])))	# Weighted window (larger unit imposes its window).
 			plage = np.arange(m-window, m+window).astype(np.uint16)		# Plage of indices where correlograms are inside the window.
 
-			diff1, diff2 = get_correlogram_differences(correlograms[i, i], correlograms[j, j], correlograms[i, j], plage, shift)
-			diff = (N[i]*diff1 + N[j]*diff2) / (N[i]+N[j])	# Weighted difference (larger unit imposes its difference).
+			spike_train1 = data.sorting.get_unit_spike_train(unit_ids[i])
+			spike_train2 = data.sorting.get_unit_spike_train(unit_ids[j]) - shift
+			n_coincidents = utils.get_nb_coincident_spikes(spike_train1, spike_train2, window=3)
+			
+			if n_coincidents / (len(spike_train1) + len(spike_train2) - n_coincidents) > 0.7:
+				diff = 0
+			else:
+				diff1, diff2 = get_correlogram_differences(correlograms[i, i], correlograms[j, j], correlograms[i, j], plage, shift)
+				diff = (N[i]*diff1 + N[j]*diff2) / (N[i]+N[j])	# Weighted difference (larger unit imposes its difference).
+			
 			all_differences.append(diff)
 
 			if diff < 1 - params['similarity']:
@@ -490,7 +498,7 @@ def _recheck_score(data: PhyData, merges: list, refractory_period: tuple, params
 				C = utils.estimate_units_contamination(data, combination, refractory_period)
 				S = F * (1 - k*C)
 
-				if S > score:
+				if S >= score:
 					score = S
 					units = combination
 
