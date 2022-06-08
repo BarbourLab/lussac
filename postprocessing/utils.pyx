@@ -65,7 +65,7 @@ def get_ISI_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0, max_ti
 def _compute_ISI(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
 	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
 	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
-	max_time -= max_time % bin_size
+	max_time_c -= max_time_c % bin_size_c
 	cdef int n_bins = max_time_c / bin_size_c
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(0, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
@@ -142,7 +142,7 @@ def get_autocorr_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0/3.
 def _compute_autocorr(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
 	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
 	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
-	max_time -= max_time % bin_size
+	max_time_c -= max_time_c % bin_size_c
 	cdef int n_bins = 2 * (max_time_c / bin_size_c)
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
@@ -230,7 +230,7 @@ def get_crosscorr_from_spiketrain(spike_train1: np.ndarray, spike_train2: np.nda
 def _compute_crosscorr(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float bin_size, float max_time, float sampling_f):
 	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
 	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
-	max_time -= max_time % bin_size
+	max_time_c -= max_time_c % bin_size_c
 	cdef int n_bins = 2 * (max_time_c / bin_size_c)
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
