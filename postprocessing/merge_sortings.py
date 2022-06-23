@@ -103,8 +103,8 @@ def automerge_sortings(data: PhyData, unit_ids: dict, params: dict, plot_folder:
 	perform_final_merging(data, similar_units, shifts2, kwargs, plot_folder)
 	check_conflicts(data, starting_ID, kwargs, plot_folder)
 
-	if len(unit_ids) <= 3:
-		add_leftover_units(data, unit_ids, kwargs, plot_folder) # A cluster that is not detected in other analyses is usually not a neuron ; see Buccino & Hurwitz et Al. 2020
+	# if len(unit_ids) <= 3:
+	# 	add_leftover_units(data, unit_ids, kwargs, plot_folder) # A cluster that is not detected in other analyses is usually not a neuron ; see Buccino & Hurwitz et Al. 2020
 
 	data.clear_wvfs()
 
@@ -412,14 +412,23 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 	b, a = filter.get_filter_params(params['waveform_validation']['filter'][0], params['waveform_validation']['filter'][1], params['waveform_validation']['filter'][2], btype="bandpass")
 
 	mean_wvfs = dict()
+	deviations = dict()
 	for unit_id in data.merged_sorting.get_unit_ids():
 		if unit_id < starting_ID:
 			continue
 
 		spike_train = data.merged_sorting.get_unit_spike_train(unit_id).astype(np.uint64)
-		mean_wvf = np.mean(data.get_waveforms_from_spiketrain(spike_train, **wvf_extraction_kwargs), axis=0, dtype=np.float32)
+		wvfs = data.get_waveforms_from_spiketrain(spike_train, **wvf_extraction_kwargs)
+		mean_wvf = np.mean(wvfs, axis=0, dtype=np.float32)
 		mean_wvf = filter.filter(mean_wvf, b, a, dtype=np.float32)
 		mean_wvfs[unit_id] = mean_wvf
+
+		best_channel = np.argmax(np.max(np.abs(mean_wvf), axis=1))
+		center = np.argmax(np.abs(mean_wvf[best_channel]))
+		mean_deviation = np.std(wvfs[:, best_channel, center] - mean_wvf[best_channel, center])
+		noise_level = scipy.stats.median_abs_deviation(filter.filter(data.recording.get_traces(channel_ids=[best_channel])[0], b, a, dtype=np.int16), scale="normal")
+		deviations[unit_id] = np.abs((mean_deviation - noise_level) / mean_wvf[best_channel, center])
+
 
 	for i in range(len(data.merged_sorting.get_unit_ids())):
 		unit_id_1 = data.merged_sorting.get_unit_ids()[i]
@@ -454,17 +463,20 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 		if shared_cluster[0] in units_to_delete or shared_cluster[1] in units_to_delete:
 			continue
 
-		scores = np.zeros([2], dtype=np.float32)
+		if abs(deviations[shared_cluster[0]] - deviations[shared_cluster[1]]) > 0.4:
+			best_unit = shared_cluster[0] if deviations[shared_cluster[0]] < deviations[shared_cluster[1]] else shared_cluster[1]
+		else:
+			scores = np.zeros([2], dtype=np.float32)
 
-		for i in range(2):
-			spike_train = data.merged_sorting.get_unit_spike_train(shared_cluster[i])
-			F = len(spike_train) / t_max * data.sampling_f
-			C = utils.estimate_spike_train_contamination(spike_train, tuple(params['refractory_period']), t_max, data.sampling_f)
-			scores[i] = F * (1 - 5*C)
+			for i in range(2):
+				spike_train = data.merged_sorting.get_unit_spike_train(shared_cluster[i])
+				F = len(spike_train) / t_max * data.sampling_f
+				C = utils.estimate_spike_train_contamination(spike_train, tuple(params['refractory_period']), t_max, data.sampling_f)
+				scores[i] = F * (1 - 5*C)
 
-		best_unit = shared_cluster[np.argmax(scores)]
+			best_unit = shared_cluster[np.argmax(scores)]
+		
 		utils.plot_units_from_spiketrain(data, [data.merged_sorting.get_unit_spike_train(unit_id) for unit_id in shared_cluster], shared_cluster, plot_folder, filename="cluster-{0}_({1})".format('-'.join([str(a) for a in shared_cluster]), best_unit))
-
 		for unit in shared_cluster:
 			if unit == best_unit:
 				continue
