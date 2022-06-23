@@ -19,5 +19,5 @@ setup(
 	include_dirs=[np.get_include()]
 )
 
-name = glob.glob("utils.cpython*")[0]
+name = glob.glob("utils.cp*")[0]
 os.rename(name, "postprocessing/{0}".format(name))
