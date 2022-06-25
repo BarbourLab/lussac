@@ -7,13 +7,15 @@ import itertools
 import numpy as np
 cimport numpy as np
 cimport cython
+from libc cimport stdint
 import scipy.interpolate
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 import postprocessing.filter as filter
 
-ctypedef np.uint64_t DTYPE_t
+ctypedef np.int64_t DTYPE_t
+ctypedef stdint.int64_t Int64
 
 
 def get_ISI(data, unit_id: int, bin_size: float=1.0, max_time: float=50.0):
@@ -41,7 +43,7 @@ def get_ISI_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0, max_ti
 	Computes the Inter-Spike Interval (time difference between consecutive spikes) of a spike train.
 	Takes ~4ms for 200k spikes.
 
-	@param spike_train (np.ndarray[uint64]) [n_spikes]:
+	@param spike_train (np.ndarray[int64]) [n_spikes]:
 		Spike train to use (timings in sampling time).
 	@param bin_size (float):
 		Size of bin for the histogram (in ms).
@@ -50,37 +52,37 @@ def get_ISI_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0, max_ti
 	@param sampling_f (float):
 		Sampling frequency of the recording (in Hz).
 
-	@return ISi (np.ndarray[uint32]) [time]:
+	@return ISI (np.ndarray[uint32]) [time]:
 		ISI histogram of the spike train.
 	@return bins (np.ndarray) [time+1]
 		Bins of the histogram.
 	"""
 
-	if spike_train.dtype != np.uint64:
-		spike_train = spike_train.astype(np.uint64)
+	if spike_train.dtype != np.int64:
+		spike_train = spike_train.astype(np.int64)
 
 	return _compute_ISI(spike_train, bin_size, max_time, sampling_f)
 
 
 def _compute_ISI(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
-	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
-	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
+	cdef Int64 bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	cdef Int64 max_time_c = round(max_time * 1e-3 * sampling_f)
 	max_time_c -= max_time_c % bin_size_c
-	cdef int n_bins = max_time_c / bin_size_c
+	cdef Int64 n_bins = max_time_c / bin_size_c
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(0, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
-	cdef np.ndarray[DTYPE_t, ndim=1] ISI = np.zeros([n_bins], dtype=np.uint64)
+	cdef np.ndarray[DTYPE_t, ndim=1] ISI = np.zeros([n_bins], dtype=np.int64)
 
-	cdef unsigned long* train = <unsigned long*> spike_train.data
-	cdef unsigned long* hist = <unsigned long*> ISI.data
+	cdef Int64* train = <Int64*> spike_train.data
+	cdef Int64* hist = <Int64*> ISI.data
 
 	_compute_ISI_c(hist, train, len(spike_train), bin_size_c, max_time_c)
 
 	return ISI, bins
 
 
-cdef void _compute_ISI_c(unsigned long* ISI, unsigned long* spike_train, int N, int bin_size, int max_time):
-	cdef int i, j, bin, diff
+cdef void _compute_ISI_c(Int64* ISI, Int64* spike_train, Int64 N, Int64 bin_size, Int64 max_time):
+	cdef Int64 i, j, bin, diff
 
 	for i in range(N-1):
 		diff = spike_train[i+1] - spike_train[i]
@@ -118,7 +120,7 @@ def get_autocorr_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0/3.
 	Computes the auto-correlogram (time difference between spikes, consecutive and non-consecutive) of a spike train.
 	Takes ~10ms for 200k spikes.
 
-	@param spike_train (np.ndarray[uint64]) [n_spikes]:
+	@param spike_train (np.ndarray[int64]) [n_spikes]:
 		Spike train to use (timings in sampling time).
 	@param bin_size (float):
 		Size of bin for the histogram (in ms).
@@ -133,31 +135,31 @@ def get_autocorr_from_spiketrain(spike_train: np.ndarray, bin_size: float=1.0/3.
 		Bins of the histogram.
 	"""
 
-	if spike_train.dtype != np.uint64:
-		spike_train = spike_train.astype(np.uint64)
+	if spike_train.dtype != np.int64:
+		spike_train = spike_train.astype(np.int64)
 
 	return _compute_autocorr(spike_train, bin_size, max_time, sampling_f)
 
 
 def _compute_autocorr(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size, float max_time, float sampling_f):
-	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
-	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
+	cdef Int64 bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	cdef Int64 max_time_c = round(max_time * 1e-3 * sampling_f)
 	max_time_c -= max_time_c % bin_size_c
-	cdef int n_bins = 2 * (max_time_c / bin_size_c)
+	cdef Int64 n_bins = 2 * (max_time_c / bin_size_c)
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
-	cdef np.ndarray[DTYPE_t, ndim=1] auto_corr = np.zeros([n_bins], dtype=np.uint64)
+	cdef np.ndarray[DTYPE_t, ndim=1] auto_corr = np.zeros([n_bins], dtype=np.int64)
 
-	cdef unsigned long* train = <unsigned long*> spike_train.data
-	cdef unsigned long* corr = <unsigned long*> auto_corr.data
+	cdef Int64* train = <Int64*> spike_train.data
+	cdef Int64* corr = <Int64*> auto_corr.data
 
 	_compute_autocorr_c(corr, train, len(spike_train), n_bins, bin_size_c, max_time_c)
 
 	return auto_corr, bins
 
 
-cdef void _compute_autocorr_c(unsigned long* auto_corr, unsigned long* spike_train, int N, int n_bins, int bin_size, int max_time):
-	cdef int i, j, bin, diff
+cdef void _compute_autocorr_c(Int64* auto_corr, Int64* spike_train, Int64 N, Int64 n_bins, Int64 bin_size, Int64 max_time):
+	cdef Int64 i, j, bin, diff
 
 	for i in range(N):
 		for j in range(i+1, N):
@@ -202,9 +204,9 @@ def get_crosscorr_from_spiketrain(spike_train1: np.ndarray, spike_train2: np.nda
 	Computes the cross-correlogram (time difference between two spike trains).
 	Takes ~3ms for 200k - 3.5k spikes.
 
-	@param spike_train1 (np.ndarray[uint64]) [n_spikes1]:
+	@param spike_train1 (np.ndarray[int64]) [n_spikes1]:
 		First spike train to use (timings in sampling time).
-	@param spike_train2 (np.ndarray[uint64]) [n_spikes2]:
+	@param spike_train2 (np.ndarray[int64]) [n_spikes2]:
 		Second spike train to use (timings in sampling time).
 	@param bin_size (float):
 		Size of bin for the histogram (in ms).
@@ -219,36 +221,36 @@ def get_crosscorr_from_spiketrain(spike_train1: np.ndarray, spike_train2: np.nda
 		Bins of the histogram.
 	"""
 
-	if spike_train1.dtype != np.uint64:
-		spike_train1 = spike_train1.astype(np.uint64)
-	if spike_train2.dtype != np.uint64:
-		spike_train2 = spike_train2.astype(np.uint64)
+	if spike_train1.dtype != np.int64:
+		spike_train1 = spike_train1.astype(np.int64)
+	if spike_train2.dtype != np.int64:
+		spike_train2 = spike_train2.astype(np.int64)
 
 	return _compute_crosscorr(spike_train1, spike_train2, bin_size, max_time, sampling_f)
 
 
 def _compute_crosscorr(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float bin_size, float max_time, float sampling_f):
-	cdef int max_time_c = round(max_time * 1e-3 * sampling_f)
-	cdef int bin_size_c = round(bin_size * 1e-3 * sampling_f)
+	cdef Int64 max_time_c = round(max_time * 1e-3 * sampling_f)
+	cdef Int64 bin_size_c = round(bin_size * 1e-3 * sampling_f)
 	max_time_c -= max_time_c % bin_size_c
-	cdef int n_bins = 2 * (max_time_c / bin_size_c)
+	cdef Int64 n_bins = 2 * (max_time_c / bin_size_c)
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(-max_time_c, max_time_c+bin_size_c, bin_size_c) * 1e3 / sampling_f
-	cdef np.ndarray[DTYPE_t, ndim=1] cross_corr = np.zeros([n_bins], dtype=np.uint64)
+	cdef np.ndarray[DTYPE_t, ndim=1] cross_corr = np.zeros([n_bins], dtype=np.int64)
 
-	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
-	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
-	cdef unsigned long* corr = <unsigned long*> cross_corr.data
+	cdef Int64* train1 = <Int64*> spike_train1.data
+	cdef Int64* train2 = <Int64*> spike_train2.data
+	cdef Int64* corr = <Int64*> cross_corr.data
 
 	_compute_crosscorr_c(corr, train1, train2, len(spike_train1), len(spike_train2), n_bins, bin_size_c, max_time_c)
 
 	return cross_corr, bins
 
 
-cdef void _compute_crosscorr_c(unsigned long* cross_corr, unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int n_bins, int bin_size, int max_time):
-	cdef int i, j, bin, diff
+cdef void _compute_crosscorr_c(Int64* cross_corr, Int64* spike_train1, Int64* spike_train2, Int64 N1, Int64 N2, Int64 n_bins, Int64 bin_size, Int64 max_time):
+	cdef Int64 i, j, bin, diff
 
-	cdef int start_j = 0
+	cdef Int64 start_j = 0
 	for i in range(N1):
 		for j in range(start_j, N2):
 			diff = spike_train1[i] - spike_train2[j]
@@ -289,7 +291,7 @@ def get_firing_rate_from_spiketrain(spike_train: np.ndarray, t_max: int, bin_siz
 	"""
 	Computes the firing rate over time of a spike train.
 
-	@param spike_train (np.ndarray[uint64]) [n_spikes]:
+	@param spike_train (np.ndarray[int64]) [n_spikes]:
 		Spike train to use (timings in sampling time).
 	@param t_max (int):
 		Number of "frames" in the recording (in sampling time).
@@ -307,8 +309,8 @@ def get_firing_rate_from_spiketrain(spike_train: np.ndarray, t_max: int, bin_siz
 		Bins of the histogram.
 	"""
 
-	if spike_train.dtype != np.uint64:
-		spike_train = spike_train.astype(np.uint64)
+	if spike_train.dtype != np.int64:
+		spike_train = spike_train.astype(np.int64)
 
 	return _compute_firing_rate(spike_train, bin_size, t_max, as_Hz, sampling_f)
 
@@ -317,10 +319,10 @@ def _compute_firing_rate(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size
 	cdef bin_size_c = round(bin_size * sampling_f)
 
 	cdef np.ndarray[np.float64_t, ndim=1] bins = np.arange(0, t_max+bin_size_c, bin_size_c) / sampling_f
-	cdef np.ndarray[DTYPE_t, ndim=1] firing_rate = np.zeros([len(bins)-1], dtype=np.uint64)
+	cdef np.ndarray[DTYPE_t, ndim=1] firing_rate = np.zeros([len(bins)-1], dtype=np.int64)
 
-	cdef unsigned long* train = <unsigned long*> spike_train.data
-	cdef unsigned long* hist = <unsigned long*> firing_rate.data
+	cdef Int64* train = <Int64*> spike_train.data
+	cdef Int64* hist = <Int64*> firing_rate.data
 
 	_compute_firing_rate_c(hist, train, len(spike_train), len(bins)-1, bin_size_c)
 
@@ -330,8 +332,8 @@ def _compute_firing_rate(np.ndarray[DTYPE_t, ndim=1] spike_train, float bin_size
 		return firing_rate, bins
 
 
-cdef void _compute_firing_rate_c(unsigned long* firing_rate, unsigned long* spike_train, int N, int n_bins, int bin_size):
-	cdef int i, bin
+cdef void _compute_firing_rate_c(Int64* firing_rate, Int64* spike_train, Int64 N, Int64 n_bins, Int64 bin_size):
+	cdef Int64 i, bin
 
 	for i in range(N):
 		bin = spike_train[i] / bin_size
@@ -367,7 +369,7 @@ def estimate_spike_train_contamination(spike_train: np.ndarray, refractory_perio
 	Estimate the contamination of a spike train based on the refractory period.
 	Takes ~1.5ms for 200k spikes.
 
-	@param spike_train (np.ndarray[uint64]) [n_spikes]:
+	@param spike_train (np.ndarray[int64]) [n_spikes]:
 		Timings of each spikes (in sampling time).
 	@param refractory_period (tuple of 2 floats):
 		Window of the refractory period (in ms).
@@ -380,8 +382,8 @@ def estimate_spike_train_contamination(spike_train: np.ndarray, refractory_perio
 		Estimated contamination ratio.
 	"""
 
-	if spike_train.dtype != np.uint64:
-		spike_train = spike_train.astype(np.uint64)
+	if spike_train.dtype != np.int64:
+		spike_train = spike_train.astype(np.int64)
 
 	lower_b = int(round(refractory_period[0] * 1e-3 * sampling_f))
 	upper_b = int(round(refractory_period[1] * 1e-3 * sampling_f))
@@ -406,24 +408,24 @@ def estimate_units_contamination(data, unit_ids, refractory_period: tuple=(0.0, 
 	"""
 
 	spike_trains = [data.get_unit_spike_train(unit_id=unit_id) for unit_id in unit_ids]
-	spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.uint64)
+	spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
 	t_max = data.recording.get_num_frames()
 
 	return estimate_spike_train_contamination(spike_train, refractory_period, t_max, data.sampling_f)
 
 
 def _compute_nb_violations(np.ndarray[DTYPE_t, ndim=1] spike_train, float t_r, float sampling_f):
-	cdef int t_r_c = round(t_r * 1e-3 * sampling_f)
-	cdef unsigned long* train = <unsigned long*> spike_train.data
+	cdef Int64 t_r_c = round(t_r * 1e-3 * sampling_f)
+	cdef Int64* train = <Int64*> spike_train.data
 
 	n_v = _compute_nb_violations_c(train, len(spike_train), t_r_c)
 
 	return n_v
 
-cdef int _compute_nb_violations_c(unsigned long* spike_train, int N, int t_r):
-	cdef int i, j, diff
-	cdef int nb_pairs = 0
-	cdef int nb_half_pairs = 0
+cdef Int64 _compute_nb_violations_c(Int64* spike_train, Int64 N, Int64 t_r):
+	cdef Int64 i, j, diff
+	cdef Int64 nb_pairs = 0
+	cdef Int64 nb_half_pairs = 0
 
 	for i in range(N):
 		for j in range(i+1, N):
@@ -444,9 +446,9 @@ def get_nb_coincident_spikes(spike_train1: np.ndarray, spike_train2: np.ndarray,
 	"""
 	Returns the number of coincident spikes between two spike trains.
 
-	@param spike_train1 (np.ndarray[uint64]) [n_spikes1]:
+	@param spike_train1 (np.ndarray[int64]) [n_spikes1]:
 		First spike train to use (timings in sampling time).
-	@param spike_train2 (np.ndarray[uint64]) [n_spikes2]:
+	@param spike_train2 (np.ndarray[int64]) [n_spikes2]:
 		Second spike train to use (timings in sampling time).
 	@param window (int):
 		Window to consider spikes to be coincident (in sampling time). 0 = need to be exact same timing.
@@ -455,28 +457,28 @@ def get_nb_coincident_spikes(spike_train1: np.ndarray, spike_train2: np.ndarray,
 		Number of coincident spikes between the two spike trains.
 	"""
 
-	if spike_train1.dtype != np.uint64:
-		spike_train1 = spike_train1.astype(np.uint64)
-	if spike_train2.dtype != np.uint64:
-		spike_train2 = spike_train2.astype(np.uint64)
+	if spike_train1.dtype != np.int64:
+		spike_train1 = spike_train1.astype(np.int64)
+	if spike_train2.dtype != np.int64:
+		spike_train2 = spike_train2.astype(np.int64)
 
 	return _compute_nb_coincident_spikes(spike_train1, spike_train2, window)
 
 
 def _compute_nb_coincident_spikes(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, int max_time):
-	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
-	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
+	cdef Int64* train1 = <Int64*> spike_train1.data
+	cdef Int64* train2 = <Int64*> spike_train2.data
 
 	nb_coincident = _compute_nb_coincident_spikes_c(train1, train2, len(spike_train1), len(spike_train2), max_time)
 
 	return nb_coincident
 
 
-cdef int _compute_nb_coincident_spikes_c(unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int max_time):
-	cdef int i, j, diff
-	cdef int nb_pairs = 0
+cdef Int64 _compute_nb_coincident_spikes_c(Int64* spike_train1, Int64* spike_train2, Int64 N1, Int64 N2, Int64 max_time):
+	cdef Int64 i, j, diff
+	cdef Int64 nb_pairs = 0
 
-	cdef int start_j = 0
+	cdef Int64 start_j = 0
 	for i in range(N1):
 		for j in range(start_j, N2):
 			diff = spike_train1[i] - spike_train2[j]
@@ -497,9 +499,9 @@ def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_tra
 	"""
 	Estimates the contamination of a spike train based on the refractory period collision with another spike train.
 
-	@param spike_train1 (np.ndarray[uint64]) [n_spikes1]:
+	@param spike_train1 (np.ndarray[int64]) [n_spikes1]:
 		Timings of each spikes (in sampling time) for the spike train we want the contamination of.
-	@param spike_train2 (np.ndarray[uint64]) [n_spikes2]:
+	@param spike_train2 (np.ndarray[int64]) [n_spikes2]:
 		Timings of each spikes (in sampling time) for the "ground truth" spike train.
 	@param t_max (int):
 		Number of sampling time in recording.
@@ -510,10 +512,10 @@ def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_tra
 		Estimated contamination ratio.
 	"""
 
-	if spike_train1.dtype != np.uint64:
-		spike_train1 = spike_train1.astype(np.uint64)
-	if spike_train2.dtype != np.uint64:
-		spike_train2 = spike_train2.astype(np.uint64)
+	if spike_train1.dtype != np.int64:
+		spike_train1 = spike_train1.astype(np.int64)
+	if spike_train2.dtype != np.int64:
+		spike_train2 = spike_train2.astype(np.int64)
 
 	lower_b = int(round(refractory_period[0] * 1e-3 * sampling_f))
 	upper_b = int(round(refractory_period[1] * 1e-3 * sampling_f))
@@ -529,20 +531,20 @@ def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_tra
 
 
 def _compute_cross_violations(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float t_r, float sampling_f):
-	cdef int t_r_c = round(t_r * 1e-3 * sampling_f)
-	cdef unsigned long* train1 = <unsigned long*> spike_train1.data
-	cdef unsigned long* train2 = <unsigned long*> spike_train2.data
+	cdef Int64 t_r_c = round(t_r * 1e-3 * sampling_f)
+	cdef Int64* train1 = <Int64*> spike_train1.data
+	cdef Int64* train2 = <Int64*> spike_train2.data
 
 	n_v = _compute_cross_violations_c(train1, train2, len(spike_train1), len(spike_train2), t_r_c)
 
 	return n_v
 
-cdef int _compute_cross_violations_c(unsigned long* spike_train1, unsigned long* spike_train2, int N1, int N2, int t_r):
-	cdef int i, j, diff
-	cdef int nb_pairs = 0
-	cdef int nb_half_pairs = 0
+cdef Int64 _compute_cross_violations_c(Int64* spike_train1, Int64* spike_train2, Int64 N1, Int64 N2, Int64 t_r):
+	cdef Int64 i, j, diff
+	cdef Int64 nb_pairs = 0
+	cdef Int64 nb_half_pairs = 0
 
-	cdef int start_j = 0
+	cdef Int64 start_j = 0
 	for i in range(N1):
 		for j in range(start_j, N2):
 			diff = spike_train1[i] - spike_train2[j]
@@ -642,7 +644,7 @@ def plot_unit_from_spiketrain(data, spike_train: np.ndarray, unit_id: int, save_
 
 	@param data (PhyData):
 		The data object.
-	@param spike_train (np.ndarray[uint64]) [n_spikes]:
+	@param spike_train (np.ndarray[int64]) [n_spikes]:
 		Spike train to use.
 	@param unit_id (int):
 		Unit's ID.

@@ -20,4 +20,5 @@ setup(
 )
 
 name = glob.glob("utils.cp*")[0]
+os.remove("postprocessing/utils.cpp")	# Can be useful for debugging.
 os.rename(name, "postprocessing/{0}".format(name))
