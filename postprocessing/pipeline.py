@@ -72,6 +72,9 @@ def launch(data: PhyData, params: dict, prb_file: str):
 		elif func == "merge_sortings":
 			_print_section(func)
 
+			if data.get_num_sortings() <= 1:
+				print("\t- Aborted: You need more than 1 sorting to use merge_sortings.")
+
 			for category, params1 in params0.items():
 				units_id = dict()
 				for sorting in range(data.get_num_sortings()):
@@ -91,6 +94,9 @@ def launch(data: PhyData, params: dict, prb_file: str):
 			
 		elif func == "export":
 			_print_section(func)
+
+			if len(data.merged_sorting.get_unit_ids()) == 0:
+				print("\t- Aborting export: No units in the merged_sorting.")
 
 			data.recording = data.recording.load_probe_file(params0['prb'])
 
@@ -139,6 +145,9 @@ def launch(data: PhyData, params: dict, prb_file: str):
 
 			for sorting in range(len(data._sortings)):
 				data.set_sorting(sorting)
+				if len(data.sorting.get_unit_ids()) == 0:
+					print(f"\t- Sorting {sorting}: Aborted (no units to export)")
+
 				folder = "{0}/sorting_{1}".format(params0['path'], sorting)
 				os.makedirs(folder, exist_ok=True)
 
@@ -175,6 +184,8 @@ def launch(data: PhyData, params: dict, prb_file: str):
 				f = open("{0}/prev_unit_id.tsv".format(folder), "w+")
 				f.write(previous_ID)
 				f.close()
+
+				print(f"\t- Sorting {sorting}: OK")
 
 		else:
 			_print_section(func)
