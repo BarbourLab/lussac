@@ -81,8 +81,8 @@
 						"waveforms": {
 							"ms_before": 2.0,
 							"ms_after": 2.0,
-							"max_spikes_per_unit": 5000,
-							"max_channels_per_waveforms": 64
+							"max_spikes_per_unit": 2000,
+							"max_channels_per_waveforms": 16
 						}
 					}
 				}

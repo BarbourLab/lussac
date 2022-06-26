@@ -628,7 +628,7 @@ def plot_unit(data, unit_id: int, save_folder: str, bin_size: float=1.0/3.0, max
 	auto_corr = get_autocorr(data, unit_id, bin_size, max_time)
 	firing_rate = get_firing_rate(data, unit_id, fr_bin_size, as_Hz=True)
 
-	waveforms = data.get_unit_waveforms(unit_id, ms_before=ms_before, ms_after=ms_after, max_spikes_per_unit=5000, max_channels_per_waveforms=3, return_idx=True)
+	waveforms = data.get_unit_waveforms(unit_id, ms_before=ms_before, ms_after=ms_after, max_spikes_per_unit=2000, max_channels_per_waveforms=3, return_idx=True)
 	channels = waveforms[1]
 	waveforms = np.mean(waveforms[0], axis=0)
 	wvf_xaxis = np.linspace(-ms_before, ms_after, waveforms.shape[1])
@@ -782,7 +782,7 @@ def plot_units(data, unit_ids: list, save_folder: str, bin_size: float=1.0/3.0, 
 		auto_corrs.append(auto_corr)
 		firing_rates.append(firing_rate)
 
-		waveforms = data.get_unit_waveforms(unit_id, ms_before=ms_before, ms_after=ms_after, max_spikes_per_unit=5000, max_channels_per_waveforms=3, return_idx=True)
+		waveforms = data.get_unit_waveforms(unit_id, ms_before=ms_before, ms_after=ms_after, max_spikes_per_unit=2000, max_channels_per_waveforms=3, return_idx=True)
 		channels = waveforms[1]
 		waveforms = np.mean(waveforms[0], axis=0, dtype=np.float32)
 		wvf_xaxis = np.linspace(-ms_before, ms_after, waveforms.shape[1])
