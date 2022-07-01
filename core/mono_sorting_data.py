@@ -15,7 +15,7 @@ class MonoSortingData:
 	"""
 
 	data: LussacData
-	active_sorting: int = 0
+	active_sorting: int
 
 	@property
 	def sorting(self) -> si.BaseSorting:
@@ -37,14 +37,14 @@ class MonoSortingData:
 
 		return self.data.sampling_f
 
-	def get_cluster_spike_train(self, cluster_id: int) -> np.ndarray:
+	def get_unit_spike_train(self, unit_id: int) -> np.ndarray:
 		"""
 		Returns the spike_train (i.e. an array containing all the spike timings)
-		of a given cluster.
+		of a given unit.
 
-		@param cluster_id: int
+		@param unit_id: int
 			The cluster's ID of which to return the spike train.
 		@return spike_train: np.ndarray
 		"""
 
-		return self.sorting.get_unit_spike_train(cluster_id)
+		return self.sorting.get_unit_spike_train(unit_id)

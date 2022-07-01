@@ -1,3 +1,4 @@
+import os
 import pathlib
 import tempfile
 import numpy as np
@@ -122,4 +123,8 @@ class LussacData:
 		"""
 
 		folder_path = pathlib.Path(folder_path)
-		return tempfile.TemporaryDirectory(prefix=folder_path.name + '_', dir=folder_path.parent)
+		tmp_dir = tempfile.TemporaryDirectory(prefix=folder_path.name + '_', dir=folder_path.parent)
+
+		os.mkdir(f"{tmp_dir.name}/spike_interface")
+
+		return tmp_dir

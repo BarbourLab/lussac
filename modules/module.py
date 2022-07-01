@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass(slots=True)
 class LussacModule(ABC):
 	"""
-	The abstract module class.
+	The abstract Module class.
 	Every module used in Lussac must inherit from this class.
 
 	Attributes:
