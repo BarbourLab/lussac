@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import spikeinterface.core as si
-import spikeinterface.toolkit as st
+import spikeinterface.preprocessing as spre
 
 
 class LussacSpikeSorter(ABC):
@@ -28,7 +28,7 @@ class LussacSpikeSorter(ABC):
 			Path to the folder containing the output of all spike sorter ran through Lussac.
 		"""
 
-		self.recording = st.preprocessing.common_reference(recording, reference="global", operator="median")
+		self.recording = spre.common_reference(recording, reference="global", operator="median")
 		self.output_folder = output_folder
 
 	@property

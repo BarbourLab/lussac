@@ -2,6 +2,7 @@ import os
 import pathlib
 import tempfile
 import numpy as np
+import numpy.typing as npt
 import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.extractors as se
@@ -94,7 +95,7 @@ class LussacData:
 		self.recording = self.recording.set_probegroup(probe_group)
 
 	@staticmethod
-	def _load_sortings(phy_folders: list[str]) -> list[se.PhySortingExtractor]:
+	def _load_sortings(phy_folders: npt.ArrayLike[str]) -> list[se.PhySortingExtractor]:
 		"""
 		Loads all the sortings (in Phy format) and return
 

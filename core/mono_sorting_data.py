@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+import numpy.typing as npt
 import spikeinterface.core as si
 from core.lussac_data import LussacData
 
@@ -37,7 +38,7 @@ class MonoSortingData:
 
 		return self.data.sampling_f
 
-	def get_unit_spike_train(self, unit_id: int) -> np.ndarray:
+	def get_unit_spike_train(self, unit_id: int) -> npt.NDArray[np.integer]:
 		"""
 		Returns the spike_train (i.e. an array containing all the spike timings)
 		of a given unit.
