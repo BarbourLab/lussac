@@ -34,12 +34,9 @@ class LussacData:
 			The params.json file containing everything we need to know.
 		"""
 
-		self._format_params(params)
 		self.params = params
 
-		self.recording = si.BinaryRecordingExtractor(params['recording']['file'], sampling_frequency=params['recording']['sampling_rate'],
-													 num_chan=params['recording']['n_channels'], dtype=params['recording']['dtype'],
-													 gain_to_uV=params['recording']['gain_uV'], offset_to_uV=params['recording']['offset_uV'])
+		self.recording = self._load_recording(params['recording'])
 		self._setup_probe(params['recording']['probe_file'])
 
 		self.sortings = self._load_sortings(params['phy_folders'])
@@ -67,22 +64,6 @@ class LussacData:
 
 		return self.recording.get_sampling_frequency()
 
-	@staticmethod
-	def _format_params(params: dict) -> None:
-		"""
-		Formats the parameters the correct way.
-		For example, is the value is a string containing the path to a file,
-		it will read the file and replace the value with its content.
-
-		@param params: dict
-			A dictionary containing Lussac's parameters.
-		"""
-
-		if isinstance(params['recording']['gain_uV'], str):
-			params['recording']['gain_uV'] = np.load(params['recording']['gain_uV'])
-		if isinstance(params['recording']['offset_uV'], str):
-			params['recording']['offset_uV'] = np.load(params['recording']['offset_uV'])
-
 	def _setup_probe(self, filename: str) -> None:
 		"""
 		Loads the probe geometry into the 'recording' attribute.
@@ -95,7 +76,29 @@ class LussacData:
 		self.recording = self.recording.set_probegroup(probe_group)
 
 	@staticmethod
-	def _load_sortings(phy_folders: npt.ArrayLike[str]) -> list[se.PhySortingExtractor]:
+	def _load_recording(params: dict) -> si.BaseRecording:
+		"""
+		Loads the recording from the given parameters.
+
+		@param params: dict
+			A dictionary containing Lussac's recording parameters.
+		@return recording: BaseRecording
+			The recording object.
+		"""
+
+		recording_extractor = None
+		for extractor in se.recording_extractor_full_list:
+			if extractor.__name__ == params['recording_extractor']:
+				recording_extractor = extractor
+				break
+
+		if recording_extractor is None:
+			raise ValueError(f"Recording extractor '{params['recording_extractor']}' not found.")
+
+		return recording_extractor(params['file'], **params['extractor_params'])
+
+	@staticmethod
+	def _load_sortings(phy_folders: npt.ArrayLike) -> list[se.PhySortingExtractor]:
 		"""
 		Loads all the sortings (in Phy format) and return
 
