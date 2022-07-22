@@ -1,7 +1,7 @@
 import os
 import importlib
 import inspect
-from typing import Type
+from typing import Any, Type
 from core.module import LussacModule
 
 
@@ -12,16 +12,24 @@ class ModuleFactory:
 
 	module_classes: dict[str, Type[LussacModule]]
 
-	def __init__(self):
+	def __init__(self) -> None:
 		"""
-		Loads all the modules in the "modules" folder.
+		Creates a new ModuleFactory instance.
+		Loads all the modules from the "modules" folder.
 		"""
 
 		self.module_classes = self._load_modules()
 		print(self.module_classes)
 
 	@staticmethod
-	def _load_modules():
+	def _load_modules() -> dict[str, Type[LussacModule]]:
+		"""
+		Loads all the modules from the "modules" folder.
+
+		@return modules: dict[str, Type[LussacModule]]
+			All the modules classes.
+		"""
+
 		modules = {}
 
 		for module_file in os.listdir(os.path.join(os.path.dirname(__file__), '../modules')):
@@ -42,5 +50,14 @@ class ModuleFactory:
 		return modules
 
 	@staticmethod
-	def _is_member_lussac_module(member):
+	def _is_member_lussac_module(member: Any) -> bool:
+		"""
+		Checks if a member (from inspect.getmembers) is a LussacModule class.
+
+		@param member: Any
+			The member to check.
+		@return is_lussac_module: bool
+			True if the member is a LussacModule class.
+		"""
+
 		return inspect.isclass(member) and issubclass(member, LussacModule) and not inspect.isabstract(member)
