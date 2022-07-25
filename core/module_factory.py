@@ -60,3 +60,18 @@ class ModuleFactory:
 		"""
 
 		return inspect.isclass(member) and issubclass(member, LussacModule) and not inspect.isabstract(member)
+
+	def get_module(self, name: str) -> Type[LussacModule]:
+		"""
+		Gets a module class by its name.
+
+		@param name: str
+			The name of the module.
+		@return module: Type[LussacModule]
+			The module class.
+		"""
+
+		if name not in self.module_classes:
+			raise ValueError(f"Error: Module '{name}' not found.\nThe loaded modules are: {list(self.module_classes.keys())}")
+
+		return self.module_classes[name]

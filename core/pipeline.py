@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from core.lussac_data import LussacData
+from core.module import MonoSortingModule, MultiSortingsModule
 from core.module_factory import ModuleFactory
 
 
@@ -14,13 +15,19 @@ class LussacPipeline:
 
 	def launch(self) -> None:
 		"""
-		TODO
+		Launches the Lussac's pipeline.
 		"""
 
 		for key, value in self.data.params['lussac']['pipeline'].items():
 			module_name = self._get_module_name(key)
+			module = self.module_factory.get_module(module_name)
 
-			pass
+			if isinstance(module, MonoSortingModule):
+				pass
+			elif isinstance(module, MultiSortingsModule):
+				pass
+			else:
+				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
 	@staticmethod
 	def _get_module_name(name: str) -> str:
