@@ -41,7 +41,7 @@ class LussacData:
 		self._setup_probe(params['recording']['probe_file'])
 
 		self.sortings = self._load_sortings(params['phy_folders'])
-		self._tmp_directory = self._setup_tmp_directory(params['post_processing']['tmp_folder'])
+		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 
 	@property
 	def tmp_folder(self) -> str:

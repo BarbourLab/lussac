@@ -19,7 +19,6 @@ class ModuleFactory:
 		"""
 
 		self.module_classes = self._load_modules()
-		print(self.module_classes)
 
 	@staticmethod
 	def _load_modules() -> dict[str, Type[LussacModule]]:
