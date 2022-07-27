@@ -2,7 +2,7 @@ import os
 import importlib
 import inspect
 from typing import Any, Type
-from core.module import LussacModule
+from lussac.core.module import LussacModule
 
 
 class ModuleFactory:
@@ -36,7 +36,7 @@ class ModuleFactory:
 				continue
 
 			module_name = module_file[:-3]
-			module = importlib.import_module(f"modules.{module_name}")
+			module = importlib.import_module(f"lussac.modules.{module_name}")
 			members = inspect.getmembers(module, ModuleFactory._is_member_lussac_module)
 
 			if len(members) == 0:

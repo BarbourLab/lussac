@@ -1,4 +1,4 @@
-from core.module import MonoSortingModule
+from lussac.core.module import MonoSortingModule
 
 
 class RemoveBadUnits(MonoSortingModule):

@@ -1,8 +1,8 @@
 import argparse
 import json
 import jsmin
-from core.lussac_data import LussacData
-from core.pipeline import LussacPipeline
+from lussac.core.lussac_data import LussacData
+from lussac.core.pipeline import LussacPipeline
 
 
 def parse_arguments() -> str:

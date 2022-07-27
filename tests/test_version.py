@@ -1,5 +1,5 @@
-import version
+import lussac.version
 
 
 def test_version():
-	assert isinstance(version.version, str)
+	assert isinstance(lussac.version.version, str)

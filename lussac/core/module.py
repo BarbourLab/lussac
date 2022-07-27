@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import spikeinterface.core as si
-from core.lussac_data import LussacData, MonoSortingData
+from lussac.core.lussac_data import LussacData, MonoSortingData
 
 
 @dataclass(slots=True)

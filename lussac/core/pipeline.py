@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from core.lussac_data import LussacData
-from core.module import MonoSortingModule, MultiSortingsModule
-from core.module_factory import ModuleFactory
+from lussac.core.lussac_data import LussacData
+from lussac.core.module import MonoSortingModule, MultiSortingsModule
+from lussac.core.module_factory import ModuleFactory
 
 
 @dataclass(slots=True)

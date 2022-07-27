@@ -1,5 +1,5 @@
 from spikeinterface.exporters import export_to_phy
-from core.module import MonoSortingModule
+from lussac.core.module import MonoSortingModule
 
 
 class ExportToPhy(MonoSortingModule):

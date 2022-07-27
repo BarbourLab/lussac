@@ -1,7 +1,7 @@
 import pytest
-from core.module import MonoSortingModule
-from core.module_factory import ModuleFactory
-from modules.export_to_phy import ExportToPhy
+from lussac.core.module import MonoSortingModule
+from lussac.core.module_factory import ModuleFactory
+from lussac.modules.export_to_phy import ExportToPhy
 
 
 def test_ModuleFactory():
