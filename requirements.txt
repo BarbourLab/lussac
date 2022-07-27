@@ -1,10 +1,11 @@
 numpy>=1.20
 scipy>=1.8
-pandas
+matplotlib
 plotly>=5.6.0
 kaleido
+pandas
+networkx
 jsmin>=3.0
-Cython==3.0.0a10
 setuptools>=58.0.4
 spikeinterface>=0.94
 probeinterface>=0.2.9
