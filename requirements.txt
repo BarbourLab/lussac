@@ -8,3 +8,5 @@ Cython==3.0.0a10
 setuptools>=58.0.4
 spikeinterface>=0.94
 probeinterface>=0.2.9
+pytest>=7.1.0
+pytest-cov>=3.0.0
