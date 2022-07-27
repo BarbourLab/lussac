@@ -65,6 +65,17 @@ class LussacData:
 
 		return self.recording.get_sampling_frequency()
 
+	@property
+	def num_sortings(self) -> int:
+		"""
+		Returns the number of sortings.
+
+		@return num_sortings: int
+			The number of sortings in the LussacData object.
+		"""
+
+		return len(self.sortings)
+
 	def _setup_probe(self, filename: str) -> None:
 		"""
 		Loads the probe geometry into the 'recording' attribute.
@@ -99,19 +110,22 @@ class LussacData:
 		return recording_extractor(params['file'], **params['extractor_params'])
 
 	@staticmethod
-	def _load_sortings(phy_folders: npt.ArrayLike) -> list[se.PhySortingExtractor]:
+	def _load_sortings(phy_folders: dict[str, str]) -> list[se.PhySortingExtractor]:
 		"""
 		Loads all the sortings (in Phy format) and return
 
-		@param phy_folders: list[str]
-			List containing the path to all the phy folders containing the spike sorted data.
+		@param phy_folders: dict[str, str]
+			Dict containing the name as key, and the path to all the
+			phy folder containing the spike sorted data as value.
 		@return sortings: list[PhySortingExtractor]
 			List containing the Phy sorting objects.
 		"""
 
 		sortings = []
-		for path in phy_folders:
-			sortings.append(se.PhySortingExtractor(path))
+		for name, path in phy_folders.items():
+			sorting = se.PhySortingExtractor(path)
+			sorting.annotate(name=name)
+			sortings.append(sorting)
 
 		return sortings
 
@@ -149,14 +163,37 @@ class MonoSortingData:
 	active_sorting: int
 
 	@property
+	def recording(self) -> si.BaseRecording:
+		"""
+		Returns the recording object.
+
+		@return recording: BaseRecording
+			The recording object.
+		"""
+
+		return self.data.recording
+
+	@property
 	def sorting(self) -> si.BaseSorting:
 		"""
 		Returns the current active sorting.
 
 		@return sorting: BaseSorting
+			The current active sorting.
 		"""
 
 		return self.data.sortings[self.active_sorting]
+
+	@property
+	def name(self) -> str:
+		"""
+		Returns the name of the current active sorting.
+
+		@return name: str
+			The name of the current active sorting.
+		"""
+
+		return self.sorting.get_annotation("name")
 
 	@property
 	def sampling_f(self) -> float:
@@ -164,9 +201,22 @@ class MonoSortingData:
 		Returns the sampling frequency of the recording (in Hz).
 
 		@return sampling_frequency: float
+			The sampling frequency (in Hz).
 		"""
 
 		return self.data.sampling_f
+
+	@property
+	def tmp_folder(self) -> str:
+		"""
+		Returns the path to the temporary folder.
+		This folder is deleted when Lussac exists (normally or because of a crash).
+
+		@return tmp_folder: str
+			Path to the folder that store temporary files.
+		"""
+
+		return self.data.tmp_folder
 
 	def get_unit_spike_train(self, unit_id: int) -> npt.NDArray[np.integer]:
 		"""
