@@ -8,4 +8,4 @@ build/
 *.dat
 *.c
 *.cpp
-.coverage
+tests/.coverage

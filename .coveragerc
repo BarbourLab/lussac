@@ -1,0 +1,11 @@
+[run]
+data_file = tests/.coverage
+source = lussac/
+
+[report]
+exclude_lines =
+	# Have to re-enable the standard pragma
+	pragma: no cover
+
+[html]
+directory = tests/coverage_html_report

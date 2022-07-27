@@ -7,4 +7,4 @@ class RemoveBadUnits(MonoSortingModule):
 	"""
 
 	def run(self, params: dict):
-		pass
+		raise NotImplementedError()
