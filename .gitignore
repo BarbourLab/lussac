@@ -9,3 +9,4 @@ build/
 *.c
 *.cpp
 tests/.coverage
+tests/dataset

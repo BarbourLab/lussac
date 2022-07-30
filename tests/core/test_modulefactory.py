@@ -5,13 +5,13 @@ from lussac.modules.export_to_phy import ExportToPhy
 
 
 def test_ModuleFactory():
-	moduleFactory = ModuleFactory()
+	module_factory = ModuleFactory()
 
-	assert 'export_to_phy' in moduleFactory.module_classes
-	assert moduleFactory.get_module("export_to_phy") == ExportToPhy
+	assert 'export_to_phy' in module_factory.module_classes
+	assert module_factory.get_module("export_to_phy") == ExportToPhy
 
-	with pytest.raises(ValueError) as err:
-		moduleFactory.get_module("not_a_module")
+	with pytest.raises(ValueError):
+		module_factory.get_module("not_a_module")
 
 
 def test_is_member_lussac_module():
@@ -45,5 +45,5 @@ class NonAbstractLussacModule(MonoSortingModule):
 	This class is a correct Lussac module.
 	"""
 
-	def run(self, params: dict):  # pragma: no cover
+	def run(self, params: dict):
 		pass
