@@ -26,21 +26,22 @@ class LussacData:
 	params: dict
 	_tmp_directory: tempfile.TemporaryDirectory
 
-	def __init__(self, params: dict) -> None:
+	def __init__(self, recording: si.BaseRecording, sortings: list[si.BaseSorting], params: dict) -> None:
 		"""
 		Creates a new LussacData instance.
 		Loads all the necessary information from spike sorters output.
 
+		@param recording: BaseRecording
+			The recording object.
+		@param sortings: list[BaseSorting]
+			A list containing all the sorting objects (i.e. all the analyses).
 		@param params: dict
 			The params.json file containing everything we need to know.
 		"""
 
+		self.recording = recording
+		self.sortings = sortings
 		self.params = params
-
-		self.recording = self._load_recording(params['recording'])
-		self._setup_probe(params['recording']['probe_file'])
-
-		self.sortings = self._load_sortings(params['phy_folders'])
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 
 	@property
@@ -76,16 +77,19 @@ class LussacData:
 
 		return len(self.sortings)
 
-	def _setup_probe(self, filename: str) -> None:
+	@staticmethod
+	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
 		"""
-		Loads the probe geometry into the 'recording' attribute.
+		Loads the probe geometry into the 'recording' object.
 
+		@param recording: BaseRecording
+			Recording on which to load the probe geometry.
 		@param filename: str
 			Path to the JSON file containing the probe geometry (ProbeInterface format).
 		"""
 
 		probe_group = probeinterface.io.read_probeinterface(filename)
-		self.recording = self.recording.set_probegroup(probe_group)
+		return recording.set_probegroup(probe_group)
 
 	@staticmethod
 	def _load_recording(params: dict) -> si.BaseRecording:
@@ -98,16 +102,8 @@ class LussacData:
 			The recording object.
 		"""
 
-		recording_extractor = None
-		for extractor in se.recording_extractor_full_list:
-			if extractor.__name__ == params['recording_extractor']:
-				recording_extractor = extractor
-				break
-
-		if recording_extractor is None:
-			raise ValueError(f"Recording extractor '{params['recording_extractor']}' not found.")
-
-		return recording_extractor(params['file'], **params['extractor_params'])
+		recording_extractor = se.extractorlist.get_recording_extractor_from_name(params['recording_extractor'])
+		return recording_extractor(**params['extractor_params'])
 
 	@staticmethod
 	def _load_sortings(phy_folders: dict[str, str]) -> list[se.PhySortingExtractor]:
@@ -147,6 +143,14 @@ class LussacData:
 		os.mkdir(f"{tmp_dir.name}/spike_interface")
 
 		return tmp_dir
+
+	@staticmethod
+	def create_from_params(params: dict) -> 'LussacData':
+		recording = LussacData._load_recording(params['recording'])
+		recording = LussacData._setup_probe(recording, params['recording']['probe_file'])
+		sortings = LussacData._load_sortings(params['phy_folders'])
+
+		return LussacData(recording, sortings, params)
 
 
 @dataclass(slots=True)

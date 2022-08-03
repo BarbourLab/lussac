@@ -10,4 +10,4 @@ build/
 *.cpp
 tests/.coverage
 tests/coverage-badge.svg
-tests/dataset
+tests/datasets

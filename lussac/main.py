@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	# STEP 0: Loading the parameters
 	params_file = parse_arguments()
 	params = load_json(params_file)
-	data = LussacData(params)
+	data = LussacData.create_from_params(params)
 
 	# STEP 1: Running the spike sorting.
 	pass
