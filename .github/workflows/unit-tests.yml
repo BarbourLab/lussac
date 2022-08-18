@@ -31,6 +31,7 @@ jobs:
         cd ..
         git clone https://github.com/SpikeInterface/spikeinterface.git
         cd spikeinterface
+        pip uninstall spikeinterface
         python setup.py install
     - name: Lint with flake8
       run: |
