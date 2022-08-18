@@ -277,6 +277,7 @@
 						},
 						"n_process": 6
 					},
+					"only_agreed_units": false,
 					"plot_units": {
 						"ms_after": 4.0,
 						"max_time": 100.0,
@@ -315,6 +316,7 @@
 						},
 						"n_process": 6
 					},
+					"only_agreed_units": true,
 					"plot_units": {
 						"max_time": 40.0
 					}

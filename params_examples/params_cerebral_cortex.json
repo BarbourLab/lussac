@@ -162,6 +162,7 @@
 						},
 						"n_process": 6
 					},
+					"only_agreed_units": true,
 					"plot_units": {
 						"max_time": 40.0
 					}

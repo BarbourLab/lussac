@@ -45,6 +45,7 @@ def automerge_sortings(data: PhyData, unit_ids: dict, params: dict, plot_folder:
 			},
 			"n_process": 6
 		},
+		"only_agreed_units": True,
 		"plot_units": {
 			"ms_before": 2.0,
 			"ms_after": 2.0,
@@ -103,8 +104,8 @@ def automerge_sortings(data: PhyData, unit_ids: dict, params: dict, plot_folder:
 	perform_final_merging(data, similar_units, shifts2, kwargs, plot_folder)
 	check_conflicts(data, starting_ID, kwargs, plot_folder)
 
-	# if len(unit_ids) <= 3:
-	# 	add_leftover_units(data, unit_ids, kwargs, plot_folder) # A cluster that is not detected in other analyses is usually not a neuron ; see Buccino & Hurwitz et Al. 2020
+	if not kwargs['only_agreed_units']:
+		add_leftover_units(data, unit_ids, kwargs, plot_folder) # A unit that is not detected in other analyses is usually not a neuron ; see Buccino & Hurwitz et Al. 2020
 
 	data.clear_wvfs()
 
