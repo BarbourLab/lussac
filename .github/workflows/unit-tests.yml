@@ -40,3 +40,8 @@ jobs:
         coverage html
         cd tests
         coverage-badge -o coverage-badge.svg
+    - name: Archive code coverage badge
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-badge.svg
+        path: tests/coverage-badge.svg
