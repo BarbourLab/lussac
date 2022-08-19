@@ -13,11 +13,13 @@ class LussacModule(ABC):
 	Attributes:
 		name		Module's name (i.e. the key in the pipeline dictionary).
 		data 		Reference to the data object.
+		category	What category is used for the module (i.e. the key in the dictionary).
 		logs_folder	Path to the folder where to output the logs.
 	"""
 
 	name: str
 	data: object
+	category: str
 	logs_folder: str
 
 
@@ -48,7 +50,7 @@ class MonoSortingModule(LussacModule):
 			The waveform extractor object.
 		"""
 
-		folder_path = f"{self.data.tmp_folder}/{self.name}/waveforms/{self.data}"
+		folder_path = f"{self.data.tmp_folder}/{self.name}/waveforms/{self.category}/{self.data.name}"
 		return si.extract_waveforms(self.data.recording, self.data.sorting, folder_path, **params)
 
 

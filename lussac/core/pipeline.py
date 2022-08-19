@@ -7,7 +7,11 @@ from lussac.core.module_factory import ModuleFactory
 @dataclass(slots=True)
 class LussacPipeline:
 	"""
+	The pipeline object for Lussac.
 
+	Attributes:
+		data			Reference to the data object.
+		module_factory	Object to load and run all the modules.
 	"""
 
 	data: LussacData
@@ -23,11 +27,38 @@ class LussacPipeline:
 			module = self.module_factory.get_module(module_name)
 
 			if isinstance(module, MonoSortingModule):
-				pass
+				run_module = self._run_mono_sorting_module
 			elif isinstance(module, MultiSortingsModule):
-				pass
+				run_module = self._run_multi_sortings_module
 			else:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
+
+			for category, params in value.items():
+				run_module(module, category)
+
+	def _run_mono_sorting_module(self, module: MonoSortingModule, category: str) -> None:
+		"""
+		Launches a mono-sorting module for a category on all sortings.
+
+		@param module: MonoSortingModule
+			The module class to use.
+		@param category: str
+			TODO
+		"""
+
+		pass
+
+	def _run_multi_sortings_module(self, module: MultiSortingsModule, category: str) -> None:
+		"""
+		Launches a multi-sorting module for a category.
+
+		@param module: MultiSortingsModule
+			The module class to use.
+		@param category: str
+			TODO
+		"""
+
+		pass
 
 	@staticmethod
 	def _get_module_name(name: str) -> str:
