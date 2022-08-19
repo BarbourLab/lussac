@@ -14,7 +14,7 @@ if not os.path.exists(params_path):
 	zip_file.extractall(path="tests/datasets")
 
 
-def test_parse_arguments():
+def test_parse_arguments() -> None:
 	with pytest.raises(SystemExit): # There is no arguments.
 		lussac.main.parse_arguments(None)
 

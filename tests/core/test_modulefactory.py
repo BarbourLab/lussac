@@ -4,7 +4,7 @@ from lussac.core.module_factory import ModuleFactory
 from lussac.modules.export_to_phy import ExportToPhy
 
 
-def test_ModuleFactory():
+def test_ModuleFactory() -> None:
 	module_factory = ModuleFactory()
 
 	assert 'export_to_phy' in module_factory.module_classes
@@ -14,7 +14,7 @@ def test_ModuleFactory():
 		module_factory.get_module("not_a_module")
 
 
-def test_is_member_lussac_module():
+def test_is_member_lussac_module() -> None:
 	assert ModuleFactory._is_member_lussac_module(test_ModuleFactory) is False
 	assert ModuleFactory._is_member_lussac_module(MonoSortingModule) is False
 	assert ModuleFactory._is_member_lussac_module(IsNotLussacModule) is False
