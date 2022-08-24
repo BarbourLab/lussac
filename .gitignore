@@ -9,5 +9,6 @@ build/
 *.c
 *.cpp
 tests/.coverage
+tests/coverage.xml
 tests/coverage-badge.svg
 tests/datasets

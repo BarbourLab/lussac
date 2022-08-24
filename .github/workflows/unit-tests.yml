@@ -43,6 +43,7 @@ jobs:
       run: |
         python -m pytest --cov
         coverage html
+        coverage xml
         cd tests
         coverage-badge -o coverage-badge.svg
     - name: Archive code coverage badge
@@ -50,3 +51,10 @@ jobs:
       with:
         name: coverage-badge.svg
         path: tests/coverage-badge.svg
+    - name: Upload coverage report to codecov.io
+      uses: codecov/codecov-action@v3
+      with:
+        files: tests/.coverage
+        flags: unittests
+        env_vars: OS,PYTHON
+        verbose: true
