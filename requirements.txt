@@ -13,4 +13,3 @@ spikeinterface>=0.94
 probeinterface>=0.2.9
 pytest>=7.1.0
 pytest-cov>=3.0.0
-coverage-badge>=1.1

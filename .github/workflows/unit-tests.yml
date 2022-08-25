@@ -42,15 +42,7 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pytest --cov
-        coverage html
         coverage xml
-        cd tests
-        coverage-badge -o coverage-badge.svg
-    - name: Archive code coverage badge
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-badge.svg
-        path: tests/coverage-badge.svg
     - name: Upload coverage report to codecov.io
       uses: codecov/codecov-action@v3
       with:
