@@ -1,13 +1,8 @@
 __pycache__/
 */__pycache__/
-build/
 .idea/
-*/build/
+lussac.egg-info/
 *.log
-*.so
-*.dat
-*.c
-*.cpp
 tests/.coverage
 tests/coverage.xml
 tests/datasets

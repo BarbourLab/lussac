@@ -40,7 +40,11 @@ def load_json(filename: str) -> dict:
 		return json.loads(minified)
 
 
-if __name__ == "__main__":
+def main() -> None:  # pragma: no cover
+	"""
+	The main function to execute Lussac.
+	"""
+
 	# STEP 0: Loading the parameters
 	params_file = parse_arguments(sys.argv[1:])
 	params = load_json(params_file)
@@ -52,3 +56,7 @@ if __name__ == "__main__":
 	# STEP 2: Running the pipeline.
 	pipeline = LussacPipeline(data)
 	pipeline.launch()
+
+
+if __name__ == "__main__":  # pragma: no cover
+	main()
