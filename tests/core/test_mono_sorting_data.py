@@ -8,7 +8,7 @@ from tests.test_main import params
 
 @pytest.fixture(scope="session")
 def mono_sorting_data(data: LussacData) -> MonoSortingData:
-	return MonoSortingData(data, 1)
+	return MonoSortingData(data, 'ms3_best')
 
 
 def test_recording(mono_sorting_data: MonoSortingData) -> None:
@@ -17,7 +17,7 @@ def test_recording(mono_sorting_data: MonoSortingData) -> None:
 
 def test_sorting(data: LussacData, mono_sorting_data: MonoSortingData) -> None:
 	assert isinstance(mono_sorting_data.sorting, si.BaseSorting)
-	assert mono_sorting_data.sorting == data.sortings[1]
+	assert mono_sorting_data.sorting == data.sortings['ms3_best']
 
 
 def test_name(mono_sorting_data: MonoSortingData) -> None:
