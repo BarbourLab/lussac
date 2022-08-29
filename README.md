@@ -5,3 +5,26 @@
 # Lussac 2.0
 
 Lussac 2.0 is still in development and is not yet operational.
+
+
+## Installation
+
+```bash
+# Download Lussac in any directory you want.
+git clone https://github.com/BarbourLab/lussac.git
+cd lussac
+
+# OPTIONAL: Use a conda environment.
+conda create -n lussac python=3.10
+source activate lussac
+
+# Install Lussac.
+pip install -r requirements.txt
+python setup.py install
+```
+
+If you want to check whether the installation was successful, you can run the tests (this may take a while as it will download some testing datasets):
+
+```bash
+python -m pytest
+```

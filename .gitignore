@@ -3,6 +3,8 @@ __pycache__/
 .idea/
 lussac.egg-info/
 *.log
+tests/datasets/
+tests/.pytest_cache/
 tests/.coverage
+tests/coverage_html_report/
 tests/coverage.xml
-tests/datasets

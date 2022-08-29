@@ -22,11 +22,11 @@ class LussacData:
 
 	__slots__ = "recording", "sortings", "params", "_tmp_directory"
 	recording: si.BaseRecording
-	sortings: list[si.BaseSorting]
+	sortings: dict[str, si.BaseSorting]
 	params: dict
 	_tmp_directory: tempfile.TemporaryDirectory
 
-	def __init__(self, recording: si.BaseRecording, sortings: list[si.BaseSorting], params: dict) -> None:
+	def __init__(self, recording: si.BaseRecording, sortings: dict[str, si.BaseSorting], params: dict) -> None:
 		"""
 		Creates a new LussacData instance.
 		Loads all the necessary information from spike sorters output.
@@ -106,7 +106,7 @@ class LussacData:
 		return recording_extractor(**params['extractor_params'])
 
 	@staticmethod
-	def _load_sortings(phy_folders: dict[str, str]) -> list[se.PhySortingExtractor]:
+	def _load_sortings(phy_folders: dict[str, str]) -> dict[str, se.PhySortingExtractor]:
 		"""
 		Loads all the sortings (in Phy format) and return
 
@@ -117,11 +117,11 @@ class LussacData:
 			List containing the Phy sorting objects.
 		"""
 
-		sortings = []
+		sortings = {}
 		for name, path in phy_folders.items():
 			sorting = se.PhySortingExtractor(path)
 			sorting.annotate(name=name)
-			sortings.append(sorting)
+			sortings[name] = sorting
 
 		return sortings
 
@@ -146,6 +146,15 @@ class LussacData:
 
 	@staticmethod
 	def create_from_params(params: dict) -> 'LussacData':
+		"""
+		Creates a new LussacData object from the given parameters.
+
+		@param params: dict
+			Lussac's parameters.
+		@return: LussacData
+			The newly created LussacData object.
+		"""
+
 		recording = LussacData._load_recording(params['recording'])
 		recording = LussacData._setup_probe(recording, params['recording']['probe_file'])
 		sortings = LussacData._load_sortings(params['phy_folders'])
@@ -164,7 +173,7 @@ class MonoSortingData:
 	"""
 
 	data: LussacData
-	active_sorting: int
+	active_sorting: str
 
 	@property
 	def recording(self) -> si.BaseRecording:
