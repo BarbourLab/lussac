@@ -1,12 +1,5 @@
 import os
-import pytest
 from lussac.core.lussac_data import LussacData
-from tests.test_main import params
-
-
-@pytest.fixture(scope="session")
-def data(params: dict) -> LussacData:
-	return LussacData.create_from_params(params)
 
 
 def test_create_from_params(data: LussacData) -> None:

@@ -6,3 +6,7 @@ def test_get_module_name() -> None:
 	assert LussacPipeline._get_module_name("merge_sortings") == "merge_sortings"
 	assert LussacPipeline._get_module_name("remove_bad_units_81") == "remove_bad_units"
 
+
+def test_get_unit_ids_for_category(pipeline: LussacPipeline) -> None:
+	pass
+

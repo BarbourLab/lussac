@@ -1,14 +1,6 @@
 import os
-import pytest
 import spikeinterface.core as si
 from lussac.core.lussac_data import LussacData, MonoSortingData
-from tests.core.test_lussac_data import data
-from tests.test_main import params
-
-
-@pytest.fixture(scope="session")
-def mono_sorting_data(data: LussacData) -> MonoSortingData:
-	return MonoSortingData(data, 'ms3_best')
 
 
 def test_recording(mono_sorting_data: MonoSortingData) -> None:
