@@ -109,6 +109,7 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 	merges = format_merges(potential_merges)
 	merges = _recheck_score(data, merges, tuple(kwargs['refractory_period']), kwargs['score_validation'])
 
+	logs = open("{0}/merges.logs".format(plot_folder), 'x')
 	for merge in merges:
 		if len(merge) <= 1:
 			continue
@@ -119,6 +120,7 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 			shift = shifts[idx0, idx1]
 			data.change_spikes_time(unit, -shift)
 		new_unit_id = data.sorting.merge_units(merge)
+		logs.write(f"Merged {merge} into {new_unit_id}\n")
 
 		for unit_id in merge:
 			new_units_id[unit_id] = new_unit_id
@@ -126,7 +128,9 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 	for unit_id in new_units_id.keys():
 		if new_units_id[unit_id] == -1:
 			data.sorting.exclude_units(unit_id)
+			logs.write(f"Removing unit {unit_id}\n")
 
+	logs.close()
 	return new_units_id
 
 
@@ -979,3 +983,4 @@ def _plot_similarity(data: PhyData, unit_ids: list, shifts: np.ndarray, params: 
 
 	np.save("{0}/corr_diff.npy".format(plot_folder), corr_diff)
 	np.save("{0}/wvf_diff.npy".format(plot_folder), wvf_diff)
+	np.save("{0}/units_diff.npy".format(plot_folder), all_pairs)
