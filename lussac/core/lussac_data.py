@@ -41,6 +41,7 @@ class LussacData:
 
 		self.recording = recording
 		self.sortings = sortings
+		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 
@@ -124,6 +125,32 @@ class LussacData:
 			sortings[name] = sorting
 
 		return sortings
+
+	@staticmethod
+	def _format_params(params: dict) -> dict:
+		"""
+		Formats the parameters' dictionary to take care of semicolons ';'.
+		When a semicolon appears in the category, it duplicates the module and
+		runs it separately for all categories separated by the semicolon.
+
+		@param params: dict
+			The parameters' dictionary for the Lussac pipeline.
+		@return formatted_params: dict:
+			The formatted parameters' dictionary.
+		"""
+
+		formatted_params = {}
+
+		for module, value in params.items():
+			formatted_params[module] = {}
+
+			for category, parameters in value.items():
+				categories = category.split(';')
+
+				for cat in categories:
+					formatted_params[module][cat] = parameters
+
+		return formatted_params
 
 	@staticmethod
 	def _setup_tmp_directory(folder_path: str) -> tempfile.TemporaryDirectory:

@@ -1,4 +1,8 @@
+from typing import ClassVar
 from dataclasses import dataclass
+import numpy as np
+import numpy.typing as npt
+import spikeinterface.core as si
 from lussac.core.lussac_data import LussacData
 from lussac.core.module import MonoSortingModule, MultiSortingsModule
 from lussac.core.module_factory import ModuleFactory
@@ -16,6 +20,8 @@ class LussacPipeline:
 
 	data: LussacData
 	module_factory: ModuleFactory = ModuleFactory()
+
+	categories: ClassVar[dict[str, dict[str, dict]]] = {}
 
 	def launch(self) -> None:
 		"""
@@ -77,3 +83,32 @@ class LussacPipeline:
 			name = '_'.join(split[:-1])
 
 		return name
+
+	@staticmethod
+	def get_unit_ids_for_category(category: str, sorting: si.BaseSorting) -> npt.NDArray[np.integer]:
+		"""
+		Gets all the unit ids for a given category.
+
+		@param category: str
+			The category to get the unit ids for.
+		@param sorting: se.SortingExtractor
+			The sorting to get the unit ids from.
+		@return unit_ids: list[int]
+			The unit ids for the given category.
+		"""
+
+		unit_ids = []
+		units_category = sorting.get_property("lussac_category")
+
+		categories = category.split('+')
+		for cat in categories:
+			if cat == "all":
+				unit_ids.extend(sorting.unit_ids)
+			elif cat == "rest":
+				indices = np.where(units_category == '')[0]
+				unit_ids.extend(sorting.unit_ids[indices])
+			else:
+				indices = np.where(units_category == cat)[0]
+				unit_ids.extend(sorting.unit_ids[indices])
+
+		return np.sort(np.unique(unit_ids))
