@@ -14,9 +14,7 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
@@ -39,6 +37,12 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --ignore=W191 --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Cache datasets
+      id: cache-datasets
+      uses: actions/cache@v3
+      with:
+        path: tests/datasets
+        key: ${{ runner.os }}-datasets
     - name: Test with pytest
       run: |
         python -m pytest --cov
