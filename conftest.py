@@ -1,3 +1,4 @@
+import shutil
 import pytest
 from lussac.core.lussac_data import LussacData, MonoSortingData
 from lussac.core.pipeline import LussacPipeline
@@ -25,3 +26,8 @@ def mono_sorting_data(data: LussacData) -> MonoSortingData:
 @pytest.fixture(scope="session")
 def pipeline(data: LussacData) -> LussacPipeline:
 	return LussacPipeline(data)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int | pytest.ExitCode) -> None:
+	# Remove temporary directory
+	shutil.rmtree("tests/datasets/cerebellar_cortex/tmp_*", ignore_errors=True)

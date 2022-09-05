@@ -39,6 +39,8 @@ class LussacData:
 			The params.json file containing everything we need to know.
 		"""
 
+		recording.annotate(is_filtered=True)  # Otherwise SpikeInterface is annoying.
+
 		self.recording = recording
 		self.sortings = sortings
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
