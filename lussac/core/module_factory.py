@@ -36,17 +36,22 @@ class ModuleFactory:
 				continue
 
 			module_name = module_file[:-3]
-			module = importlib.import_module(f"lussac.modules.{module_name}")
-			members = inspect.getmembers(module, ModuleFactory._is_member_lussac_module)
-
-			if len(members) == 0:
-				raise Exception(f"Error: Couldn't find a module class for module '{module_name}'.")
-			if len(members) > 1:
-				raise Exception(f"Error: Found multiple module classes for module '{module_name}'.\n{members}")
-
-			modules[module_name] = members[0][1]
+			modules[module_name] = ModuleFactory._get_module_member(f"lussac.modules.{module_name}")
 
 		return modules
+
+	@staticmethod
+	def _get_module_member(module_name: str) -> Type[LussacModule]:
+		module = importlib.import_module(module_name)
+		members = inspect.getmembers(module, ModuleFactory._is_member_lussac_module)
+		members = [member for member in members if member[1].__module__ == module_name]
+
+		if len(members) == 0:
+			raise Exception(f"Error: Couldn't find a module class for module '{module_name}'.")
+		if len(members) > 1:
+			raise Exception(f"Error: Found multiple module classes for module '{module_name}'.\n{members}")
+
+		return members[0][1]
 
 	@staticmethod
 	def _is_member_lussac_module(member: Any) -> bool:

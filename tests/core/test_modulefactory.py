@@ -14,6 +14,17 @@ def test_ModuleFactory() -> None:
 		module_factory.get_module("not_a_module")
 
 
+def test_get_module_member() -> None:
+	with pytest.raises(ModuleNotFoundError):
+		ModuleFactory._get_module_member("not_a_module")
+
+	with pytest.raises(Exception):
+		ModuleFactory._get_module_member("lussac.core.lussac_data")
+
+	with pytest.raises(Exception):
+		ModuleFactory._get_module_member("tests.core.test_modulefactory")
+
+
 def test_is_member_lussac_module() -> None:
 	assert ModuleFactory._is_member_lussac_module(test_ModuleFactory) is False
 	assert ModuleFactory._is_member_lussac_module(MonoSortingModule) is False
@@ -43,6 +54,15 @@ class AbstractLussacModule(MonoSortingModule):
 class NonAbstractLussacModule(MonoSortingModule):
 	"""
 	This class is a correct Lussac module.
+	"""
+
+	def run(self, params: dict):
+		pass
+
+
+class NonAbstractLussacModule2(MonoSortingModule):
+	"""
+	This class is a 2nd correct Lussac module.
 	"""
 
 	def run(self, params: dict):
