@@ -42,6 +42,15 @@ class ModuleFactory:
 
 	@staticmethod
 	def _get_module_member(module_name: str) -> Type[LussacModule]:
+		"""
+		Returns the module class from its path.
+
+		@param module_name: str
+			Path to the module file as would be used in an import statement.
+		@return: module_class: Type[LussacModule]
+			The module class (not instantiated!).
+		"""
+
 		module = importlib.import_module(module_name)
 		members = inspect.getmembers(module, ModuleFactory._is_member_lussac_module)
 		members = [member for member in members if member[1].__module__ == module_name]

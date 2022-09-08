@@ -89,6 +89,8 @@ class LussacData:
 			Recording on which to load the probe geometry.
 		@param filename: str
 			Path to the JSON file containing the probe geometry (ProbeInterface format).
+		@return probed_recording: BaseRecording
+			The recording object with the probe geometry loaded.
 		"""
 
 		probe_group = probeinterface.io.read_probeinterface(filename)
@@ -116,8 +118,8 @@ class LussacData:
 		@param phy_folders: dict[str, str]
 			Dict containing the name as key, and the path to all the
 			phy folder containing the spike sorted data as value.
-		@return sortings: list[PhySortingExtractor]
-			List containing the Phy sorting objects.
+		@return sortings: dict[str, PhySortingExtractor]
+			Dictionary containing the Phy sorting objects indexed by their name.
 		"""
 
 		sortings = {}

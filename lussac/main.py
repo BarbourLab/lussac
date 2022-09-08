@@ -45,7 +45,7 @@ def main() -> None:  # pragma: no cover
 	The main function to execute Lussac.
 	"""
 
-	# STEP 0: Loading the parameters
+	# STEP 0: Loading the parameters into the LussacData object.
 	params_file = parse_arguments(sys.argv[1:])
 	params = load_json(params_file)
 	data = LussacData.create_from_params(params)
