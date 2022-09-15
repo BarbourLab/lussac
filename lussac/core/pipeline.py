@@ -42,6 +42,8 @@ class LussacPipeline:
 			for category, params in value.items():
 				run_module(module, category)
 
+			# Maybe convert sorting objects to Numpy to avoid having a big tree.
+
 	def _run_mono_sorting_module(self, module: MonoSortingModule, category: str) -> None:
 		"""
 		Launches a mono-sorting module for a category on all sortings.
@@ -52,7 +54,13 @@ class LussacPipeline:
 			TODO
 		"""
 
-		pass
+		for name, sorting in self.data.sortings.items():
+			unit_ids = self.get_unit_ids_for_category(category, sorting)
+			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
+
+			# Do stuff
+
+			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting])
 
 	def _run_multi_sortings_module(self, module: MultiSortingsModule, category: str) -> None:
 		"""
@@ -112,3 +120,22 @@ class LussacPipeline:
 				unit_ids.extend(sorting.unit_ids[indices])
 
 		return np.sort(np.unique(unit_ids))
+
+	@staticmethod
+	def split_sorting(sorting: si.BaseSorting, unit_ids: npt.ArrayLike) -> tuple[si.BaseSorting, si.BaseSorting]:
+		"""
+		Splits a sorting into two based on the given unit ids.
+
+		@param sorting: si.BaseSorting
+			The sorting to split.
+		@param unit_ids: ArrayLike[int]
+			The unit ids of the first sorting.
+		@return split_sortings: tuple[si.BaseSorting, si.BaseSorting]
+			The split sortings.
+		"""
+
+		other_unit_ids = [unit_id for unit_id in sorting.get_unit_ids() if unit_id not in unit_ids]
+		sorting1 = sorting.select_units(unit_ids)
+		sorting2 = sorting.select_units(other_unit_ids)
+
+		return sorting1, sorting2

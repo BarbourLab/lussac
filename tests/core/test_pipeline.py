@@ -26,3 +26,13 @@ def test_get_unit_ids_for_category(data: LussacData) -> None:
 	assert np.all(LussacPipeline.get_unit_ids_for_category("all", sorting) == sorting.unit_ids)
 	assert np.all(LussacPipeline.get_unit_ids_for_category("all+SS+rest", sorting) == sorting.unit_ids)
 
+
+def test_split_sorting(data: LussacData) -> None:
+	sorting = data.sortings['ks2_best']
+	unit_ids = np.array([3, 4, 5, 7, 11, 34, 39, 51], dtype=np.int32)
+
+	sorting1, sorting2 = LussacPipeline.split_sorting(sorting, unit_ids)
+
+	assert sorting1.unit_ids.size == 8
+	assert sorting2.unit_ids.size == len(sorting.unit_ids) - 8
+
