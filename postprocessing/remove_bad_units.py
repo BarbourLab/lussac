@@ -67,6 +67,23 @@ def rm_bad_units(data: PhyData, unit_ids: list, params: dict, plot_folder: str):
 				bad_units[unit_id] = -1
 				continue
 
+		if 'std_amplitudes' in params:
+			assert data.uvolt_ratio is not None, "rm_bad_units() with 'std_amplitudes' parameter only works if µV_ratio has been given."
+
+			waveforms, channel_idx = data.get_unit_waveforms(unit_id, return_idx=True, **params['std_amplitudes']['waveforms'])
+			mean_wvf = np.mean(waveforms, axis=0, dtype=np.float32)
+
+			spike_train = data.get_unit_spike_train(unit_id)
+			amplitudes = data.recording._timeseries[channel_idx[0], spike_train] * data.uvolt_ratio
+			std_amplitudes = np.std(amplitudes)
+
+			if 'min' in params['std_amplitudes'] and std_amplitudes < params['std_amplitudes']['min']:
+				bad_units[unit_id] = -1
+				continue
+			if 'max' in params['std_amplitudes'] and std_amplitudes > params['std_amplitudes']['max']:
+				bad_units[unit_id] = -1
+				continue
+
 	unit_ids = list(bad_units.keys())
 	_plot_bad_units(data, unit_ids, plot_folder)
 	data.sorting.exclude_units(unit_ids)
