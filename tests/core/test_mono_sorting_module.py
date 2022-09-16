@@ -4,6 +4,10 @@ from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
 
 
+def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
+	assert mono_sorting_module.sorting == mono_sorting_module.data.sorting
+
+
 def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 	wvf_extractor_1 = mono_sorting_module.extract_waveforms(ms_before=1.5, ms_after=2.0, max_spikes_per_unit=40, overwrite=True)
 	wvf_extractor_2 = mono_sorting_module.extract_waveforms(sub_folder="aze", ms_before=1.5, ms_after=2.0, max_spikes_per_unit=40, overwrite=True)

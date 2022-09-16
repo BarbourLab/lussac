@@ -37,6 +37,17 @@ class MonoSortingModule(LussacModule):
 
 	data: MonoSortingData
 
+	@property
+	def sorting(self) -> si.BaseSorting:
+		"""
+		Returns the sorting object.
+
+		@return sorting: BaseSorting
+			The sorting object.The MonoSortingData's sorting object.
+		"""
+
+		return self.data.sorting
+
 	@abstractmethod
 	def run(self, params: dict) -> si.BaseSorting:
 		...

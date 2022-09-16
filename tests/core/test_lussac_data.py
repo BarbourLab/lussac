@@ -11,6 +11,11 @@ def test_tmp_folder(data: LussacData) -> None:
 	assert os.path.isdir(data.tmp_folder)
 
 
+def test_logs_folder(data: LussacData) -> None:
+	assert os.path.exists(data.logs_folder)
+	assert os.path.isdir(data.logs_folder)
+
+
 def test_sampling_f(data: LussacData) -> None:
 	assert data.sampling_f == 30000
 

@@ -28,6 +28,11 @@ def pipeline(data: LussacData) -> LussacPipeline:
 	return LussacPipeline(data)
 
 
+def pytest_sessionstart(session: pytest.Session) -> None:
+	# Remove lussac folder if exists.
+	shutil.rmtree("tests/datasets/cerebellar_cortex/lussac", ignore_errors=True)
+
+
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int | pytest.ExitCode) -> None:
 	# Remove temporary directory
 	shutil.rmtree("tests/datasets/cerebellar_cortex/tmp_*", ignore_errors=True)

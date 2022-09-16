@@ -1,6 +1,18 @@
 import numpy as np
 from lussac.core.lussac_data import LussacData
+from lussac.core.module import MonoSortingModule
 from lussac.core.pipeline import LussacPipeline
+import spikeinterface.core as si
+from spikeinterface.curation import CurationSorting
+
+
+def test_run_mono_sorting_module(pipeline: LussacPipeline):
+	n_units = {name: len(pipeline.data.sortings[name].unit_ids) for name in pipeline.data.sortings.keys()}
+	n_units['ks2_cs'] -= 1
+	pipeline._run_mono_sorting_module(TestMonoSortingModule, "test_mono_starting_module", "all", {})
+
+	for sorting_name in pipeline.data.sortings.keys():
+		assert len(pipeline.data.sortings[sorting_name].unit_ids) == n_units[sorting_name]
 
 
 def test_get_module_name() -> None:
@@ -36,3 +48,15 @@ def test_split_sorting(data: LussacData) -> None:
 	assert sorting1.unit_ids.size == 8
 	assert sorting2.unit_ids.size == len(sorting.unit_ids) - 8
 
+
+class TestMonoSortingModule(MonoSortingModule):
+
+	__test__ = False
+
+	def run(self, params: dict) -> si.BaseSorting:
+		if self.sorting.get_annotation('name') == "ks2_cs":
+			sorting = CurationSorting(self.sorting)
+			sorting.remove_unit(8)
+			return sorting.sorting
+
+		return self.sorting

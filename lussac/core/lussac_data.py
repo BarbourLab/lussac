@@ -60,6 +60,20 @@ class LussacData:
 		return self._tmp_directory.name
 
 	@property
+	def logs_folder(self) -> str:
+		"""
+		Returns the path to the logs folder.
+
+		@return: logs_folder: str
+			Path to the folder that store the logs.
+		"""
+
+		if not os.path.exists(logs_folder := self.params['lussac']['logs_folder']):
+			os.makedirs(logs_folder)
+
+		return logs_folder
+
+	@property
 	def sampling_f(self) -> float:
 		"""
 		Returns the sampling frequency of the recording (in Hz).
