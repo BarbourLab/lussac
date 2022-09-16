@@ -1,9 +1,9 @@
-from typing import ClassVar
+from typing import ClassVar, Type
 from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData
+from lussac.core.lussac_data import LussacData, MonoSortingData
 from lussac.core.module import MonoSortingModule, MultiSortingsModule
 from lussac.core.module_factory import ModuleFactory
 
@@ -29,47 +29,65 @@ class LussacPipeline:
 		"""
 
 		for key, value in self.data.params['lussac']['pipeline'].items():
+			if not isinstance(value, dict):
+				raise Exception(f"Errr: params['lussac']['pipeline][{key}] must map to a dict.")
+
 			module_name = self._get_module_name(key)
 			module = self.module_factory.get_module(module_name)
 
-			if isinstance(module, MonoSortingModule):
+			if issubclass(module, MonoSortingModule):
 				run_module = self._run_mono_sorting_module
-			elif isinstance(module, MultiSortingsModule):
+			elif issubclass(module, MultiSortingsModule):
 				run_module = self._run_multi_sortings_module
 			else:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
 			for category, params in value.items():
-				run_module(module, category)
+				if not isinstance(category, str):
+					raise Exception(f"Error: Category {category} in params['lussac']['pipeline'][{key}] must be a string.")
+				if not isinstance(params, dict):
+					raise Exception(f"Error: params['lussac']['pipeline'][{key}][{category}] must map to a dict.")
+
+				run_module(module, key, category, params)
 
 			# Maybe convert sorting objects to Numpy to avoid having a big tree.
 
-	def _run_mono_sorting_module(self, module: MonoSortingModule, category: str) -> None:
+	def _run_mono_sorting_module(self, module: Type[MonoSortingModule], module_name: str, category: str, params: dict) -> None:
 		"""
 		Launches a mono-sorting module for a category on all sortings.
 
 		@param module: MonoSortingModule
 			The module class to use.
+		@param module_name: str
+			TODO
 		@param category: str
 			TODO
+		@param params: dict
+			The parameters for the module.
 		"""
 
 		for name, sorting in self.data.sortings.items():
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
 			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
 
-			# Do stuff
+			data = MonoSortingData(self.data, sub_sorting)
+			module_instance = module(module_name, data, category, self.data.logs_folder)
+			sub_sorting = module_instance.run(params)
 
 			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting])
 
-	def _run_multi_sortings_module(self, module: MultiSortingsModule, category: str) -> None:
+	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, category: str, params: dict) -> None:
 		"""
 		Launches a multi-sorting module for a category.
 
 		@param module: MultiSortingsModule
 			The module class to use.
+		@param module_name: str
+			TODO
 		@param category: str
 			TODO
+		@param params: dict
+			The parameters for the module.
 		"""
 
 		pass

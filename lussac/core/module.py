@@ -23,6 +23,7 @@ class LussacModule(ABC):
 	logs_folder: str
 
 
+@dataclass(slots=True)
 class MonoSortingModule(LussacModule):
 	"""
 	The abstract mono-sorting module class.
@@ -37,7 +38,7 @@ class MonoSortingModule(LussacModule):
 	data: MonoSortingData
 
 	@abstractmethod
-	def run(self, params: dict):
+	def run(self, params: dict) -> si.BaseSorting:
 		...
 
 	def extract_waveforms(self, sub_folder: str = None, **params) -> si.WaveformExtractor:
@@ -59,6 +60,7 @@ class MonoSortingModule(LussacModule):
 		return si.extract_waveforms(self.data.recording, self.data.sorting, folder_path, **params)
 
 
+@dataclass(slots=True)
 class MultiSortingsModule(LussacModule):
 	"""
 	The abstract multi-sorting module class.

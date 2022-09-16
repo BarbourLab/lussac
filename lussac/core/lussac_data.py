@@ -23,10 +23,10 @@ class LussacData:
 	__slots__ = "recording", "sortings", "params", "_tmp_directory"
 	recording: si.BaseRecording
 	sortings: dict[str, si.BaseSorting]
-	params: dict
+	params: dict[str, dict]
 	_tmp_directory: tempfile.TemporaryDirectory
 
-	def __init__(self, recording: si.BaseRecording, sortings: dict[str, si.BaseSorting], params: dict) -> None:
+	def __init__(self, recording: si.BaseRecording, sortings: dict[str, si.BaseSorting], params: dict[str, dict]) -> None:
 		"""
 		Creates a new LussacData instance.
 		Loads all the necessary information from spike sorters output.
@@ -131,7 +131,7 @@ class LussacData:
 		return sortings
 
 	@staticmethod
-	def _format_params(params: dict) -> dict:
+	def _format_params(params: dict[str, dict]) -> dict[str, dict]:
 		"""
 		Formats the parameters' dictionary to take care of semicolons ';'.
 		When a semicolon appears in the category, it duplicates the module and
@@ -176,7 +176,7 @@ class LussacData:
 		return tmp_dir
 
 	@staticmethod
-	def create_from_params(params: dict) -> 'LussacData':
+	def create_from_params(params: dict[str, dict]) -> 'LussacData':
 		"""
 		Creates a new LussacData object from the given parameters.
 
@@ -199,12 +199,12 @@ class MonoSortingData:
 	Allows easy manipulation of the LussacData object when working on only one sorting.
 
 	Attributes:
-		data			The main data object for Lussac.
-		active_sorting	Which sorting is currently being used?
+		data	The main data object for Lussac.
+		sorting	The sorting being used.
 	"""
 
 	data: LussacData
-	active_sorting: str
+	sorting: si.BaseSorting
 
 	@property
 	def recording(self) -> si.BaseRecording:
@@ -216,17 +216,6 @@ class MonoSortingData:
 		"""
 
 		return self.data.recording
-
-	@property
-	def sorting(self) -> si.BaseSorting:
-		"""
-		Returns the current active sorting.
-
-		@return sorting: BaseSorting
-			The current active sorting.
-		"""
-
-		return self.data.sortings[self.active_sorting]
 
 	@property
 	def name(self) -> str:

@@ -20,7 +20,7 @@ def data(params: dict) -> LussacData:
 
 @pytest.fixture(scope="session")
 def mono_sorting_data(data: LussacData) -> MonoSortingData:
-	return MonoSortingData(data, 'ms3_best')
+	return MonoSortingData(data, data.sortings['ms3_best'])
 
 
 @pytest.fixture(scope="session")
