@@ -30,7 +30,7 @@ class LussacPipeline:
 
 		for key, value in self.data.params['lussac']['pipeline'].items():
 			if not isinstance(value, dict):
-				raise Exception(f"Errr: params['lussac']['pipeline][{key}] must map to a dict.")
+				raise Exception(f"Error: params['lussac']['pipeline][{key}] must map to a dict.")
 
 			module_name = self._get_module_name(key)
 			module = self.module_factory.get_module(module_name)
@@ -61,12 +61,15 @@ class LussacPipeline:
 		@param module_name: str
 			TODO
 		@param category: str
-			TODO
+			Run the module only on units from this category.
 		@param params: dict
 			The parameters for the module.
 		"""
 
 		for name, sorting in self.data.sortings.items():
+			if 'sortings' in params and name not in params['sortings']:
+				continue
+
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
 			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
 
@@ -75,6 +78,7 @@ class LussacPipeline:
 			sub_sorting = module_instance.run(params)
 
 			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting])
+			self.data.sortings[name].annotate(name=sorting.get_annotation("name"))
 
 	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, category: str, params: dict) -> None:
 		"""
@@ -85,12 +89,14 @@ class LussacPipeline:
 		@param module_name: str
 			TODO
 		@param category: str
-			TODO
+			Run the module only on units from this category.
 		@param params: dict
 			The parameters for the module.
 		"""
 
-		pass
+		unit_ids = {name: self.get_unit_ids_for_category(category, sorting) for name, sorting in self.data.sortings.items()}
+
+		module_instance = module(module_name, self.data, category, self.data.logs_folder)
 
 	@staticmethod
 	def _get_module_name(name: str) -> str:

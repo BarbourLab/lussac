@@ -9,8 +9,8 @@ def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
 
 
 def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
-	wvf_extractor_1 = mono_sorting_module.extract_waveforms(ms_before=1.5, ms_after=2.0, max_spikes_per_unit=40, overwrite=True)
-	wvf_extractor_2 = mono_sorting_module.extract_waveforms(sub_folder="aze", ms_before=1.5, ms_after=2.0, max_spikes_per_unit=40, overwrite=True)
+	wvf_extractor_1 = mono_sorting_module.extract_waveforms(ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
+	wvf_extractor_2 = mono_sorting_module.extract_waveforms(sub_folder="aze", ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
 
 	assert wvf_extractor_1 is not None
 	assert wvf_extractor_2 is not None

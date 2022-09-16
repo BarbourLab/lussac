@@ -6,7 +6,7 @@ import spikeinterface.core as si
 from spikeinterface.curation import CurationSorting
 
 
-def test_run_mono_sorting_module(pipeline: LussacPipeline):
+def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
 	n_units = {name: len(pipeline.data.sortings[name].unit_ids) for name in pipeline.data.sortings.keys()}
 	n_units['ks2_cs'] -= 1
 	pipeline._run_mono_sorting_module(TestMonoSortingModule, "test_mono_starting_module", "all", {})
