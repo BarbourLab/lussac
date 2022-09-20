@@ -12,7 +12,6 @@ class ExportToPhy(MonoSortingModule):
 	def run(self, params: dict) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		output_folder = self._format_output_path(params['path'])
-		Path(output_folder).parent.mkdir(parents=True, exist_ok=True)
 
 		export_to_phy(wvf_extractor, output_folder, **params['export_params'])
 

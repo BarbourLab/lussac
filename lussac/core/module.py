@@ -52,11 +52,11 @@ class MonoSortingModule(LussacModule):
 	def run(self, params: dict) -> si.BaseSorting:
 		...
 
-	def extract_waveforms(self, sub_folder: str = None, **params) -> si.WaveformExtractor:
+	def extract_waveforms(self, sub_folder: str | None = None, **params) -> si.WaveformExtractor:
 		"""
 		Creates the WaveformExtractor object and returns it.
 
-		@param sub_folder: str:
+		@param sub_folder: str | None:
 			The sub-folder where to save the waveforms.
 		@param params
 			The parameters for the waveform extractor.

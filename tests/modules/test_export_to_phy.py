@@ -19,8 +19,8 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 			"max_channels_per_template": 4,
 			"template_mode": "average",
 			"copy_binary": False,
-			"chunk_duration=": '1s',
-			"n_jobs": 4
+			"chunk_duration": '1s',
+			"n_jobs": 6
 		}
 	}
 
@@ -29,3 +29,5 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	assert os.path.exists(f"{folder}/ks2_best/spike_times.npy")
 	assert os.path.exists(f"{folder}/ms3_cs/spike_times.npy")
 	assert not os.path.exists(f"{folder}/ks2_cs/spike_times.npy")
+
+# TODO: Add test for _format_output_path() for 1 and multiple sortings.
