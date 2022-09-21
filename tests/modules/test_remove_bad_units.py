@@ -31,32 +31,42 @@ params = {
 		"filter": {
 			"band": [200, 5000]
 		},
-		"max": 50
+		"max": 140
 	}
 }
 
 
-def test_get_feature(mono_sorting_data: MonoSortingData) -> None:
-	module = RemoveBadUnits("test_rbu_get_feature", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
+def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
+	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
 
-	frequencies = module._get_feature("frequency", params['frequency'])
+	sorting = module.run(params)
+	assert 0 < sorting.get_num_units() < mono_sorting_data.sorting.get_num_units()
+	# TODO: Test that plots are generated.
+
+	sorting = module.run({"all": {}})
+	assert sorting.get_num_units() == 0
+
+
+def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
+	module = RemoveBadUnits("test_rbu_get_units_attribute", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
+
+	frequencies = module._get_units_attribute("frequency", params['frequency'])
 	assert isinstance(frequencies, np.ndarray)
 	assert frequencies.shape == (mono_sorting_data.sorting.get_num_units(), )
 	assert abs(frequencies[0] - 22.978) < 0.01
 
-	contamination = module._get_feature("contamination", params["contamination"])
+	contamination = module._get_units_attribute("contamination", params["contamination"])
 	assert isinstance(contamination, np.ndarray)
 	assert contamination.shape == (mono_sorting_data.sorting.get_num_units(), )
 	assert contamination[0] >= 1.0
 
-	amplitude = module._get_feature("amplitude", params["amplitude"])
+	amplitude = module._get_units_attribute("amplitude", params["amplitude"])
 	assert isinstance(amplitude, np.ndarray)
 	assert amplitude.shape == (mono_sorting_data.sorting.get_num_units(), )
 
-	amplitude_std = module._get_feature("amplitude_std", params["amplitude_std"])
+	amplitude_std = module._get_units_attribute("amplitude_std", params["amplitude_std"])
 	assert isinstance(amplitude_std, np.ndarray)
 	assert amplitude_std.shape == (mono_sorting_data.sorting.get_num_units(), )
 
 	with pytest.raises(ValueError):
-		module._get_feature("test", {})
-
+		module._get_units_attribute("test", {})

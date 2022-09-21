@@ -1,4 +1,3 @@
-from pathlib import Path
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
 from lussac.core.module import MonoSortingModule

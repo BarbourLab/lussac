@@ -14,7 +14,7 @@ if not os.path.exists(params_path):
 
 
 def test_parse_arguments() -> None:
-	with pytest.raises(SystemExit): # There is no arguments.
+	with pytest.raises(SystemExit):  # There is no arguments.
 		lussac.main.parse_arguments(None)
 
 	assert lussac.main.parse_arguments([params_path]) == params_path

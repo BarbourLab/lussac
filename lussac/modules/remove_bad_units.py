@@ -20,15 +20,31 @@ class RemoveBadUnits(MonoSortingModule):
 				units_to_remove[:] = True
 				break
 
-			value = self._get_feature(attribute, p)
+			value = self._get_units_attribute(attribute, p)
+			if 'min' in p:
+				units_to_remove |= value < p['min']
+			if 'max' in p:
+				units_to_remove |= value > p['max']
 
-	def _get_feature(self, attribute: str, params: dict) -> np.ndarray:
+		sorting = self.sorting.select_units([unit_id for unit_id, bad in zip(self.sorting.unit_ids, units_to_remove) if not bad])
+		bad_sorting = self.sorting.select_units([unit_id for unit_id, bad in zip(self.sorting.unit_ids, units_to_remove) if bad])
+
+		# TODO: Plot bad units.
+
+		return sorting
+
+	def _get_units_attribute(self, attribute: str, params: dict) -> np.ndarray:
 		"""
-		TODO
+		Gets the attribute for all the units.
 
 		@param attribute: str
-			TODO
-		@return: TODO
+			The attribute name.
+			- frequency (in Hz)
+			- contamination (between 0 and 1)
+			- amplitude (TODO)
+			- amplitude_std (TODO)
+		@return attribute: np.ndarray
+			The attribute for all the units.
 		"""
 		recording = self.data.recording
 		sorting = self.sorting
@@ -65,4 +81,3 @@ class RemoveBadUnits(MonoSortingModule):
 
 			case _:
 				raise ValueError(f"Unknown attribute: {attribute}")
-
