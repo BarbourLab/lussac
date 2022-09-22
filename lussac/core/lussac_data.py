@@ -1,5 +1,6 @@
 import os
 import pathlib
+import copy
 import tempfile
 from dataclasses import dataclass
 import numpy as np
@@ -160,13 +161,23 @@ class LussacData:
 		formatted_params = {}
 
 		for module, value in params.items():
+			if not isinstance(module, str):
+				raise Exception(f"Error: Module {module} in params['lussac']['pipeline'] must be a string.")
+			if not isinstance(value, dict):
+				raise Exception(f"Error: params['lussac']['pipeline][{module}] must map to a dict.")
+
 			formatted_params[module] = {}
 
 			for category, parameters in value.items():
+				if not isinstance(category, str):
+					raise Exception(f"Error: Category {category} in params['lussac']['pipeline'][{module}] must be a string.")
+				if not isinstance(parameters, dict):
+					raise Exception(f"Error: params['lussac']['pipeline'][{module}][{category}] must map to a dict.")
+
 				categories = category.split(';')
 
 				for cat in categories:
-					formatted_params[module][cat] = parameters
+					formatted_params[module][cat] = copy.deepcopy(parameters)
 
 		return formatted_params
 

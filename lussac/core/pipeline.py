@@ -1,4 +1,4 @@
-from typing import ClassVar, Type
+from typing import Type
 from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
@@ -21,17 +21,12 @@ class LussacPipeline:
 	data: LussacData
 	module_factory: ModuleFactory = ModuleFactory()
 
-	categories: ClassVar[dict[str, dict[str, dict]]] = {}
-
 	def launch(self) -> None:
 		"""
 		Launches the Lussac's pipeline.
 		"""
 
 		for key, value in self.data.params['lussac']['pipeline'].items():
-			if not isinstance(value, dict):
-				raise Exception(f"Error: params['lussac']['pipeline][{key}] must map to a dict.")
-
 			module_name = self._get_module_name(key)
 			module = self.module_factory.get_module(module_name)
 
@@ -43,11 +38,6 @@ class LussacPipeline:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
 			for category, params in value.items():
-				if not isinstance(category, str):
-					raise Exception(f"Error: Category {category} in params['lussac']['pipeline'][{key}] must be a string.")
-				if not isinstance(params, dict):
-					raise Exception(f"Error: params['lussac']['pipeline'][{key}][{category}] must map to a dict.")
-
 				run_module(module, key, category, params)
 
 			# Maybe convert sorting objects to Numpy to avoid having a big tree.

@@ -24,6 +24,8 @@ def test_get_module_member() -> None:
 	with pytest.raises(Exception):
 		ModuleFactory._get_module_member("tests.core.test_modulefactory")
 
+	assert ModuleFactory._get_module_member("lussac.modules.export_to_phy") == ExportToPhy
+
 
 def test_is_member_lussac_module() -> None:
 	assert ModuleFactory._is_member_lussac_module(test_ModuleFactory) is False

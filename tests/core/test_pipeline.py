@@ -1,9 +1,18 @@
+import copy
+import pytest
 import numpy as np
 from lussac.core.lussac_data import LussacData
 from lussac.core.module import MonoSortingModule
 from lussac.core.pipeline import LussacPipeline
 import spikeinterface.core as si
 from spikeinterface.curation import CurationSorting
+
+
+def test_launch(pipeline: LussacPipeline) -> None:
+	wrong_pipeline = copy.deepcopy(pipeline)
+	pipeline.data.params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
+	with pytest.raises(ValueError):
+		pipeline.launch()
 
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
