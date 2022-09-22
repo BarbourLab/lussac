@@ -122,6 +122,12 @@ class MonoSortingModule(LussacModule):
 				std_amplitudes = {unit_id: np.std(amp) for unit_id, amp in amplitudes.items()}
 				return std_amplitudes
 
+			case "ISI_portion":  # Returns the portion of consecutive spikes that are between a certain range (in ms).
+				low, high = np.array(params['range']) * recording.sampling_frequency * 1e-3
+				diff = {unit_id: np.diff(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
+				ISI_portion = {unit_id: np.sum((low < d) & (d < high)) / len(d) for unit_id, d in diff.items()}
+				return ISI_portion
+
 			case _:
 				raise ValueError(f"Unknown attribute: {attribute}")
 

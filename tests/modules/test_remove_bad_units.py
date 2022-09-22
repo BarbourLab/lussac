@@ -38,8 +38,8 @@ params = {
 
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
-
 	sorting = module.run(params)
+
 	assert 0 < sorting.get_num_units() < mono_sorting_data.sorting.get_num_units()
 	# TODO: Test that plots are generated.
 
