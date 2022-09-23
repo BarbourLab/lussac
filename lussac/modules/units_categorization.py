@@ -12,20 +12,22 @@ class UnitsCategorization(MonoSortingModule):
 	def run(self, params: dict) -> si.BaseSorting:
 		units_to_categorize = self._init_units_to_categorize()
 
-		for attribute, p in params.items():
-			if attribute == "clear":
+		for category, rules in params.items():
+			if category == "clear":
 				self.sorting.set_property("lussac_category", None)
-				return self.sorting
+				units_to_categorize = np.ones(self.sorting.get_num_units(), dtype=bool)
+				continue
 
-			value = self.get_units_attribute_arr(attribute, p)
-			if 'min' in p:
-				units_to_categorize &= value > p['min']
-			if 'max' in p:
-				units_to_categorize &= value < p['max']
+			for attribute, p in rules.items():
+				value = self.get_units_attribute_arr(attribute, p)
+				if 'min' in p:
+					units_to_categorize &= value > p['min']
+				if 'max' in p:
+					units_to_categorize &= value < p['max']
 
-		unit_ids = self.sorting.unit_ids[units_to_categorize]
-		values = np.array([self.category]*len(unit_ids), dtype=object)  # dtype cannot be str, otherwise string length is restricted.
-		self.sorting.set_property("lussac_category", values, ids=unit_ids)
+			unit_ids = self.sorting.unit_ids[units_to_categorize]
+			values = np.array([category]*len(unit_ids), dtype=object)  # dtype cannot be str, otherwise string length is restricted.
+			self.sorting.set_property("lussac_category", values, ids=unit_ids)
 
 		return self.sorting
 

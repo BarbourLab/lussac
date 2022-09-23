@@ -4,7 +4,7 @@ from lussac.modules.units_categorization import UnitsCategorization
 
 
 def test_units_categorization(mono_sorting_data: MonoSortingData) -> None:
-	params = {
+	params = {"CS": {
 		"frequency": {
 			"min": 0.2,
 			"max": 5.0
@@ -13,9 +13,9 @@ def test_units_categorization(mono_sorting_data: MonoSortingData) -> None:
 			"range": [8.0, 35.0],
 			"max": 0.012
 		}
-	}
+	}}
 
-	module = UnitsCategorization("test_categorization", mono_sorting_data, "CS", mono_sorting_data.data.logs_folder)
+	module = UnitsCategorization("test_categorization", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
 	sorting = module.run(params)
 
 	assert np.all(sorting.unit_ids[sorting.get_property("lussac_category") == "CS"] == (2, 5, 8, 51, 56, 57, 70))
