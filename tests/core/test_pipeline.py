@@ -14,6 +14,35 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	with pytest.raises(ValueError):
 		pipeline.launch()
 
+	light_pipeline = copy.deepcopy(pipeline)
+	light_pipeline.data.sortings.pop('ks2_cs')
+	light_pipeline.data.sortings.pop('ks2_low_thresh')
+	light_pipeline.data.sortings.pop('ms3_cs')
+	light_pipeline.data.sortings.pop('ms4_cs')
+	light_pipeline.data.params['lussac']['pipeline'] = {
+		'remove_bad_units': {
+			'all': {'frequency': {'min': 0.1, 'max': 200}}
+		},
+		'units_categorization': {
+			'all': {'CS': {
+				"frequency": {
+					"min": 0.2,
+					"max": 5.0
+				},
+				"ISI_portion": {
+					"range": [8.0, 35.0],
+					"max": 0.02
+				}
+			}}
+		},
+		'remove_bad_units_2': {
+			'CS': {'contamination': {'refractory_period': [2.0, 25.0], 'max': 0.05}}
+		}
+	}
+	light_pipeline.launch()
+
+	# TODO: add assert tests.
+
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
 	n_units = {name: len(pipeline.data.sortings[name].unit_ids) for name in pipeline.data.sortings.keys()}

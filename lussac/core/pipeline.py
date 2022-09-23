@@ -1,3 +1,4 @@
+import time
 from typing import Type
 from dataclasses import dataclass
 import numpy as np
@@ -55,10 +56,16 @@ class LussacPipeline:
 		@param params: dict
 			The parameters for the module.
 		"""
+		print('\n' + '*'*30)
+		print(f"{' ' + module_name + ' ':*^30}")
+		print('*' * 30)
 
 		for name, sorting in self.data.sortings.items():
 			if 'sortings' in params and name not in params['sortings']:
 				continue
+
+			print(f"\t- Sorting  {name:<18}", end='')
+			t1 = time.perf_counter()
 
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
 			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
@@ -66,9 +73,14 @@ class LussacPipeline:
 			data = MonoSortingData(self.data, sub_sorting)
 			module_instance = module(module_name, data, category, self.data.logs_folder)
 			sub_sorting = module_instance.run(params)
+			print(sub_sorting.get_property("lussac_category"))
 
-			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting])
+			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting]) if other_sorting is not None else sub_sorting
 			self.data.sortings[name].annotate(name=sorting.get_annotation("name"))
+
+			t2 = time.perf_counter()
+			print(f"(Done in {t2-t1:.1f} s)")
+			print(self.data.sortings[name].get_property("lussac_category"))
 
 	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, category: str, params: dict) -> None:
 		"""
@@ -136,7 +148,7 @@ class LussacPipeline:
 		return np.sort(np.unique(unit_ids))
 
 	@staticmethod
-	def split_sorting(sorting: si.BaseSorting, unit_ids: npt.ArrayLike) -> tuple[si.BaseSorting, si.BaseSorting]:
+	def split_sorting(sorting: si.BaseSorting, unit_ids: npt.ArrayLike) -> tuple[si.BaseSorting, si.BaseSorting | None]:
 		"""
 		Splits a sorting into two based on the given unit ids.
 
@@ -147,6 +159,9 @@ class LussacPipeline:
 		@return split_sortings: tuple[si.BaseSorting, si.BaseSorting]
 			The split sortings.
 		"""
+
+		if len(unit_ids) == sorting.get_num_units():
+			return sorting, None
 
 		other_unit_ids = [unit_id for unit_id in sorting.get_unit_ids() if unit_id not in unit_ids]
 		sorting1 = sorting.select_units(unit_ids)
