@@ -2,7 +2,7 @@ import copy
 import pytest
 import numpy as np
 from lussac.core.lussac_data import LussacData
-from lussac.core.module import MonoSortingModule
+from lussac.core.module import MonoSortingModule, MultiSortingsModule
 from lussac.core.pipeline import LussacPipeline
 import spikeinterface.core as si
 from spikeinterface.curation import CurationSorting
@@ -50,7 +50,16 @@ def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
 	pipeline._run_mono_sorting_module(TestMonoSortingModule, "test_mono_starting_module", "all", {})
 
 	for sorting_name in pipeline.data.sortings.keys():
-		assert len(pipeline.data.sortings[sorting_name].unit_ids) == n_units[sorting_name]
+		assert pipeline.data.sortings[sorting_name].get_num_units() == n_units[sorting_name]
+
+
+def test_run_multi_sortings_module(pipeline: LussacPipeline) -> None:
+	n_units = {name: len(pipeline.data.sortings[name].unit_ids) for name in pipeline.data.sortings.keys()}
+	n_units['ks2_cs'] -= 1
+	pipeline._run_multi_sortings_module(TestMultiSortingsModule, "test_multi_starting_module", {'all': {}})
+
+	for sorting_name in pipeline.data.sortings.keys():
+		assert pipeline.data.sortings[sorting_name].get_num_units() == n_units[sorting_name]
 
 
 def test_get_module_name() -> None:
@@ -98,3 +107,15 @@ class TestMonoSortingModule(MonoSortingModule):
 			return sorting.sorting
 
 		return self.sorting
+
+
+class TestMultiSortingsModule(MultiSortingsModule):
+
+	__test__ = False
+
+	def run(self, params: dict) -> dict[str, si.BaseSorting]:
+		sorting = CurationSorting(self.sortings['ks2_cs'])
+		sorting.remove_unit(5)
+		self.sortings['ks2_cs'] = sorting.sorting
+
+		return self.sortings

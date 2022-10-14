@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData, MonoSortingData
+from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
 from lussac.core.module import MonoSortingModule, MultiSortingsModule
 from lussac.core.module_factory import ModuleFactory
 
@@ -27,21 +27,24 @@ class LussacPipeline:
 		Launches the Lussac's pipeline.
 		"""
 
-		for key, value in self.data.params['lussac']['pipeline'].items():
-			module_name = self._get_module_name(key)
+		for module_key, module_params in self.data.params['lussac']['pipeline'].items():
+			print('\n' + '*'*30)
+			print(f"{' ' + module_key + ' ':*^30}")
+			print('*' * 30)
+
+			module_name = self._get_module_name(module_key)
 			module = self.module_factory.get_module(module_name)
 
 			if issubclass(module, MonoSortingModule):
-				run_module = self._run_mono_sorting_module
+				for category, params in module_params.items():
+					print(f"Running category {category}:")
+					self._run_mono_sorting_module(module, module_key, category, params)
 			elif issubclass(module, MultiSortingsModule):
-				run_module = self._run_multi_sortings_module
+				self._run_multi_sortings_module(module, module_key, module_params)
 			else:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
-			for category, params in value.items():
-				run_module(module, key, category, params)
-
-			# Maybe convert sorting objects to Numpy to avoid having a big tree.
+			# TODO: Maybe convert sorting objects to Numpy to avoid having a big tree.
 
 	def _run_mono_sorting_module(self, module: Type[MonoSortingModule], module_name: str, category: str, params: dict) -> None:
 		"""
@@ -50,15 +53,12 @@ class LussacPipeline:
 		@param module: MonoSortingModule
 			The module class to use.
 		@param module_name: str
-			TODO
+			The module's name/key in the json file.
 		@param category: str
 			Run the module only on units from this category.
 		@param params: dict
 			The parameters for the module.
 		"""
-		print('\n' + '*'*30)
-		print(f"{' ' + module_name + ' ':*^30}")
-		print('*' * 30)
 
 		for name, sorting in self.data.sortings.items():
 			if 'sortings' in params and name not in params['sortings']:
@@ -79,23 +79,39 @@ class LussacPipeline:
 			t2 = time.perf_counter()
 			print(f"(Done in {t2-t1:.1f} s)")
 
-	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, category: str, params: dict) -> None:
+	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, module_params: dict) -> None:
 		"""
 		Launches a multi-sorting module for a category.
 
 		@param module: MultiSortingsModule
 			The module class to use.
 		@param module_name: str
-			TODO
-		@param category: str
-			Run the module only on units from this category.
-		@param params: dict
+			The module's name/key in the json file.
+		@param module_params: dict
 			The parameters for the module.
 		"""
 
-		unit_ids = {name: self.get_unit_ids_for_category(category, sorting) for name, sorting in self.data.sortings.items()}
+		new_sortings = {}
+		for category, params in module_params.items():
+			sub_sortings = {}
+			for name, sorting in self.data.sortings.items():
+				if 'sortings' in params and name not in params['sortings']:
+					continue
 
-		module_instance = module(module_name, self.data, category, self.data.logs_folder)
+				unit_ids = self.get_unit_ids_for_category(category, sorting)
+				sub_sortings[name], _ = self.split_sorting(sorting, unit_ids)
+
+			data = MultiSortingsData(self.data, sub_sortings)
+			module_instance = module(module_name, data, category, self.data.logs_folder)
+			sub_sortings = module_instance.run(params)
+
+			for name, sub_sorting in sub_sortings.items():
+				if name not in new_sortings:
+					new_sortings[name] = sub_sorting
+				else:
+					new_sortings[name] = si.UnitsAggregationSorting([new_sortings[name], sub_sorting])
+
+		self.data.sortings = new_sortings
 
 	@staticmethod
 	def _get_module_name(name: str) -> str:

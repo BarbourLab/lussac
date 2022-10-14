@@ -5,7 +5,7 @@ import spikeinterface.core as si
 import spikeinterface.preprocessing as spre
 import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
-from lussac.core.lussac_data import LussacData, MonoSortingData
+from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
 
 
 @dataclass(slots=True)
@@ -47,7 +47,7 @@ class MonoSortingModule(LussacModule):
 		Returns the sorting object.
 
 		@return sorting: BaseSorting
-			The sorting object.The MonoSortingData's sorting object.
+			The sorting object.
 		"""
 
 		return self.data.sorting
@@ -152,8 +152,19 @@ class MultiSortingsModule(LussacModule):
 		logs_folder	Path to the folder where to output the logs.
 	"""
 
-	data: LussacData
+	data: MultiSortingsData
+
+	@property
+	def sortings(self) -> dict[str, si.BaseSorting]:
+		"""
+		Returns the sorting objects.
+
+		@return sortings: dict[str, BaseSorting]
+			The sorting objects.
+		"""
+
+		return self.data.sortings
 
 	@abstractmethod
-	def run(self):
+	def run(self, params: dict) -> dict[str, si.BaseSorting]:
 		...

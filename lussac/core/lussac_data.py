@@ -221,7 +221,7 @@ class LussacData:
 @dataclass(slots=True)
 class MonoSortingData:
 	"""
-	Allows easy manipulation of the LussacData object when working on only one sorting.
+	Allows easy manipulation of the LussacData object when working on only one sorting (or sub-sorting).
 
 	Attributes:
 		data	The main data object for Lussac.
@@ -287,3 +287,51 @@ class MonoSortingData:
 		"""
 
 		return self.sorting.get_unit_spike_train(unit_id)
+
+
+@dataclass(slots=True)
+class MultiSortingsData:
+	"""
+	Allows easy manipulation of the LussacData object when working on multiple sortings (or sub-sortings).
+
+	Attributes:
+		data		The main data object for Lussac.
+		sortings	The sortings being used.
+	"""
+
+	data: LussacData
+	sortings: dict[str, si.BaseSorting]
+
+	@property
+	def recording(self) -> si.BaseRecording:
+		"""
+		Returns the recording object.
+
+		@return recording: BaseRecording
+			The recording object.
+		"""
+
+		return self.data.recording
+
+	@property
+	def num_sortings(self) -> int:
+		"""
+		Returns the number of sortings.
+
+		@return num_sortings: int
+			The number of sortings.
+		"""
+
+		return len(self.sortings)
+
+	@property
+	def tmp_folder(self) -> str:
+		"""
+		Returns the path to the temporary folder.
+		This folder is deleted when Lussac exists (normally or because of a crash).
+
+		@return tmp_folder: str
+			Path to the folder that store temporary files.
+		"""
+
+		return self.data.tmp_folder

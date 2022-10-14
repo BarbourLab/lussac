@@ -1,6 +1,6 @@
 import shutil
 import pytest
-from lussac.core.lussac_data import LussacData, MonoSortingData
+from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
 from lussac.core.pipeline import LussacPipeline
 import lussac.main
 
@@ -21,6 +21,10 @@ def data(params: dict) -> LussacData:
 @pytest.fixture(scope="session")
 def mono_sorting_data(data: LussacData) -> MonoSortingData:
 	return MonoSortingData(data, data.sortings['ms3_best'])
+
+@pytest.fixture(scope="session")
+def multi_sortings_data(data: LussacData) -> MultiSortingsData:
+	return MultiSortingsData(data, data.sortings)
 
 
 @pytest.fixture(scope="session")
