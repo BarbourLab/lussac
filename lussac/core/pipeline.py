@@ -73,14 +73,11 @@ class LussacPipeline:
 			data = MonoSortingData(self.data, sub_sorting)
 			module_instance = module(module_name, data, category, self.data.logs_folder)
 			sub_sorting = module_instance.run(params)
-			print(sub_sorting.get_property("lussac_category"))
 
 			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting]) if other_sorting is not None else sub_sorting
-			self.data.sortings[name].annotate(name=sorting.get_annotation("name"))
 
 			t2 = time.perf_counter()
 			print(f"(Done in {t2-t1:.1f} s)")
-			print(self.data.sortings[name].get_property("lussac_category"))
 
 	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, category: str, params: dict) -> None:
 		"""
