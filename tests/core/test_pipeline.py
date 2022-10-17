@@ -61,6 +61,8 @@ def test_run_multi_sortings_module(pipeline: LussacPipeline) -> None:
 	for sorting_name in pipeline.data.sortings.keys():
 		assert pipeline.data.sortings[sorting_name].get_num_units() == n_units[sorting_name]
 
+	# TODO: Add tests for 'sortings' and for Aggregation.
+
 
 def test_get_module_name() -> None:
 	assert LussacPipeline._get_module_name("module") == "module"

@@ -4,6 +4,10 @@ from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
 
 
+def test_recording(mono_sorting_module: MonoSortingModule) -> None:
+	assert mono_sorting_module.recording == mono_sorting_module.data.recording
+
+
 def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
 	assert mono_sorting_module.sorting == mono_sorting_module.data.sorting
 

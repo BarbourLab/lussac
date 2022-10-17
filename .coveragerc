@@ -10,6 +10,9 @@ exclude_lines =
 	# Don't complain about abstract methods
 	@(abc\.)?abstractmethod
 
+	# Numba code isn't correctly checked for coverage
+	@numba.jit
+
 [html]
 directory = tests/coverage_html_report
 

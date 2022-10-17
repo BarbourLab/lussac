@@ -22,9 +22,20 @@ class LussacModule(ABC):
 	"""
 
 	name: str
-	data: object
+	data: MonoSortingData | MultiSortingsData
 	category: str
 	logs_folder: str
+
+	@property
+	def recording(self) -> si.BaseRecording:
+		"""
+		Returns the recording object.
+
+		@return recording: BaseRecording
+			The recording object.
+		"""
+
+		return self.data.recording
 
 
 @dataclass(slots=True)
