@@ -55,15 +55,19 @@ class MergeSortings(MultiSortingsModule):
 
 	@staticmethod
 	@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32),
-			   nopython=True, cache=True, parallel=True)
+			   nopython=True, nogil=True, cache=True, parallel=True)
 	def _compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time):
 		"""
 		Computes the number of coincident spikes between all units in two sortings
 
 		@param spike_times1: array[int64] (n_spikes1)
+			All the spike timings of the first sorting.
 		@param spike_labels1: array[int64] (n_spikes1)
+			The unit labels of the first sorting (i.e. unit index of each spike).
 		@param spike_times2: array[int64] (n_spikes2)
+			All the spike timings of the second sorting.
 		@param spike_labels2: array[int64] (n_spikes2)
+			The unit labels of the second sorting (i.e. unit index of each spike).
 		@param max_time: int32
 			The maximum time difference between two spikes to be considered coincident.
 			Two spikes spaced by exactly max_time are considered coincident.

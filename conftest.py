@@ -1,3 +1,4 @@
+import os
 import shutil
 import pytest
 from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
@@ -35,8 +36,9 @@ def pipeline(data: LussacData) -> LussacPipeline:
 def pytest_sessionstart(session: pytest.Session) -> None:
 	# Remove lussac folder if exists.
 	shutil.rmtree("tests/datasets/cerebellar_cortex/lussac", ignore_errors=True)
-
+	os.makedirs("tests/tmp", exist_ok=True)
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int | pytest.ExitCode) -> None:
-	# Remove temporary directory
+	# Remove temporary directories
 	shutil.rmtree("tests/datasets/cerebellar_cortex/tmp_*", ignore_errors=True)
+	# shutil.rmtree("tests/tmp", ignore_errors=True)

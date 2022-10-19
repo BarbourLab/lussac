@@ -8,3 +8,4 @@ tests/.pytest_cache/
 tests/.coverage
 tests/coverage_html_report/
 tests/coverage.xml
+tests/tmp
