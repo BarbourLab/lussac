@@ -37,18 +37,19 @@ params = {
 
 
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
-	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
+	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all")
 	sorting = module.run(params)
 
 	assert 0 < sorting.get_num_units() < mono_sorting_data.sorting.get_num_units()
 	# TODO: Test that plots are generated.
 
+	module = RemoveBadUnits("test_rbu_all", mono_sorting_data, "all")
 	sorting = module.run({"all": {}})
 	assert sorting.get_num_units() == 0
 
 
 def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
-	module = RemoveBadUnits("test_rbu_get_units_attribute", mono_sorting_data, "all", mono_sorting_data.data.logs_folder)
+	module = RemoveBadUnits("test_rbu_get_units_attribute", mono_sorting_data, "all")
 
 	frequencies = module.get_units_attribute_arr("frequency", params['frequency'])
 	assert isinstance(frequencies, np.ndarray)

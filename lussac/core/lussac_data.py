@@ -276,6 +276,16 @@ class MonoSortingData:
 
 		return self.data.tmp_folder
 
+	@property
+	def logs_folder(self) -> str:
+		"""
+		TODO
+
+		@return:
+		"""
+
+		return self.data.logs_folder
+
 	def get_unit_spike_train(self, unit_id: int) -> npt.NDArray[np.integer]:
 		"""
 		Returns the spike_train (i.e. an array containing all the spike timings)
@@ -335,3 +345,13 @@ class MultiSortingsData:
 		"""
 
 		return self.data.tmp_folder
+
+	@property
+	def logs_folder(self) -> str:
+		"""
+		TODO
+
+		@return:
+		"""
+
+		return self.data.logs_folder

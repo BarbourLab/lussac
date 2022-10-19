@@ -24,7 +24,6 @@ class LussacModule(ABC):
 	name: str
 	data: MonoSortingData | MultiSortingsData
 	category: str
-	logs_folder: str
 
 	@property
 	def recording(self) -> si.BaseRecording:
@@ -63,14 +62,27 @@ class MonoSortingModule(LussacModule):
 
 		return self.data.sorting
 
+	@property
+	def logs_folder(self) -> str:
+		"""
+		TODO
+
+		@return:
+		"""
+
+		return f"{self.data.logs_folder}/{self.name}/{self.category}/{self.data.name}"
+
 	@abstractmethod
 	def run(self, params: dict) -> si.BaseSorting:
 		...
 
-	def extract_waveforms(self, sub_folder: str | None = None, **params) -> si.WaveformExtractor:
+	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, **params) -> si.WaveformExtractor:
 		"""
 		Creates the WaveformExtractor object and returns it.
 
+		@param sorting: BaseSorting | None
+			The sorting for the WaveformExtractor.
+			If None, will take the sorting from the data object.
 		@param sub_folder: str | None:
 			The sub-folder where to save the waveforms.
 		@param params
@@ -79,11 +91,13 @@ class MonoSortingModule(LussacModule):
 			The waveform extractor object.
 		"""
 
-		folder_path = f"{self.data.tmp_folder}/{self.name}/waveforms/{self.category}/{self.data.name}"
+		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.data.name}"
 		if sub_folder is not None:
 			folder_path += f"/{sub_folder}"
+		folder_path += f"/wvf_extractor"
 
-		return si.extract_waveforms(self.data.recording, self.data.sorting, folder_path, **params)
+		sorting = self.sorting if sorting is None else sorting
+		return si.extract_waveforms(self.data.recording, sorting, folder_path, **params)
 
 	def get_units_attribute(self, attribute: str, params: dict) -> dict:
 		"""
@@ -175,6 +189,10 @@ class MultiSortingsModule(LussacModule):
 		"""
 
 		return self.data.sortings
+
+	@property
+	def logs_folder(self) -> str:
+		return f"{self.data.logs_folder}/{self.name}/{self.category}"
 
 	@abstractmethod
 	def run(self, params: dict) -> dict[str, si.BaseSorting]:

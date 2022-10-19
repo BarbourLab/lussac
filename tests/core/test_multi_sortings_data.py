@@ -14,3 +14,10 @@ def test_num_sortings(data: LussacData, multi_sortings_data: MultiSortingsData) 
 def test_tmp_folder(multi_sortings_data: MultiSortingsData) -> None:
 	assert os.path.exists(multi_sortings_data.tmp_folder)
 	assert os.path.isdir(multi_sortings_data.tmp_folder)
+
+
+
+
+def test_logs_folder(multi_sortings_data: MultiSortingsData) -> None:
+	assert os.path.exists(multi_sortings_data.logs_folder)
+	assert os.path.isdir(multi_sortings_data.logs_folder)

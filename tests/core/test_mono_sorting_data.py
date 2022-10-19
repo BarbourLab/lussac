@@ -25,6 +25,11 @@ def test_tmp_folder(mono_sorting_data: MonoSortingData) -> None:
 	assert os.path.isdir(mono_sorting_data.tmp_folder)
 
 
+def test_logs_folder(mono_sorting_data: MonoSortingData) -> None:
+	assert os.path.exists(mono_sorting_data.logs_folder)
+	assert os.path.isdir(mono_sorting_data.logs_folder)
+
+
 def test_get_unit_spike_train(mono_sorting_data: MonoSortingData) -> None:
 	assert len(mono_sorting_data.get_unit_spike_train(2)) == 1026
 	assert len(mono_sorting_data.get_unit_spike_train(71)) == 62474

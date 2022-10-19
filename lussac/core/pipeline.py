@@ -71,7 +71,7 @@ class LussacPipeline:
 			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
 
 			data = MonoSortingData(self.data, sub_sorting)
-			module_instance = module(module_name, data, category, self.data.logs_folder)
+			module_instance = module(module_name, data, category)
 			sub_sorting = module_instance.run(params)
 
 			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting]) if other_sorting is not None else sub_sorting
@@ -102,7 +102,7 @@ class LussacPipeline:
 				sub_sortings[name], _ = self.split_sorting(sorting, unit_ids)
 
 			data = MultiSortingsData(self.data, sub_sortings)
-			module_instance = module(module_name, data, category, self.data.logs_folder)
+			module_instance = module(module_name, data, category)
 			sub_sortings = module_instance.run(params)
 
 			for name, sub_sorting in sub_sortings.items():

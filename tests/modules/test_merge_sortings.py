@@ -35,7 +35,7 @@ def test_compute_graph(data: LussacData) -> None:
 		'3': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
-	module = MergeSortings("merge_sortings", multi_sortings_data, "all", "")
+	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
 
 	similarity_matrices = {
 		'1': {
@@ -73,4 +73,4 @@ def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# TODO: Maybe remove some units to accelerate the test.
 
 	multi_sortings_data = MultiSortingsData(data, data.sortings)
-	return MergeSortings("merge_sortings", multi_sortings_data, "all", "")
+	return MergeSortings("merge_sortings", multi_sortings_data, "all")
