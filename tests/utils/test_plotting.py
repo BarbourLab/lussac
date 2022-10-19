@@ -1,11 +1,15 @@
 import os
 import numpy as np
 import plotly.graph_objects as go
-import lussac.utils.plotting as plotting
+import spikeinterface.core as si
+from lussac.core.lussac_data import LussacData
+import lussac.utils as utils
+
+
+folder = "tests/tmp/plotting"
 
 
 def test_plot_sliders() -> None:
-	folder = "tests/tmp/plotting"
 	fig = go.Figure().set_subplots(rows=1, cols=2)
 	xaxis = np.arange(0, 2*np.pi, 1e-2)
 
@@ -26,10 +30,18 @@ def test_plot_sliders() -> None:
 	fig.update_xaxes(title_text="Time (s)")
 	fig.update_yaxes(title_text="Amplitude")
 
-	plotting._plot_sliders(fig, 2, labels=list(range(10)), filepath=f"{folder}/test_sliders", plots_per_file=20)
-	plotting._plot_sliders(fig, 2, labels=list(range(10)), filepath=f"{folder}/test_sliders", plots_per_file=5)
+	utils.plot_sliders(fig, 2, labels=list(range(10)), filepath=f"{folder}/test_sliders", plots_per_file=20)
+	utils.plot_sliders(fig, 2, labels=list(range(10)), filepath=f"{folder}/test_sliders", plots_per_file=5)
 
 	assert os.path.exists(f"{folder}/test_sliders.html")
 	assert os.path.exists(f"{folder}/test_sliders_1.html")
 	assert os.path.exists(f"{folder}/test_sliders_2.html")
 	assert not os.path.exists(f"{folder}/test_sliders_3.html")
+
+
+def test_plot_units(data: LussacData) -> None:
+	sorting = data.sortings['ks2_best'].select_units([13, 19, 40, 41])
+	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5, max_spikes_per_unit=1000)
+
+	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units")
+	assert os.path.exists(f"{folder}/plot_units.html")

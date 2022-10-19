@@ -24,11 +24,16 @@ def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, tru
 	t_axis = t_axis.astype(np.float32)
 
 	if margin_reflect:
-		assert np.min(events) >= t_axis[0]
-		assert np.max(events) <= t_axis[-1]
+		if np.min(events) >= t_axis[0]:
+			events_low = 2*t_axis[0] - events[:np.searchsorted(events, t_axis[0] + truncate * sigma, side="right")][::-1]
+		else:
+			events_low = np.array([], dtype=np.float32)
 
-		events_low = 2*t_axis[0] - events[:np.searchsorted(events, t_axis[0] + truncate * sigma, side="right")][::-1]
-		events_high = 2*t_axis[-1] - events[np.searchsorted(events, t_axis[-1] - truncate * sigma, side="left"):][::-1]
+		if np.max(events) <= t_axis[-1]:
+			events_high = 2*t_axis[-1] - events[np.searchsorted(events, t_axis[-1] - truncate * sigma, side="left"):][::-1]
+		else:
+			events_high = np.array([], dtype=np.float32)
+
 		events = np.concatenate((events_low, events, events_high))
 
 	return _gaussian_kernel(events, t_axis, sigma, truncate)
