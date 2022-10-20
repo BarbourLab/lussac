@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import numpy as np
@@ -65,12 +66,17 @@ class MonoSortingModule(LussacModule):
 	@property
 	def logs_folder(self) -> str:
 		"""
-		TODO
+		Returns the logs directory for this module.
 
-		@return:
+		@return logs_folder: str
+			Path to the logs directory.
 		"""
 
-		return f"{self.data.logs_folder}/{self.name}/{self.category}/{self.data.name}"
+		logs_folder = f"{self.data.logs_folder}/{self.name}/{self.category}/{self.data.name}"
+		if not os.path.exists(logs_folder):
+			os.makedirs(logs_folder)
+
+		return logs_folder
 
 	@abstractmethod
 	def run(self, params: dict) -> si.BaseSorting:
@@ -192,7 +198,18 @@ class MultiSortingsModule(LussacModule):
 
 	@property
 	def logs_folder(self) -> str:
-		return f"{self.data.logs_folder}/{self.name}/{self.category}"
+		"""
+		Returns the logs directory for this module.
+
+		@return logs_folder: str
+			Path to the logs directory.
+		"""
+
+		logs_folder = f"{self.data.logs_folder}/{self.name}/{self.category}"
+		if not os.path.exists(logs_folder):
+			os.makedirs(logs_folder)
+
+		return logs_folder
 
 	@abstractmethod
 	def run(self, params: dict) -> dict[str, si.BaseSorting]:

@@ -14,6 +14,7 @@ def test_get_path_to_plotlyJS() -> None:
 
 	path = plotly_js.parent / "aze" / "dfg"
 	assert utils.get_path_to_plotlyJS(path) == "../../plotly.min.js"
+	assert utils.get_path_to_plotlyJS(str(path)) == "../../plotly.min.js"
 
 
 def test_plot_sliders() -> None:

@@ -21,11 +21,8 @@ def get_path_to_plotlyJS(path: str | Path) -> str:
 	"""
 	if isinstance(path, str):
 		path = Path(path)
-	if path.is_file():
-		path = path.parent
 
-	relative_path = os.path.relpath(LussacData.PLOTLY_JS, start=path)
-	return relative_path
+	return os.path.relpath(LussacData.PLOTLY_JS, start=path)
 
 
 def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, filepath: str, args: list[dict] | None = None, plots_per_file: int = 30) -> None:

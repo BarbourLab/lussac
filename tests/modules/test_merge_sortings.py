@@ -1,6 +1,8 @@
 import copy
+import pickle
 import pytest
 import numpy as np
+import networkx as nx
 import spikeinterface.core as si
 from lussac.core.lussac_data import LussacData, MultiSortingsData
 from lussac.modules.merge_sortings import MergeSortings
@@ -60,6 +62,10 @@ def test_compute_graph(data: LussacData) -> None:
 	assert graph.has_edge(('1', 1), ('2', 1))
 	assert graph.has_edge(('2', 2), ('3', 0))
 	assert not graph.has_edge(('1', 2), ('2', 2))
+
+	with open(f"{module.logs_folder}/similarity_graph.pkl", 'rb') as file:
+		graph_loaded = pickle.load(file)
+		assert nx.is_isomorphic(graph, graph_loaded)
 
 
 @pytest.fixture(scope="function")

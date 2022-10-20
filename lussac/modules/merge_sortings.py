@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import numba
 import networkx as nx
@@ -118,5 +119,8 @@ class MergeSortings(MultiSortingsModule):
 						graph.add_node((name2, unit_id2))
 						if similarity := similarity_matrices[name1][name2][i, j] >= min_similarity:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
+
+		with open(f"{self.logs_folder}/similarity_graph.pkl", 'wb+') as file:
+			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 		return graph

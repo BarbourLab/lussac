@@ -16,7 +16,7 @@ cd lussac
 
 # OPTIONAL: Use a conda environment.
 conda create -n lussac python=3.10
-source activate lussac
+conda activate lussac
 
 # Install Lussac.
 pip install -r requirements.txt
