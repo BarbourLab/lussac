@@ -517,17 +517,19 @@ def estimate_cross_spiketrains_contamination(spike_train1: np.ndarray, spike_tra
 	if spike_train2.dtype != np.int64:
 		spike_train2 = spike_train2.astype(np.int64)
 
-	lower_b = int(round(refractory_period[0] * 1e-3 * sampling_f))
-	upper_b = int(round(refractory_period[1] * 1e-3 * sampling_f))
-	t_r = upper_b - lower_b
+	t_c = int(round(refractory_period[0] * 1e-3 * sampling_f))
+	t_r = int(round(refractory_period[1] * 1e-3 * sampling_f))
 
-	C = estimate_spike_train_contamination(spike_train2, refractory_period, t_max, sampling_f)
-	nb_refract = _compute_cross_violations(spike_train1, spike_train2, refractory_period[1], sampling_f)
+	N1 = len(spike_train1)
+	N2 = len(spike_train2)
+	C1 = estimate_spike_train_contamination(spike_train1, refractory_period, t_max, sampling_f)
+	C2 = estimate_spike_train_contamination(spike_train2, refractory_period, t_max, sampling_f)
+	n_collisions = _compute_cross_violations(spike_train1, spike_train2, refractory_period[1], sampling_f) - _compute_cross_violations(spike_train1, spike_train2, refractory_period[0], sampling_f)
 
-	estimate1 = len(spike_train1) * len(spike_train2)*C * 2*t_r / t_max
-	estimate2 = len(spike_train1) * len(spike_train2)*(1-C) * 2*t_r / t_max
+	expected_same = 2 * N1 * N2 * (t_r) * (C1 + C2 - C1*C2) / t_max
+	expected_diff = 2 * N1 * N2 * (t_r) / t_max
 
-	return (nb_refract - estimate1) / estimate2
+	return (n_collisions - expected_same) / (expected_diff - expected_same)
 
 
 def _compute_cross_violations(np.ndarray[DTYPE_t, ndim=1] spike_train1, np.ndarray[DTYPE_t, ndim=1] spike_train2, float t_r, float sampling_f):
