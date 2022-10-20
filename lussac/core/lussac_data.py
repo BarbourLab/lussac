@@ -3,8 +3,10 @@ import pathlib
 import copy
 import tempfile
 from dataclasses import dataclass
+from typing import ClassVar
 import numpy as np
 import numpy.typing as npt
+from plotly.offline.offline import get_plotlyjs
 import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.extractors as se
@@ -26,6 +28,7 @@ class LussacData:
 	sortings: dict[str, si.BaseSorting]
 	params: dict[str, dict]
 	_tmp_directory: tempfile.TemporaryDirectory
+	PLOTLY_JS: ClassVar[pathlib.Path]
 
 	def __init__(self, recording: si.BaseRecording, sortings: dict[str, si.BaseSorting], params: dict[str, dict]) -> None:
 		"""
@@ -47,6 +50,7 @@ class LussacData:
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
+		self._setup_logs_directory(params['lussac']['logs_folder'])
 
 	@property
 	def tmp_folder(self) -> str:
@@ -69,10 +73,7 @@ class LussacData:
 			Path to the folder that store the logs.
 		"""
 
-		if not os.path.exists(logs_folder := self.params['lussac']['logs_folder']):
-			os.makedirs(logs_folder)
-
-		return logs_folder
+		return self.params['lussac']['logs_folder']
 
 	@property
 	def sampling_f(self) -> float:
@@ -199,6 +200,25 @@ class LussacData:
 		os.mkdir(f"{tmp_dir.name}/spike_interface")
 
 		return tmp_dir
+
+	@staticmethod
+	def _setup_logs_directory(folder_path: str) -> None:
+		"""
+		Sets up the folder containing Lussac's logs.
+
+		@param folder_path: str
+			Path for the logs directory.
+		"""
+
+		os.makedirs(folder_path, exist_ok=True)
+
+		# The javascript for plotly html files is about ~3 MB.
+		# To not export it for each plot, store it in the logs and point to it in each html file.
+		LussacData.PLOTLY_JS = pathlib.Path(f"{folder_path}/plotly.min.js")
+		if not os.path.exists(LussacData.PLOTLY_JS):
+			file = open(LussacData.PLOTLY_JS, 'w')
+			file.write(get_plotlyjs())
+			file.close()
 
 	@staticmethod
 	def create_from_params(params: dict[str, dict]) -> 'LussacData':

@@ -9,6 +9,13 @@ import lussac.utils as utils
 folder = "tests/tmp/plotting"
 
 
+def test_get_path_to_plotlyJS() -> None:
+	plotly_js = LussacData.PLOTLY_JS
+
+	path = plotly_js.parent / "aze" / "dfg"
+	assert utils.get_path_to_plotlyJS(path) == "../../plotly.min.js"
+
+
 def test_plot_sliders() -> None:
 	fig = go.Figure().set_subplots(rows=1, cols=2)
 	xaxis = np.arange(0, 2*np.pi, 1e-2)
