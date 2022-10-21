@@ -6,7 +6,6 @@ import numpy.typing as npt
 import plotly.graph_objects as go
 import spikeinterface.core as si
 import spikeinterface.postprocessing as spost
-from lussac.core.lussac_data import LussacData
 import lussac.utils as utils
 
 
@@ -22,7 +21,7 @@ def get_path_to_plotlyJS(path: str | Path) -> str:
 	if isinstance(path, str):
 		path = Path(path)
 
-	return os.path.relpath(LussacData.PLOTLY_JS, start=path)
+	return os.path.relpath(utils.Utils.plotly_js_file, start=path)
 
 
 def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, filepath: str, args: list[dict] | None = None, plots_per_file: int = 30) -> None:

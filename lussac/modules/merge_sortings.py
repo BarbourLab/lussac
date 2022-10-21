@@ -1,3 +1,4 @@
+import itertools
 import pickle
 import numpy as np
 import numba
@@ -15,7 +16,7 @@ class MergeSortings(MultiSortingsModule):
 		# TODO: recenter units between them before comparing them.
 		similarity_matrices = self._compute_similarity_matrices(params['similarity']['TODO'])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
-		# TODO: Detect and remove merged units.
+		self.remove_merged_units(graph)
 
 		return self.sortings
 
@@ -56,7 +57,7 @@ class MergeSortings(MultiSortingsModule):
 
 	@staticmethod
 	@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32),
-			   nopython=True, nogil=True, cache=True, parallel=True)
+			   nopython=True, nogil=True, cache=True)
 	def _compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time):
 		"""
 		Computes the number of coincident spikes between all units in two sortings
@@ -124,3 +125,30 @@ class MergeSortings(MultiSortingsModule):
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 		return graph
+
+	def remove_merged_units(self, graph: nx.Graph):
+		"""
+		Detects and remove merged units from the graph.
+		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
+		to two nodes coming from the same sorting, then either the original node is a merged unit, or the two nodes are
+		split units. In the first case, (under the hypothesis that the 2 neurons are not correlated), the cross-contamination
+		between the two nodes should be high (around 100%), whereas in the second case, the cross contamination should be
+		low (around 0%). If the cross-contamination crosses a threshold, the original node is labeled as a merged unit
+		and all of its edges are removed.
+
+		@param graph: nx.Graph
+			The graph containing all the units and connected by their similarity.
+		@return:
+		"""
+
+		for sub_graph in nx.connected_components_subgraphs(graph):
+			for node in sub_graph.nodes:
+				for node1, node2 in itertools.combinations(sub_graph.neighbors(node), 2):
+					sorting1_name, unit_id1 = node1
+					sorting2_name, unit_id2 = node2
+
+					if sorting1_name != sorting2_name:
+						continue
+
+					spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
+					spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)

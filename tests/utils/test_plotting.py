@@ -10,7 +10,7 @@ folder = "tests/tmp/plotting"
 
 
 def test_get_path_to_plotlyJS() -> None:
-	plotly_js = LussacData.PLOTLY_JS
+	plotly_js = utils.Utils.plotly_js_file
 
 	path = plotly_js.parent / "aze" / "dfg"
 	assert utils.get_path_to_plotlyJS(path) == "../../plotly.min.js"

@@ -3,13 +3,13 @@ import pathlib
 import copy
 import tempfile
 from dataclasses import dataclass
-from typing import ClassVar
 import numpy as np
 import numpy.typing as npt
 from plotly.offline.offline import get_plotlyjs
 import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.extractors as se
+from lussac.utils import Utils
 
 
 class LussacData:
@@ -28,7 +28,6 @@ class LussacData:
 	sortings: dict[str, si.BaseSorting]
 	params: dict[str, dict]
 	_tmp_directory: tempfile.TemporaryDirectory
-	PLOTLY_JS: ClassVar[pathlib.Path]
 
 	def __init__(self, recording: si.BaseRecording, sortings: dict[str, si.BaseSorting], params: dict[str, dict]) -> None:
 		"""
@@ -51,6 +50,11 @@ class LussacData:
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 		self._setup_logs_directory(params['lussac']['logs_folder'])
+
+		Utils.sampling_frequency = recording.sampling_frequency
+		Utils.t_max = recording.get_num_frames()
+
+		# TODO: Add sanity check (check that sortings have same number of segments / sampling rate / etc. as recording).
 
 	@property
 	def tmp_folder(self) -> str:
@@ -214,9 +218,9 @@ class LussacData:
 
 		# The javascript for plotly html files is about ~3 MB.
 		# To not export it for each plot, store it in the logs and point to it in each html file.
-		LussacData.PLOTLY_JS = pathlib.Path(f"{folder_path}/plotly.min.js")
-		if not os.path.exists(LussacData.PLOTLY_JS):
-			file = open(LussacData.PLOTLY_JS, 'w')
+		Utils.plotly_js_file = pathlib.Path(f"{folder_path}/plotly.min.js")
+		if not os.path.exists(Utils.plotly_js_file):
+			file = open(Utils.plotly_js_file, 'w')
 			file.write(get_plotlyjs())
 			file.close()
 
