@@ -40,6 +40,7 @@ def automerge_units(data: PhyData, unit_ids: list, params: dict, plot_folder: st
 			"bin_size": 1.0/3.0,
 			"filter": [2, 800],
 			"similarity": 0.7,
+			"max_noise": 0.5,
 			"window": {
 				"type": "adaptative",
 				"limit": 10.0,
@@ -181,8 +182,12 @@ def _get_potential_merges(data: PhyData, unit_ids: list, shifts: np.ndarray, par
 
 			spike_train1 = data.sorting.get_unit_spike_train(unit_ids[i])
 			spike_train2 = data.sorting.get_unit_spike_train(unit_ids[j]) - shift
+			noise = estimate_correlogram_noise(len(spike_train1), len(spike_train2), 2*window, params['bin_size']*data.sampling_f*1e-3, data.recording.get_num_frames())
+			if noise > params['max_noise']:
+				all_differences.append(3.0)
+				continue
+
 			n_coincidents = utils.get_nb_coincident_spikes(spike_train1, spike_train2, window=3)
-			
 			if n_coincidents / (len(spike_train1) + len(spike_train2) - n_coincidents) > 0.7:
 				diff = 0
 			else:
@@ -210,6 +215,17 @@ def _get_potential_merges(data: PhyData, unit_ids: list, shifts: np.ndarray, par
 		return np.array(all_differences, dtype=np.float32)
 	else:
 		return np.array(potential_merges, dtype=np.uint32)
+
+
+def estimate_correlogram_noise(n1: int, n2: int, window: int, bin_size: int, t_max: int):
+	"""
+
+	"""
+
+	N1 = max(n1, n2)**2 * window * bin_size / t_max		# Estimated number of spikes in the auto-corr
+	N2 = 2 * n1 * n2 * window * bin_size / t_max		# Estimated number of spikes in the cross-corr
+
+	return math.sqrt(2*window/math.pi * (1 - 1/window) * (1/N1 + 1/N2))
 
 
 def get_correlogram_differences(auto_corr1: np.ndarray, auto_corr2: np.ndarray, cross_corr: np.ndarray, plage: np.ndarray, shift: int=0):

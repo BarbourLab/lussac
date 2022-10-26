@@ -2,6 +2,7 @@ import os
 import math
 import itertools
 from multiprocessing import Pool
+import networkx
 import numpy as np
 import scipy.signal
 import scipy.stats
@@ -24,6 +25,7 @@ def automerge_sortings(data: PhyData, unit_ids: dict, params: dict, plot_folder:
 		"refractory_period": [0.2, 1.0],
 		"max_reshift": 0.5,
 		"duplicated_spike": 0.2,
+		"threshold_merged_units": 0.4,
 		"similarity_validation": {
 			"window": 0.2,
 			"min_similarity": 0.4,
@@ -66,6 +68,7 @@ def automerge_sortings(data: PhyData, unit_ids: dict, params: dict, plot_folder:
 	
 	shifts = _get_cross_cluster_shift(data, unit_ids, kwargs)
 	similar_units = get_similar_units(data, unit_ids, shifts, kwargs['similarity_validation'], plot_folder)
+	similar_units = remove_merged_units(data, unit_ids, similar_units, shifts, kwargs, plot_folder)
 	similar_units = _correlogram_validation(data, similar_units, kwargs['correlogram_validation'], plot_folder)
 
 	shifts2 = np.zeros([len(similar_units)], dtype=np.int16)
@@ -201,6 +204,90 @@ def _compute_agreement_matrix(roots1, roots2, shifts: np.ndarray, window: int):
 	return agreement_matrix
 
 
+def remove_merged_units(data: PhyData, unit_ids: dict, similar_units: np.ndarray, shifts: dict, params: dict, plot_folder: str):
+	"""
+	Detects units that are merged (i.e. merge of 2 or more neurons) and removes them.
+	This is done by seeing that they are linked to multiple units from the same analysis,
+	and these units do not come from the same unit (high collision rate).
+
+	@param data (PhyData):
+		The data object.
+	@params unit_ids (dict):
+		Dictionary containing all of the unit_ids (values) for all sortings (keys).
+	@params shifts (dict):
+		shifts[i][j] contains a 2D array with all of the shifts between the clusters of sortings i and j.
+	@params params (dict):
+		The parameters for the merge_sortings module.
+	@param plot_folder (str):
+		Path to the logs folder.
+	"""
+
+	merged_units = []
+	good_units = []
+	G = networkx.Graph()
+	logs = open("{0}/remove_merged_units.logs".format(plot_folder), 'x')
+
+	for pair in similar_units:
+		G.add_edge(f"{pair[0, 0]}-{pair[0, 1]}", f"{pair[1, 0]}-{pair[1, 1]}")
+
+	for n in range(len(data._sortings)):
+		for unit_id in data._sortings[n].get_unit_ids():
+			if not f"{n}-{unit_id}" in G:
+				continue
+
+			neighbors = list(G[f"{n}-{unit_id}"])
+			for neighbor1 in neighbors:
+				for neighbor2 in neighbors:
+					if neighbor1 == neighbor2:
+						continue
+
+					sorting1, unit1 = np.array(neighbor1.split('-')).astype(int)
+					sorting2, unit2 = np.array(neighbor2.split('-')).astype(int)
+
+					if sorting1 != sorting2: # The neighbors don't come from the same analysis.
+						continue
+					if unit1 > unit2: # Only look in 1 direction.
+						continue
+
+					spike_train1 = data._sortings[sorting1].get_unit_spike_train(unit1)
+					spike_train2 = data._sortings[sorting2].get_unit_spike_train(unit2) - shifts[sorting1][sorting1][np.where(unit_ids[sorting1] == unit1)[0][0]][np.where(unit_ids[sorting1] == unit2)[0][0]]
+					cross_cont = utils.estimate_cross_spiketrains_contamination(spike_train1, spike_train2, tuple(params['refractory_period']), data.recording.get_num_frames(), data.sampling_f)
+					n_coincidents = utils.get_nb_coincident_spikes(spike_train1, spike_train2, params['similarity_validation']['window'])
+					expected_coincidents = len(spike_train1) * len(spike_train2) * (2*params['similarity_validation']['window'] + 1) / data.recording.get_num_frames()
+
+					if (n_coincidents - expected_coincidents) / min(len(spike_train1), len(spike_train2)) > 0.005:
+						continue
+
+					logs.write(f"{n}-{unit_id} is a potential merged unit! (connection with {neighbor1} & {neighbor2} [{cross_cont:.1%} ; {n_coincidents}])\n")
+
+					if cross_cont > params['threshold_merged_units'] and (n, unit_id) not in merged_units:
+						merged_units.append((n, unit_id))
+						good_units.append((sorting1, unit1))
+						good_units.append((sorting2, unit2))
+
+			if (n, unit_id) in merged_units:
+				logs.write(f"{n}-{unit_id} is considered a merge.\n")
+
+	logs.write(f"\nMerged units are: {merged_units}")
+	logs.close()
+
+	result = []
+
+	for pair in similar_units:
+		if (pair[0][0], pair[0][1]) in merged_units:
+			continue
+		if (pair[1][0], pair[1][1]) in merged_units:
+			continue
+
+		result.append(pair)
+
+	for pair in good_units: # Add a connection to show that this is a good unit that was at once connected to something else (now classified as a merge).
+		result.append([pair, pair])
+
+	return np.array(result, dtype=np.uint32)
+
+
+
 def _correlogram_validation(data: PhyData, similar_units: np.ndarray, params: dict, plot_folder: str):
 	"""
 	Checks if the similar clusters come from a single unit based of the auto/cross-correlograms.
@@ -228,6 +315,9 @@ def _correlogram_validation(data: PhyData, similar_units: np.ndarray, params: di
 		unit2 = similar_units[i, 1]
 		spike_train1 = data._sortings[unit1[0]].get_unit_spike_train(unit1[1])
 		spike_train2 = data._sortings[unit2[0]].get_unit_spike_train(unit2[1])
+
+		if unit1[0] == unit2[0]: # If both units come from the same sorting, don't compare them.
+			continue
 
 		auto_corr1 = utils.get_autocorr_from_spiketrain(spike_train1, bin_size=params['bin_size'], max_time=params['max_time'])[0].astype(np.int32)
 		auto_corr2 = utils.get_autocorr_from_spiketrain(spike_train2, bin_size=params['bin_size'], max_time=params['max_time'])[0].astype(np.int32)
@@ -296,6 +386,9 @@ def _waveform_validation(data: PhyData, similar_units: np.ndarray, shifts: np.nd
 		unit1 = similar_units[i, 0]
 		unit2 = similar_units[i, 1]
 		shift = shifts[i]
+
+		if unit1[0] == unit2[0]: # If both units come from the same sorting, don't compare them.
+			continue
 
 		data.set_sorting(unit1[0])
 		wvf_1 = data.get_unit_mean_waveform(unit1[1], ms_before=params['waveforms']['ms_before']+max_shift, ms_after=params['waveforms']['ms_after']+max_shift, max_spikes_per_unit=params['waveforms']['max_spikes_per_unit'])
@@ -776,25 +869,29 @@ def _plot_waveform_checks(waveforms: np.ndarray, pairs: np.ndarray, shifts: np.n
 	steps = []
 	xaxis = np.linspace(-time_bound[0], time_bound[1], waveforms.shape[2])
 
+	j = 0
 	for i in range(len(pairs)):
+		if pairs[i, 0, 0] == pairs[i, 1, 0]: # Don't consider pairs that come from the same sorting.
+			continue
+
 		for channel in range(n_channels):
 			row = 1 + channel//n_cols
 			col = 1 + channel%n_cols
 
 			fig.add_trace(go.Scatter(
 				x=xaxis,
-				y=waveforms[2*i, channels[i, channel]] * (1 if uvolt_ratio is None else uvolt_ratio),
+				y=waveforms[2*j, channels[j, channel]] * (1 if uvolt_ratio is None else uvolt_ratio),
 				mode="lines",
 				marker_color="CornflowerBlue",
-				name="Unit {0}-{1} (channel {2})".format(*pairs[i, 0], channels[i, channel]),
+				name="Unit {0}-{1} (channel {2})".format(*pairs[i, 0], channels[j, channel]),
 				visible=False
 			), row=row, col=col)
 			fig.add_trace(go.Scatter(
 				x=xaxis,
-				y=waveforms[2*i+1, channels[i, channel]] * (1 if uvolt_ratio is None else uvolt_ratio),
+				y=waveforms[2*j+1, channels[j, channel]] * (1 if uvolt_ratio is None else uvolt_ratio),
 				mode="lines",
 				marker_color="LightSeaGreen",
-				name="Unit {0}-{1} (channel {2})".format(*pairs[i, 1], channels[i, channel]),
+				name="Unit {0}-{1} (channel {2})".format(*pairs[i, 1], channels[j, channel]),
 				visible=False
 			), row=row, col=col)
 
@@ -803,11 +900,11 @@ def _plot_waveform_checks(waveforms: np.ndarray, pairs: np.ndarray, shifts: np.n
 			method="update",
 			args=[
 				{"visible": [j//(2*n_channels) == i for j in range(2*len(pairs)*n_channels)]},
-				{"title.text": "Units {0}-{1} & {2}-{3} (Difference = {4:.2f})".format(*pairs[i, 0], *pairs[i, 1], scores[i]),
-				"title.font.color": "black" if passed[i] else "red",
+				{"title.text": "Units {0}-{1} & {2}-{3} (Difference = {4:.2f})".format(*pairs[i, 0], *pairs[i, 1], scores[j]),
+				"title.font.color": "black" if passed[j] else "red",
 				"annotations": [
 					dict(x=0.9, y=1.1, xref="paper", yref="paper", showarrow=False,
-						text="Shift = {0} pt".format(shifts[i]))
+						text="Shift = {0} pt".format(shifts[j]))
 				]}
 			]
 		)
