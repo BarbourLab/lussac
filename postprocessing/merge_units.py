@@ -183,7 +183,7 @@ def _get_potential_merges(data: PhyData, unit_ids: list, shifts: np.ndarray, par
 			spike_train1 = data.sorting.get_unit_spike_train(unit_ids[i])
 			spike_train2 = data.sorting.get_unit_spike_train(unit_ids[j]) - shift
 			noise = estimate_correlogram_noise(len(spike_train1), len(spike_train2), 2*window, params['bin_size']*data.sampling_f*1e-3, data.recording.get_num_frames())
-			if noise > params['max_noise']:
+			if noise > (params['max_noise'] if 'max_noise' in params else 0.5):
 				all_differences.append(3.0)
 				continue
 
