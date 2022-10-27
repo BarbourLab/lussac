@@ -1,10 +1,10 @@
 import itertools
 import pickle
 import numpy as np
-import numba
 import networkx as nx
 import spikeinterface.core as si
 from lussac.core.module import MultiSortingsModule
+import lussac.utils as utils
 
 
 class MergeSortings(MultiSortingsModule):
@@ -34,7 +34,7 @@ class MergeSortings(MultiSortingsModule):
 		similarity_matrices = {}
 		# TODO: remove duplicated spikes for sorting before to_spike_vector().
 		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
-		n_spikes = {name: np.array([len(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids]) for name, sorting in self.sortings.items()}
+		n_spikes = {name: np.array(list(sorting.get_total_num_spikes().values())) for name, sorting in self.sortings.items()}
 
 		for name1, sorting1 in self.sortings.items():
 			similarity_matrices[name1] = {}
@@ -44,56 +44,13 @@ class MergeSortings(MultiSortingsModule):
 				if name2 not in similarity_matrices:
 					similarity_matrices[name2] = {}
 
-				coincidence_matrix = self._compute_coincidence_matrix(spike_vectors[name1]['sample_ind'], spike_vectors[name1]['unit_ind'],
-																	  spike_vectors[name2]['sample_ind'], spike_vectors[name2]['unit_ind'], max_time)
+				coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vectors[name1], spike_vectors[name2], max_time)
 
-				similarity_matrix = coincidence_matrix / np.minimum(n_spikes[name1][:, None], n_spikes[name2])
-				expected_matrix = n_spikes[name1][:, None] * n_spikes[name2] * (2*max_time+1) / self.recording.get_num_frames()
-				corrected_similarity_matrix = (similarity_matrix - expected_matrix) / (1 - expected_matrix)
-				similarity_matrices[name1][name2] = corrected_similarity_matrix
-				similarity_matrices[name2][name1] = corrected_similarity_matrix.T
+				similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes[name1], n_spikes[name2], max_time)
+				similarity_matrices[name1][name2] = similarity_matrix
+				similarity_matrices[name2][name1] = similarity_matrix.T
 
 		return similarity_matrices
-
-	@staticmethod
-	@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32),
-			   nopython=True, nogil=True, cache=True)
-	def _compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time):
-		"""
-		Computes the number of coincident spikes between all units in two sortings
-
-		@param spike_times1: array[int64] (n_spikes1)
-			All the spike timings of the first sorting.
-		@param spike_labels1: array[int64] (n_spikes1)
-			The unit labels of the first sorting (i.e. unit index of each spike).
-		@param spike_times2: array[int64] (n_spikes2)
-			All the spike timings of the second sorting.
-		@param spike_labels2: array[int64] (n_spikes2)
-			The unit labels of the second sorting (i.e. unit index of each spike).
-		@param max_time: int32
-			The maximum time difference between two spikes to be considered coincident.
-			Two spikes spaced by exactly max_time are considered coincident.
-		@return coincidence_matrix: array[int64] (n_units1, n_units2)
-		"""
-
-		n_units1 = np.max(spike_labels1) + 1
-		n_units2 = np.max(spike_labels2) + 1
-		coincidence_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
-
-		start_j = 0
-		for i in range(len(spike_times1)):
-			for j in range(start_j, len(spike_times2)):
-				diff = spike_times1[i] - spike_times2[j]
-
-				if diff > max_time:
-					start_j += 1
-					continue
-				if diff < -max_time:
-					break
-
-				coincidence_matrix[spike_labels1[i], spike_labels2[j]] += 1
-
-		return coincidence_matrix
 
 	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], min_similarity: float) -> nx.Graph:
 		"""
@@ -115,18 +72,20 @@ class MergeSortings(MultiSortingsModule):
 					continue
 
 				for i, unit_id1 in enumerate(sorting1.unit_ids):
-					graph.add_node((name1, unit_id1))
+					graph.add_node((name1, unit_id1), connected=False)
 					for j, unit_id2 in enumerate(sorting2.unit_ids):
-						graph.add_node((name2, unit_id2))
+						graph.add_node((name2, unit_id2), connected=False)
 						if similarity := similarity_matrices[name1][name2][i, j] >= min_similarity:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
+							graph.add_node((name1, unit_id1), connected=True)
+							graph.add_node((name2, unit_id2), connected=True)
 
 		with open(f"{self.logs_folder}/similarity_graph.pkl", 'wb+') as file:
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 		return graph
 
-	def remove_merged_units(self, graph: nx.Graph):
+	def remove_merged_units(self, graph: nx.Graph) -> None:
 		"""
 		Detects and remove merged units from the graph.
 		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
@@ -138,17 +97,33 @@ class MergeSortings(MultiSortingsModule):
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
-		@return:
 		"""
 
-		for sub_graph in nx.connected_components_subgraphs(graph):
-			for node in sub_graph.nodes:
-				for node1, node2 in itertools.combinations(sub_graph.neighbors(node), 2):
-					sorting1_name, unit_id1 = node1
-					sorting2_name, unit_id2 = node2
+		logs = open(f"{self.logs_folder}/merged_units_logs.txt", 'w+')
+		nodes_to_remove = []
 
-					if sorting1_name != sorting2_name:
-						continue
+		for node in graph.nodes:
+			for node1, node2 in itertools.combinations(graph.neighbors(node), 2):
+				sorting1_name, unit_id1 = node1
+				sorting2_name, unit_id2 = node2
 
-					spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
-					spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
+				if sorting1_name != sorting2_name:
+					continue
+
+				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
+				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
+				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, (0.0, 1.0), limit=0.3)  # TODO: Don't hardcode the refractory period and limit!
+
+				logs.write(f"Unit {node} is connected to {node1} and {node2}: cc = {cross_cont:.2%} (p_value={p_value:.2f})")
+				if p_value > 1e-5:
+					continue
+
+				if node not in nodes_to_remove:
+					nodes_to_remove.append(node)
+
+		for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
+			graph.remove_node(node)
+			graph.add_node(node, merged=True, connected=False)
+
+		logs.close()

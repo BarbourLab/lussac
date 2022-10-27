@@ -1,3 +1,4 @@
+import os
 import copy
 import pickle
 import pytest
@@ -6,20 +7,6 @@ import networkx as nx
 import spikeinterface.core as si
 from lussac.core.lussac_data import LussacData, MultiSortingsData
 from lussac.modules.merge_sortings import MergeSortings
-
-
-def test_compute_coincidence_matrix() -> None:
-	sorting1 = si.NumpySorting.from_dict({0: np.array([18, 163, 622, 1197]), 1: np.array([161, 300, 894])}, sampling_frequency=30000)
-	sorting2 = si.NumpySorting.from_dict({0: np.array([120, 298, 303, 628]), 1: np.array([84, 532, 1092])}, sampling_frequency=30000)
-	spike_vector1 = sorting1.to_spike_vector()
-	spike_vector2 = sorting2.to_spike_vector()
-
-	coincidence_matrix = MergeSortings._compute_coincidence_matrix(spike_vector1['sample_ind'], spike_vector1['unit_ind'],
-																   spike_vector2['sample_ind'], spike_vector2['unit_ind'], 8)
-
-	assert coincidence_matrix[0, 0] == 1
-	assert coincidence_matrix[0, 1] == 0
-	assert coincidence_matrix[1, 0] == 2
 
 
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
@@ -66,6 +53,19 @@ def test_compute_graph(data: LussacData) -> None:
 	with open(f"{module.logs_folder}/similarity_graph.pkl", 'rb') as file:
 		graph_loaded = pickle.load(file)
 		assert nx.is_isomorphic(graph, graph_loaded)
+
+
+def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
+	logs_file = f"{merge_sortings_module.logs_folder}/merged_units_logs.txt"
+
+	similarity_matrices = merge_sortings_module._compute_similarity_matrices(max_time=5)
+	graph = merge_sortings_module._compute_graph(similarity_matrices, min_similarity=0.4)
+
+	assert not os.path.exists(logs_file)
+	merge_sortings_module.remove_merged_units(graph)
+	assert os.path.exists(logs_file)
+
+	# TODO: Check that the units have been removed with correct attributes.
 
 
 @pytest.fixture(scope="function")
