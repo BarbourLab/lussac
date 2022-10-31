@@ -37,6 +37,20 @@ def test_launch(pipeline: LussacPipeline) -> None:
 		},
 		'remove_bad_units_2': {
 			'CS': {'contamination': {'refractory_period': [2.0, 25.0], 'max': 0.05}}
+		},
+		'merge_sortings': {
+			'CS': {
+				'similarity': {
+					'min_similarity': 0.4,
+					'window': 20
+				}
+			},
+			'rest': {
+				'similarity': {
+					'min_similarity': 0.4,
+					'window': 5
+				}
+			}
 		}
 	}
 	light_pipeline.launch()
@@ -54,6 +68,10 @@ def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
 
 
 def test_run_multi_sortings_module(pipeline: LussacPipeline) -> None:
+	pipeline = copy.deepcopy(pipeline)
+	pipeline2 = copy.deepcopy(pipeline)
+
+	# Run on all sortings.
 	n_units = {name: len(pipeline.data.sortings[name].unit_ids) for name in pipeline.data.sortings.keys()}
 	n_units['ks2_cs'] -= 1
 	pipeline._run_multi_sortings_module(TestMultiSortingsModule, "test_multi_starting_module", {'all': {}})
@@ -61,7 +79,15 @@ def test_run_multi_sortings_module(pipeline: LussacPipeline) -> None:
 	for sorting_name in pipeline.data.sortings.keys():
 		assert pipeline.data.sortings[sorting_name].get_num_units() == n_units[sorting_name]
 
-	# TODO: Add tests for 'sortings' and for Aggregation.
+	# Run on a subset of sortings.
+	n_units = {name: len(pipeline2.data.sortings[name].unit_ids) for name in pipeline2.data.sortings.keys()}
+	n_units['ks2_cs'] -= 1
+	pipeline2._run_multi_sortings_module(TestMultiSortingsModule, "test_multi_starting_module", {'all': {'sortings': ['ks2_cs', 'ms3_best', 'ms4_cs']}})
+
+	for sorting_name in pipeline2.data.sortings.keys():
+		assert pipeline2.data.sortings[sorting_name].get_num_units() == n_units[sorting_name]
+
+	# TODO: Missing test for aggregation.
 
 
 def test_get_module_name() -> None:

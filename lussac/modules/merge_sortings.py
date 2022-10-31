@@ -13,6 +13,10 @@ class MergeSortings(MultiSortingsModule):
 	"""
 
 	def run(self, params: dict) -> dict[str, si.BaseSorting]:
+		for name in list(self.sortings):
+			if self.sortings[name].get_num_units() == 0:
+				del self.sortings[name]
+
 		# TODO: recenter units between them before comparing them.
 		similarity_matrices = self._compute_similarity_matrices(params['similarity']['window'])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])

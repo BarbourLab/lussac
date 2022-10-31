@@ -51,7 +51,6 @@ def test_sanity_check() -> None:
 		if name == "correct":
 			continue
 
-
 		with pytest.raises(AssertionError):
 			LussacData(recording, {'correct': sortings['correct'], name: sorting}, lussac_default_params)
 
