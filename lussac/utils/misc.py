@@ -103,9 +103,11 @@ def estimate_contamination(spike_train: np.ndarray, refractory_period: tuple[flo
 	return contamination
 
 
-def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndarray, refractory_period: tuple[float, float], limit: float = 0.3) -> tuple[float, float]:
+def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndarray,
+								 refractory_period: tuple[float, float], limit: float = 0.3) -> tuple[float, float]:
 	"""
-	TODO
+	Estimates the cross-contamination of the second spike train with the neuron of the first spike train.
+	Also performs a statistical test to check if the cross-contamination is significantly higher than a given limit.
 
 	@param spike_train1: np.ndarray
 		The spike train of the first unit.
@@ -116,7 +118,7 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	@param limit: float
 		The higher limit of cross-contamination for the statistical test.
 	@return (estimated_cross_cont, p_value): tuple[float, float]
-		TODO
+		Returns the estimation of cross-contamination, as well as the p-value of the statistical test.
 	"""
 	spike_train1 = spike_train1.astype(np.int64)
 	spike_train2 = spike_train2.astype(np.int64)
@@ -229,12 +231,17 @@ def compute_nb_coincidence(spike_train1, spike_train2, max_time):
 
 def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, window: int):
 	"""
-	TODO
+	Computes the number of coincident spikes between two sortings (given their spike vector).
 
-	@param spike_vector1:
-	@param spike_vector2:
-	@param window:
-	@return:
+	@param spike_vector1: np.ndarray (n_spikes1)
+		The spike vector of the first sorting.
+	@param spike_vector2: np.ndarray (n_spikes2)
+		The spike vector of the second sorting.
+	@param window: int
+		The coincidence window (in number of samples).
+		Two spikes separated by exactly window are considered as coincident.
+	@return coincidence_matrix: np.ndarray[int64] (n_units1, n_units2)
+		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
 	return compute_coincidence_matrix(spike_vector1['sample_ind'], spike_vector1['unit_ind'],
@@ -245,7 +252,7 @@ def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vect
 		   nopython=True, nogil=True, cache=True)
 def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time):
 	"""
-	Computes the number of coincident spikes between all units in two sortings
+	Computes the number of coincident spikes between all units in two sortings.
 
 	@param spike_times1: array[int64] (n_spikes1)
 		All the spike timings of the first sorting.
@@ -259,6 +266,7 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 		The maximum time difference between two spikes to be considered coincident.
 		Two spikes spaced by exactly max_time are considered coincident.
 	@return coincidence_matrix: array[int64] (n_units1, n_units2)
+		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
 	n_units1 = np.max(spike_labels1) + 1

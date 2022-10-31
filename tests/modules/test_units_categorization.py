@@ -5,7 +5,7 @@ from lussac.modules.units_categorization import UnitsCategorization
 
 def test_units_categorization(mono_sorting_data: MonoSortingData) -> None:
 	params = {"CS": {
-		"frequency": {
+		"firing_rate": {
 			"min": 0.2,
 			"max": 5.0
 		},

@@ -122,7 +122,7 @@ class MonoSortingModule(LussacModule):
 
 		@param attribute: str
 			The attribute name.
-			- frequency (in Hz)
+			- firing_rate (in Hz)
 			- contamination (between 0 and 1)
 			- amplitude (TODO)
 			- amplitude_std (TODO)
@@ -140,10 +140,10 @@ class MonoSortingModule(LussacModule):
 						else si.WaveformExtractor(recording, sorting)
 
 		match attribute:
-			case "frequency":  # Returns the firing rate of each unit (in Hz).
+			case "firing_rate":  # Returns the firing rate of each unit (in Hz).
 				n_spikes = {unit_id: len(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
-				frequencies = {unit_id: n_spike * sorting.get_sampling_frequency() / recording.get_num_frames() for unit_id, n_spike in n_spikes.items()}
-				return frequencies
+				firing_rates = {unit_id: n_spike * sorting.get_sampling_frequency() / recording.get_num_frames() for unit_id, n_spike in n_spikes.items()}
+				return firing_rates
 
 			case "contamination":  # Returns the estimated contamination of each unit.
 				censored_period, refractory_period = params['refractory_period']

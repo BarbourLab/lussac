@@ -6,7 +6,7 @@ from lussac.modules.remove_bad_units import RemoveBadUnits
 
 
 params = {
-	"frequency": {
+	"firing_rate": {
 		"min": 0.5
 	},
 	"contamination": {
@@ -57,7 +57,7 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	data.sorting = data.sorting.select_units([0, 1, 2, 3, 4])
 	module = RemoveBadUnits("test_rbu_get_units_attribute", data, "all")
 
-	frequencies = module.get_units_attribute_arr("frequency", params['frequency'])
+	frequencies = module.get_units_attribute_arr("firing_rate", params['firing_rate'])
 	assert isinstance(frequencies, np.ndarray)
 	assert frequencies.shape == (data.sorting.get_num_units(), )
 	assert abs(frequencies[0] - 22.978) < 0.01

@@ -51,10 +51,10 @@ class LussacData:
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 		self._setup_logs_directory(params['lussac']['logs_folder'])
 
+		self._sanity_check()
+
 		Utils.sampling_frequency = recording.sampling_frequency
 		Utils.t_max = recording.get_num_frames()
-
-		# TODO: Add sanity check (check that sortings have same number of segments / sampling rate / etc. as recording).
 
 	@property
 	def tmp_folder(self) -> str:
@@ -87,7 +87,7 @@ class LussacData:
 		@return sampling_frequency: float
 		"""
 
-		return self.recording.get_sampling_frequency()
+		return self.recording.sampling_frequency
 
 	@property
 	def num_sortings(self) -> int:
@@ -99,6 +99,23 @@ class LussacData:
 		"""
 
 		return len(self.sortings)
+
+	def _sanity_check(self) -> None:
+		"""
+		Checks that everything seems correct in the recording and sortings.
+		"""
+
+		for name, sorting in self.sortings.items():
+			assert sorting.get_sampling_frequency() == self.sampling_f
+			assert sorting.get_num_segments() == self.recording.get_num_segments()
+			assert sorting.get_annotation("name") == name
+
+			# Check that each spike train is valid.
+			for unit_id in sorting.unit_ids:
+				spike_train = sorting.get_unit_spike_train(unit_id)
+				assert np.all(np.diff(spike_train) >= 0)
+				assert spike_train[0] >= 0
+				assert spike_train[-1] < self.recording.get_num_frames()
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
@@ -303,9 +320,9 @@ class MonoSortingData:
 	@property
 	def logs_folder(self) -> str:
 		"""
-		TODO
+		Returns the path to the logs folder.
 
-		@return:
+		@return logs_folder: str
 		"""
 
 		return self.data.logs_folder
@@ -373,9 +390,9 @@ class MultiSortingsData:
 	@property
 	def logs_folder(self) -> str:
 		"""
-		TODO
+		Returns the path to the logs folder.
 
-		@return:
+		@return logs_folder: str
 		"""
 
 		return self.data.logs_folder

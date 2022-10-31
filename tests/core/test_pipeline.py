@@ -21,11 +21,11 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	light_pipeline.data.sortings.pop('ms4_cs')
 	light_pipeline.data.params['lussac']['pipeline'] = {
 		'remove_bad_units': {
-			'all': {'frequency': {'min': 0.1, 'max': 200}}
+			'all': {'firing_rate': {'min': 0.1, 'max': 200}}
 		},
 		'units_categorization': {
 			'all': {'CS': {
-				"frequency": {
+				"firing_rate": {
 					"min": 0.2,
 					"max": 5.0
 				},

@@ -1,6 +1,8 @@
 import os
 import pytest
+import numpy as np
 from lussac.core.lussac_data import LussacData
+import spikeinterface.core as si
 
 
 def test_format_params() -> None:
@@ -27,6 +29,31 @@ def test_format_params() -> None:
 	assert formatted_params['module']['cat1']['a'] == 1
 	assert formatted_params['module']['cat2']['b'] == 3
 	assert formatted_params['module']['cat3']['b'] == 2
+
+
+def test_sanity_check() -> None:
+	recording = si.NumpyRecording(np.zeros((30000, 4), dtype=np.int16), sampling_frequency=30000)
+
+	sortings = {
+		'correct': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
+		'wrong_sf': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000),
+		'wrong_name': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
+		'negative_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000),
+		'too_long_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845, 30000])}, sampling_frequency=30000)
+	}
+	for name, sorting in sortings.items():
+		sorting.annotate(name=name if name != "wrong_name" else "uncorrect_name")
+
+	lussac_default_params = {'lussac': {'pipeline': {}, 'tmp_folder': "tests/tmp", 'logs_folder': "tests/tmp/logs"}}
+	LussacData(recording, {'correct': sortings['correct']}, lussac_default_params)
+
+	for name, sorting in sortings.items():
+		if name == "correct":
+			continue
+
+
+		with pytest.raises(AssertionError):
+			LussacData(recording, {'correct': sortings['correct'], name: sorting}, lussac_default_params)
 
 
 def test_tmp_folder(data: LussacData) -> None:
