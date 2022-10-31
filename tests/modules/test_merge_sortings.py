@@ -9,6 +9,17 @@ from lussac.core.lussac_data import LussacData, MultiSortingsData
 from lussac.modules.merge_sortings import MergeSortings
 
 
+def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
+	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
+
+	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4, 'window': 6}})
+
+	assert len(sortings) == 1
+	assert 'merged_sorting' in sortings
+	assert sortings['merged_sorting'].get_num_units() > 10
+	assert os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
+
+
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
 	similarity_matrices = merge_sortings_module._compute_similarity_matrices(6)
 
@@ -56,16 +67,23 @@ def test_compute_graph(data: LussacData) -> None:
 
 
 def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
-	logs_file = f"{merge_sortings_module.logs_folder}/merged_units_logs.txt"
+	# TODO: Use other module to not repeat test_merge_sortings()
+
+	"""logs_file = f"{merge_sortings_module.logs_folder}/merged_units_logs.txt"
 
 	similarity_matrices = merge_sortings_module._compute_similarity_matrices(max_time=5)
 	graph = merge_sortings_module._compute_graph(similarity_matrices, min_similarity=0.4)
 
 	assert not os.path.exists(logs_file)
 	merge_sortings_module.remove_merged_units(graph)
-	assert os.path.exists(logs_file)
+	assert os.path.exists(logs_file)"""
 
 	# TODO: Check that the units have been removed with correct attributes.
+
+
+def test_merge_sortings_func() -> None:
+	# TODO
+	pass
 
 
 @pytest.fixture(scope="function")

@@ -37,6 +37,17 @@ class LussacModule(ABC):
 
 		return self.data.recording
 
+	@property
+	def sampling_f(self) -> float:
+		"""
+		Returns the sampling frequency of the recording (in Hz).
+
+		@return sampling_f: float
+			The sampling frequency (in Hz).
+		"""
+
+		return self.recording.sampling_frequency
+
 
 @dataclass(slots=True)
 class MonoSortingModule(LussacModule):
