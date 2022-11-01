@@ -144,9 +144,32 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	return estimation, p_value
 
 
+@numba.jit((numba.float32, ), nopython=True, nogil=True, cache=True)
+def _get_border_probabilities(max_time):
+	"""
+	Computes the integer borders, and the probability of 2 spikes distant by this border to be closer than max_time.
+
+	@param max_time: float
+		The maximum time between 2 spikes to be considered as a coincidence.
+	@return border_low, border_high, p_low, p_high: tuple[int, int, float, float]
+		The borders and their probabilities.
+	"""
+
+	border_high = math.ceil(max_time)
+	border_low = math.floor(max_time)
+	p_high = .5 * (max_time - border_high + 1) ** 2
+	p_low  = .5 * (1 - (max_time - border_low)**2) + (max_time - border_low)
+
+	if border_low == 0:
+		p_low -= .5 * (-max_time + 1)**2
+
+	return border_low, border_high, p_low, p_high
+
+
 @numba.jit((numba.int64[:], numba.float32), nopython=True, nogil=True, cache=True)
 def compute_nb_violations(spike_train, max_time):
 	"""
+	Computes the number of refractory period violations in a spike train.
 
 	@param spike_train: array[int64] (n_spikes)
 		The spike train to compute the number of violations for.
@@ -156,10 +179,10 @@ def compute_nb_violations(spike_train, max_time):
 		The number of spike pairs that violate the refractory period.
 	"""
 
-	border_high = math.ceil(max_time)
-	border_low = math.floor(max_time)
-	p_high = .5 * (max_time - border_high + 1) ** 2  # TODO: Doesn't work with max_time very close to 0.
-	p_low  = .5 * (1 - (max_time - border_low)**2) + (max_time - border_low)
+	if max_time <= 0.0:
+		return 0.0
+
+	border_low, border_high, p_low, p_high = _get_border_probabilities(max_time)
 	n_violations = 0
 	n_violations_low = 0
 	n_violations_high = 0
@@ -201,10 +224,10 @@ def compute_nb_coincidence(spike_train1, spike_train2, max_time):
 		The number of coincident spikes.
 	"""
 
-	border_high = math.ceil(max_time)
-	border_low = math.floor(max_time)
-	p_high = .5 * (max_time - border_high + 1) ** 2  # TODO: Doesn't work with max_time very close to 0.
-	p_low  = .5 * (1 - (max_time - border_low)**2) + (max_time - border_low)
+	if max_time <= 0:
+		return 0.0
+
+	border_low, border_high, p_low, p_high = _get_border_probabilities(max_time)
 	n_coincident = 0
 	n_coincident_low = 0
 	n_coincident_high = 0

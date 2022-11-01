@@ -21,10 +21,9 @@ class MergeSortings(MultiSortingsModule):
 		similarity_matrices = self._compute_similarity_matrices(params['similarity']['window'])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
 		self.remove_merged_units(graph)
+		merged_sorting = self.merge_sortings(graph)
 
-		sorting = self.merge_sortings(graph)
-
-		return {'merged_sorting': sorting}
+		return {'merged_sorting': merged_sorting}
 
 	def _compute_similarity_matrices(self, max_time: int) -> dict[str, dict[str, np.ndarray]]:
 		"""
@@ -121,7 +120,7 @@ class MergeSortings(MultiSortingsModule):
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, (0.0, 1.0), limit=0.3)  # TODO: Don't hardcode the refractory period and limit!
 
-				logs.write(f"Unit {node} is connected to {node1} and {node2}: cc = {cross_cont:.2%} (p_value={p_value:.2f})\n")
+				logs.write(f"Unit {node} is connected to {node1} and {node2}: cc = {cross_cont:.2%} (p_value={p_value:.3f})\n")
 				if p_value > 1e-5:
 					continue
 

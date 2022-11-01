@@ -124,10 +124,13 @@ class MonoSortingModule(LussacModule):
 			The attribute name.
 			- firing_rate (in Hz)
 			- contamination (between 0 and 1)
-			- amplitude (TODO)
-			- amplitude_std (TODO)
+			- amplitude (unit depends on the wvf extractor 'return_scaled' parameter)
+			- amplitude_std (unit depends on parameters 'return_scaled')
 		@param params: dict
-			TODO
+			The parameters to get the attribute.
+			- 'filter': parameters to filter the recording.
+			- 'wvf_extraction': parameters to extract the waveforms.
+			- others: parameters for how to get the attribute.
 		@return attribute: np.ndarray
 			The attribute for all the units.
 		"""
@@ -139,6 +142,7 @@ class MonoSortingModule(LussacModule):
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
 						else si.WaveformExtractor(recording, sorting)
 
+		# TODO: Probably a better way to handle 'params' than manually setting each parameter individually.
 		match attribute:
 			case "firing_rate":  # Returns the firing rate of each unit (in Hz).
 				n_spikes = {unit_id: len(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
@@ -150,17 +154,18 @@ class MonoSortingModule(LussacModule):
 				contamination = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period, censored_period)[1]
 				return contamination
 
-			case "amplitude":  # Returns the amplitude of each unit on its best channel (TODO: unit).
+			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
 				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
 				mode = params['mode'] if 'mode' in params else "extremum"
 				amplitudes = spost.get_template_extremum_amplitude(wvf_extractor, peak_sign, mode)
 				return amplitudes
 
-			case "amplitude_std":
+			case "amplitude_std":  # Returns the standard deviation of the amplitude of spikes.
 				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
+				return_scaled = params['return_scaled'] if 'return_scaled' in params else True
 				chunk_duration = params['chunk_duration'] if 'chunk_duration' in params else '1s'
 				n_jobs = params['n_jobs'] if 'n_jobs' in params else 6
-				amplitudes = spost.compute_spike_amplitudes(wvf_extractor, peak_sign, outputs='by_unit', chunk_duration=chunk_duration, n_jobs=n_jobs)[0]
+				amplitudes = spost.compute_spike_amplitudes(wvf_extractor, peak_sign=peak_sign, return_scaled=return_scaled, outputs='by_unit', chunk_duration=chunk_duration, n_jobs=n_jobs)[0]
 				std_amplitudes = {unit_id: np.std(amp) for unit_id, amp in amplitudes.items()}
 				return std_amplitudes
 

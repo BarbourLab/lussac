@@ -28,6 +28,7 @@ def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, fi
 	"""
 	Takes a figure with multiple traces and plots, and decomposes it with a slider for each plot.
 	If there are too many plots, will split the plots into multiple files.
+	TODO: Add parameters for width, height, font_size etc.
 
 	@param fig: go.Figure
 		The plotly figure object.
@@ -165,6 +166,8 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	fig.update_xaxes(title_text="Time (ms)", row=1, col=1)
 	fig.update_xaxes(title_text="Time (ms)", row=1, col=2)
 	fig.update_xaxes(title_text="Time (s)", row=1, col=3)
+	fig.update_yaxes(title_text="ISI", rangemode="tozero", row=1, col=1)
+	fig.update_yaxes(title_text="Auto-correlogram", rangemode="tozero", row=1, col=2)
 	fig.update_yaxes(title_text="Firing rate (Hz)", rangemode="tozero", row=1, col=3)
 	for i in range(n_channels):
 		fig.update_xaxes(title_text="Time (ms)", row=2 + i//3, col=1 + i%3)

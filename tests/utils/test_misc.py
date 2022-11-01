@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 import lussac.utils as utils
+from lussac.utils.misc import _get_border_probabilities
 import spikeinterface.core as si
 
 
@@ -13,6 +14,14 @@ def test_gaussian_histogram() -> None:
 	assert np.abs(np.sum(histogram1) * dt - 2.5) < 1e-3
 	assert np.abs(np.sum(histogram2) * dt - 3.0) < 1e-3
 	assert np.abs(np.sum(histogram3) * dt - 2.5) < 1e-3
+
+
+def test_get_border_probabilities() -> None:
+	assert np.allclose(_get_border_probabilities(0.02), (0, 1, 0.0396, 0.0002))
+	assert np.allclose(_get_border_probabilities(0.4), (0, 1, 0.64, 0.08))
+	assert np.allclose(_get_border_probabilities(1), (1, 1, 0.5, 0.5))
+	assert np.allclose(_get_border_probabilities(3.5), (3, 4, 0.875, 0.125))
+	assert np.allclose(_get_border_probabilities(4.73), (4, 5, 0.96355, 0.26645))
 
 
 def test_estimate_contamination() -> None:
@@ -165,12 +174,17 @@ def generate_contamination(n_spikes_neuron: int, C: float) -> npt.NDArray[np.int
 
 def generate_contaminated_spike_train(firing_rate: float, t_r: float, C: float) -> npt.NDArray[np.int64]:
 	"""
-	TODO
+	Generates a contaminated spike train.
 
-	@param firing_rate:
-	@param t_r:
-	@param C:
-	@return:
+	@param firing_rate: float
+		The mean firing rate of the neuron (in Hz).
+		The contamination is added on top of that.
+	@param t_r: float
+		The refractory period of the neuron (in ms).
+	@param C: float
+		The contamination rate.
+	@return: np.ndarray[int64]
+		The generated contaminated spike train.
 	"""
 
 	spike_train = generate_spike_train(firing_rate, t_r)
