@@ -135,10 +135,12 @@ class MergeSortings(MultiSortingsModule):
 
 	def merge_sortings(self, graph: nx.Graph) -> si.NpzSortingExtractor:
 		"""
-		TODO
+		Merges the sortings based on a graph of similar units.
 
-		@param graph:
-		@return:
+		@param graph: nx.Graph
+			The graph containing all the units and connected by their similarity.
+		@return merged_sorting: si.NpzSortingExtractor
+			The merged sorting.
 		"""
 
 		min_sortings_per_neuron = 2
@@ -165,6 +167,7 @@ class MergeSortings(MultiSortingsModule):
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
 					C = utils.estimate_contamination(spike_train, (0.0, 1.0))  # TODO: Don't hardcode the refractory period!
 					score = f * (1 - (k+1)*C)
+					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]")
 
 					if score > best_score:
 						best_score = score

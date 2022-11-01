@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
 import spikeinterface.core as si
 import spikeinterface.preprocessing as spre
 
 
-class LussacSpikeSorter(ABC):
+class LussacSpikeSorter:
 	"""
 	Abstract class for all spike sorting algorithms running through Lussac.
 	All children must have names to recognize them, and a launch method.
@@ -31,18 +30,6 @@ class LussacSpikeSorter(ABC):
 		self.recording = spre.common_reference(recording, reference="global", operator="median")
 		self.output_folder = output_folder
 
-	@property
-	@abstractmethod
-	def names(self) -> tuple:
-		"""
-		Returns a tuple containing all acceptable names to reference
-		to this spike sorter in the Lussac parameters.
-
-		@return names: tuple
-		"""
-		...
-
-	@abstractmethod
 	def launch(self, name: str, params: dict) -> None:
 		"""
 		Launches the spike sorting algorithm and saves the result as a Phy folder.

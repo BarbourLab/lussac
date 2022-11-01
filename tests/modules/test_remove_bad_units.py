@@ -1,4 +1,5 @@
 import copy
+import os
 import pytest
 import numpy as np
 from lussac.core.lussac_data import MonoSortingData
@@ -42,10 +43,11 @@ def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 	data.sorting = data.sorting.select_units([2, 7, 11, 14, 21, 23, 24])
 
 	module = RemoveBadUnits("test_rbu", data, "all")
+	assert not os.path.exists(f"{module.logs_folder}/bad_units.html")
 	sorting = module.run(params)
+	assert os.path.exists(f"{module.logs_folder}/bad_units.html")
 
 	assert 0 < sorting.get_num_units() < data.sorting.get_num_units()
-	# TODO: Test that plots are generated.
 
 	module = RemoveBadUnits("test_rbu_all", data, "all")
 	sorting = module.run({"all": {}})
