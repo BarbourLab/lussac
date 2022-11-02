@@ -335,3 +335,54 @@ def compute_similarity_matrix(coincidence_matrix: np.ndarray, n_spikes1: np.ndar
 	expected_matrix = (n_spikes1[:, None] * n_spikes2[None, :] * (2*window+1) / Utils.t_max) / minimum_n_spikes
 
 	return (similarity_matrix - expected_matrix) / (1 - expected_matrix)
+
+
+def filter(data: np.ndarray, band: tuple[float, float] | list[float, float] | np.ndarray, axis: int = -1) -> np.ndarray:
+	"""
+	Filters the data using a Gaussian bandpass filter.
+	Since the Gaussian filter is a convolution with a Gaussian kernel, we can accelerate the filtering
+	by using FFTs. The convolution in the time domain is a multiplication in the frequency domains.
+
+	@param data: np.ndarray
+		The data to filter.
+	@param band: Iterable of two floats [highpass, lowpass]
+		The highpass and lowpass frequencies (in Hz).
+	@param axis: int
+		The axis along which to filter the data.
+	@return filtered_data: np.ndarray
+		The filtered data.
+	"""
+
+	N = data.shape[axis]
+	data_fft = np.fft.fft(data, axis=axis)
+	gaussian_highpass = _create_fft_gaussian(N, band[0])
+	gaussian_lowpass  = _create_fft_gaussian(N, band[1])
+
+	broadcast = tuple(slice(None) if i == axis else None for i in range(data_fft.ndim))
+	filtered_data_fft = data_fft * (gaussian_lowpass - gaussian_highpass)[broadcast]
+	filtered_data = np.fft.ifft(filtered_data_fft, axis=axis).real
+
+	return filtered_data
+
+
+def _create_fft_gaussian(N: int, cutoff_freq: float) -> np.ndarray:
+	"""
+	Creates a Gaussian filter in the frequency domain for a given cutoff frequency.
+
+	@param N: int
+		The number of samples of the signal for the Fourier transform.
+	@param cutoff_freq: float
+		The cutoff frequency (in Hz).
+	@return fft_gaussian: np.ndarray
+		The Gaussian filter in the frequency domain.
+	"""
+
+	if cutoff_freq > Utils.sampling_frequency / 8:  # The Fourier transform of a Gaussian with a very low sigma isn't a Gaussian in the Fourier domain.
+		sigma = Utils.sampling_frequency / (2 * math.pi * cutoff_freq)
+		limit = int(round(6*sigma)) + 1
+		xaxis = np.arange(-limit, limit+1) / sigma
+		gaussian = scipy.stats.norm.pdf(xaxis) / sigma
+		return np.abs(np.fft.fft(gaussian, n=N))
+	else:
+		freq_axis = np.fft.fftfreq(N, d=1/Utils.sampling_frequency)
+		return scipy.stats.norm.pdf(freq_axis / cutoff_freq) * math.sqrt(2 * math.pi)

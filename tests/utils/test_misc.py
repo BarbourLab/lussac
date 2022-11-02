@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.typing as npt
+from scipy.ndimage import gaussian_filter1d
 import lussac.utils as utils
 from lussac.utils.misc import _get_border_probabilities
 import spikeinterface.core as si
@@ -190,3 +191,49 @@ def generate_contaminated_spike_train(firing_rate: float, t_r: float, C: float) 
 	spike_train = generate_spike_train(firing_rate, t_r)
 	contaminated_spikes = generate_contamination(len(spike_train), C)
 	return np.sort(np.concatenate((spike_train, contaminated_spikes)))
+
+
+def test_filter() -> None:
+	# Test that everything is valid when passing a 1d-array.
+	xaxis = np.arange(0, 0.1, 1/utils.Utils.sampling_frequency)
+	N = len(xaxis)
+	data = np.cos(2*np.pi*50*xaxis) + 3 * np.sin(2*np.pi*1000*xaxis) + np.cos(2*np.pi*10000*xaxis + 0.1)
+	data_filtered = utils.filter(data, [300, 6000], axis=0)
+
+	freq = np.fft.rfftfreq(N, 1/utils.Utils.sampling_frequency)
+	data_filtered_fft = np.abs(np.fft.rfft(data_filtered) * 2 / N)
+
+	freq50 = np.argmax(freq >= 50)
+	freq1000 = np.argmax(freq >= 1000)
+	freq10000 = np.argmax(freq >= 10000)
+
+	assert data_filtered_fft[freq50] < 0.1
+	assert data_filtered_fft[freq1000] > 2.9
+	assert data_filtered_fft[freq10000] < 0.3
+
+	# Test that everything is valid with multi-dimensional arrays.
+	frequencies = np.array([[50, 500], [1000, 10000]])
+
+	data = np.cos(2*np.pi*frequencies[None, :, :] * xaxis[:, None, None])
+	data_filtered = utils.filter(data, [300, 6000], axis=0)
+	fft0 = np.abs(np.fft.rfft(data_filtered, axis=0) * 2 / N)
+
+	data = np.cos(2*np.pi*frequencies[:, None, :] * xaxis[None, :, None])
+	data_filtered = utils.filter(data, [300, 6000], axis=1)
+	fft1 = np.abs(np.fft.rfft(data_filtered, axis=1) * 2 / N)
+
+	data = np.cos(2*np.pi*frequencies[:, :, None] * xaxis[None, None, :])
+	data_filtered = utils.filter(data, [300, 6000], axis=2)
+	fft2 = np.abs(np.fft.rfft(data_filtered, axis=2) * 2 / N)
+
+	assert np.all(fft0[freq50] < 0.1)
+	assert np.all(fft1[:, freq50] < 0.1)
+	assert np.all(fft2[..., freq50] < 0.1)
+
+	assert fft0[freq1000, 1, 0] > 0.95
+	assert fft1[1, freq1000, 0] > 0.95
+	assert fft2[1, 0, freq1000] > 0.95
+
+	assert np.all(fft0[freq10000] < 0.3)
+	assert np.all(fft1[:, freq10000] < 0.3)
+	assert np.all(fft2[..., freq10000] < 0.3)
