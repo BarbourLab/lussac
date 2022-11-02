@@ -1,5 +1,6 @@
 from pathlib import Path
 import pytest
+import numpy as np
 from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
 
@@ -24,6 +25,19 @@ def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 	assert wvf_extractor_2 is not None
 	assert Path(f"{mono_sorting_module.data.tmp_folder}/test_mono_sorting_module/all/ms3_best/wvf_extractor/waveforms").is_dir()
 	assert Path(f"{mono_sorting_module.data.tmp_folder}/test_mono_sorting_module/all/ms3_best/aze/wvf_extractor/waveforms").is_dir()
+
+
+def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
+	ms_before, ms_after = (2.0, 2.0)
+	templates, wvf_extractor, _ = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], return_extractor=True)
+
+	n_units = mono_sorting_module.sorting.get_num_units()
+	n_samples = int(round((ms_before + ms_after) * mono_sorting_module.sampling_f * 1e-3))
+	n_channels = mono_sorting_module.recording.get_num_channels()
+
+	assert templates is not None
+	assert templates.shape == (n_units, n_samples, n_channels)
+	assert np.all(wvf_extractor.unit_ids == mono_sorting_module.sorting.unit_ids)
 
 
 @pytest.fixture(scope="function")

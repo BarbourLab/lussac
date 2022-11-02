@@ -7,6 +7,7 @@ import spikeinterface.preprocessing as spre
 import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
 from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
+import lussac.utils as utils
 
 
 @dataclass(slots=True)
@@ -115,6 +116,45 @@ class MonoSortingModule(LussacModule):
 
 		sorting = self.sorting if sorting is None else sorting
 		return si.extract_waveforms(self.data.recording, sorting, folder_path, **params)
+
+	def get_templates(self, params: dict, filter_band: tuple[float, float] | list[float, float] | np.ndarray | None = None, margin: float = 3.0,
+					  return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:
+		"""
+		Extract the templates for all the units.
+		If filter_band is not None, will also filter them using a Gaussian filter.
+
+		@param params: dict
+			The parameters for the waveform extraction.
+		@param filter_band: Iterable[float, float] | None
+			If not none, the highpass and lowpass cutoff frequencies (in Hz).
+		@param margin: float
+			The margin (in ms) to extract (useful for filtering).
+		@param return_extractor: bool
+			If true, will also return the waveform extractor and margin (in samples).
+		@return templates: np.ndarray (n_units, n_samples, n_channels)
+			The extracted templates
+		@return wvf_extractor: si.WaveformExtractor
+			The Waveform Extractor of unfiltered waveforms.
+			Only if return_extractor is True.
+		@return margin: int
+			The margin (in samples) that were used for the filtering.
+			Only if return_extractor is True.
+		"""
+
+		params['ms_before'] += margin
+		params['ms_after'] += margin
+		wvf_extractor = self.extract_waveforms(sub_folder="templates", **params)
+		templates = wvf_extractor.get_all_templates()
+
+		if filter_band is not None:
+			templates = utils.filter(templates, filter_band, axis=1)
+
+		margin = int(round(margin * self.recording.sampling_frequency * 1e-3))
+
+		if return_extractor:
+			return templates[:, margin:-margin], wvf_extractor, margin
+		else:
+			return templates[:, margin:-margin]
 
 	def get_units_attribute(self, attribute: str, params: dict) -> dict:
 		"""
