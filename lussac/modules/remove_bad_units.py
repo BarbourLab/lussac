@@ -32,6 +32,13 @@ class RemoveBadUnits(MonoSortingModule):
 		return sorting
 
 	def _plot_bad_units(self, bad_sorting: si.BaseSorting) -> None:
+		"""
+		Plots the units that were removed.
+
+		@param bad_sorting: si.BaseSorting
+			The sorting object containing the bad units.
+		"""
+
 		if bad_sorting.get_num_units() == 0:
 			return
 

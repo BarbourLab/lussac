@@ -49,7 +49,8 @@ def test_plot_sliders() -> None:
 
 def test_plot_units(data: LussacData) -> None:
 	sorting = data.sortings['ks2_best'].select_units([13, 19, 40, 41])
-	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
+	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5,
+										 max_spikes_per_unit=500, allow_unfiltered=True)
 
 	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units")
 	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units_all_channels", n_channels=100000)

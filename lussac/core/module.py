@@ -115,7 +115,7 @@ class MonoSortingModule(LussacModule):
 		folder_path += f"/wvf_extractor"
 
 		sorting = self.sorting if sorting is None else sorting
-		return si.extract_waveforms(self.data.recording, sorting, folder_path, **params)
+		return si.extract_waveforms(self.data.recording, sorting, folder_path, allow_unfiltered=True, **params)
 
 	def get_templates(self, params: dict, filter_band: tuple[float, float] | list[float, float] | np.ndarray | None = None, margin: float = 3.0,
 					  return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:
@@ -180,7 +180,7 @@ class MonoSortingModule(LussacModule):
 			recording = spre.filter(recording, **params['filter'])
 
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
-						else si.WaveformExtractor(recording, sorting)
+						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
 
 		# TODO: Probably a better way to handle 'params' than manually setting each parameter individually.
 		match attribute:
