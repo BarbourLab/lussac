@@ -292,8 +292,8 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
-	n_units1 = np.max(spike_labels1) + 1
-	n_units2 = np.max(spike_labels2) + 1
+	n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
+	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
 	coincidence_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
 
 	start_j = 0

@@ -1,6 +1,12 @@
 import os
+from lussac.core.lussac_data import MonoSortingData
 from lussac.core.pipeline import LussacPipeline
 from lussac.modules.export_to_phy import ExportToPhy
+
+
+def test_default_params(mono_sorting_data: MonoSortingData) -> None:
+	module = ExportToPhy("test_etp_params", mono_sorting_data, "all")
+	assert isinstance(module.default_params, dict)
 
 
 def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:

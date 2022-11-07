@@ -1,10 +1,11 @@
 import itertools
 import pickle
+from typing import Any
 import numpy as np
 import networkx as nx
-import spikeinterface.core as si
 from lussac.core.module import MultiSortingsModule
 import lussac.utils as utils
+import spikeinterface.core as si
 
 
 class MergeSortings(MultiSortingsModule):
@@ -12,11 +13,16 @@ class MergeSortings(MultiSortingsModule):
 	Merges the sortings into a single one.
 	"""
 
-	def run(self, params: dict) -> dict[str, si.BaseSorting]:
-		for name in list(self.sortings):
-			if self.sortings[name].get_num_units() == 0:
-				del self.sortings[name]
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {
+			'similarity': {
+				'window': 6,  # TODO: switch to ms.
+				'min_similarity': 0.3
+			}
+		}
 
+	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		# TODO: recenter units between them before comparing them.
 		similarity_matrices = self._compute_similarity_matrices(params['similarity']['window'])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])

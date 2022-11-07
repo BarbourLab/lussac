@@ -3,6 +3,11 @@ from lussac.core.lussac_data import MonoSortingData
 from lussac.modules.units_categorization import UnitsCategorization
 
 
+def test_default_params(mono_sorting_data: MonoSortingData) -> None:
+	module = UnitsCategorization("test_categorization_params", mono_sorting_data, "all")
+	assert isinstance(module.default_params, dict)
+
+
 def test_units_categorization(mono_sorting_data: MonoSortingData) -> None:
 	params = {"CS": {
 		"firing_rate": {

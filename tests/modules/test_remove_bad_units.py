@@ -38,6 +38,11 @@ params = {
 }
 
 
+def test_default_params(mono_sorting_data: MonoSortingData) -> None:
+	module = RemoveBadUnits("test_rbu_params", mono_sorting_data, "all")
+	assert isinstance(module.default_params, dict)
+
+
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 	data = copy.deepcopy(mono_sorting_data)
 	data.sorting = data.sorting.select_units([2, 7, 11, 14, 21, 23, 24])

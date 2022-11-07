@@ -1,5 +1,6 @@
 from pathlib import Path
 import pytest
+from typing import Any
 import numpy as np
 from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
@@ -29,10 +30,10 @@ def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	ms_before, ms_after = (2.0, 2.0)
-	templates, wvf_extractor, _ = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], return_extractor=True)
+	templates, wvf_extractor, margin = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], return_extractor=True)
 
 	n_units = mono_sorting_module.sorting.get_num_units()
-	n_samples = int(round((ms_before + ms_after) * mono_sorting_module.sampling_f * 1e-3))
+	n_samples = wvf_extractor.nsamples - 2*margin
 	n_channels = mono_sorting_module.recording.get_num_channels()
 
 	assert templates is not None
@@ -54,6 +55,10 @@ class TestMonoSortingModule(MonoSortingModule):
 
 	def __init__(self, data: MonoSortingData):
 		super().__init__("test_mono_sorting_module", data, "all")
+
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
 
 	def run(self, params: dict):
 		pass

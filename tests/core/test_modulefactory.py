@@ -1,4 +1,5 @@
 import pytest
+from typing import Any
 from lussac.core.module import MonoSortingModule
 from lussac.core.module_factory import ModuleFactory
 from lussac.modules.export_to_phy import ExportToPhy
@@ -58,6 +59,10 @@ class NonAbstractLussacModule(MonoSortingModule):
 	This class is a correct Lussac module.
 	"""
 
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
+
 	def run(self, params: dict):
 		pass
 
@@ -65,7 +70,12 @@ class NonAbstractLussacModule(MonoSortingModule):
 class NonAbstractLussacModule2(MonoSortingModule):
 	"""
 	This class is a 2nd correct Lussac module.
+	Designed to make test_modulefactory fail because it contains 2 correct modules.
 	"""
+
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
 
 	def run(self, params: dict):
 		pass

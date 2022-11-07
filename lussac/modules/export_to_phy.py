@@ -1,6 +1,7 @@
+from typing import Any
+from lussac.core.module import MonoSortingModule
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
-from lussac.core.module import MonoSortingModule
 
 
 class ExportToPhy(MonoSortingModule):
@@ -8,7 +9,26 @@ class ExportToPhy(MonoSortingModule):
 	Exports the sorting data to phy.
 	"""
 
-	def run(self, params: dict) -> si.BaseSorting:
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {
+			'wvf_extraction': {
+				'ms_before': 1.0,
+				'ms_after': 3.0,
+				'max_spikes_per_unit': 1000
+			},
+			'export_params': {
+				'compute_amplitudes': True,
+				'compute_pc_features': False,
+				'copy_binary': False,
+				'template_mode': "average",
+				'verbose': False,
+				'chunk_duration': '1s',
+				'n_jobs': 6
+			}
+		}
+
+	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		output_folder = self._format_output_path(params['path'])
 

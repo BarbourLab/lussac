@@ -1,7 +1,8 @@
+from typing import Any
 import numpy as np
 import numpy.typing as npt
-import spikeinterface.core as si
 from lussac.core.module import MonoSortingModule
+import spikeinterface.core as si
 
 
 class UnitsCategorization(MonoSortingModule):
@@ -9,7 +10,11 @@ class UnitsCategorization(MonoSortingModule):
 	Categorizes units based on their properties.
 	"""
 
-	def run(self, params: dict) -> si.BaseSorting:
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
+
+	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		units_to_categorize = self._init_units_to_categorize()
 
 		for category, rules in params.items():

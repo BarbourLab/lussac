@@ -1,13 +1,14 @@
-import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import os
+from typing import Any
 import numpy as np
+from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
+import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.preprocessing as spre
 import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
-from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
-import lussac.utils as utils
 
 
 @dataclass(slots=True)
@@ -48,6 +49,29 @@ class LussacModule(ABC):
 		"""
 
 		return self.recording.sampling_frequency
+
+	@abstractmethod
+	def run(self, params: dict[str, Any]) -> si.BaseSorting | dict[str, si.BaseSorting]:
+		"""
+		Executes the module and returns the result (either a sorting of a dict of sortings).
+
+		@param params: dict
+			The parameters for the module.
+		@return result: si.BaseSorting | dict[str, si.BaseSorting]
+			The result of the module.
+		"""
+		...
+
+	@property
+	@abstractmethod
+	def default_params(self) -> dict[str, Any]:
+		"""
+		Returns the default parameters of the module.
+
+		@return default_params: dict[str, Any]
+			The default parameters of the module.
+		"""
+		...
 
 
 @dataclass(slots=True)
@@ -91,7 +115,7 @@ class MonoSortingModule(LussacModule):
 		return logs_folder
 
 	@abstractmethod
-	def run(self, params: dict) -> si.BaseSorting:
+	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		...
 
 	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, **params) -> si.WaveformExtractor:
@@ -268,5 +292,5 @@ class MultiSortingsModule(LussacModule):
 		return logs_folder
 
 	@abstractmethod
-	def run(self, params: dict) -> dict[str, si.BaseSorting]:
+	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		...

@@ -1,10 +1,11 @@
+from typing import Any
 import numpy as np
 import plotly.graph_objects as go
 import scipy.signal
-import spikeinterface.core as si
-import spikeinterface.postprocessing as spost
 from lussac.core.module import MonoSortingModule
 import lussac.utils as utils
+import spikeinterface.core as si
+import spikeinterface.postprocessing as spost
 
 
 class AlignUnits(MonoSortingModule):
@@ -12,7 +13,19 @@ class AlignUnits(MonoSortingModule):
 	Align the units so that their peak is at t=0 in the spike train.
 	"""
 
-	def run(self, params: dict) -> si.BaseSorting:
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {
+			'wvf_extraction': {
+				'ms_before': 2.0,
+				'ms_after': 2.0,
+				'max_spikes_per_unit': 2000
+			},
+			'filter': [200, 5000],
+			'threshold': 0.5
+		}
+
+	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		templates, wvf_extractor, margin = self.get_templates(params['wvf_extraction'], params['filter'], return_extractor=True)
 		best_channels = np.argmax(np.max(np.abs(templates), axis=1), axis=1)
 		templates = templates[np.arange(templates.shape[0]), :, best_channels]  # Only take the best channel for each unit.

@@ -1,7 +1,8 @@
+from typing import Any
 import numpy as np
-import spikeinterface.core as si
 from lussac.core.module import MonoSortingModule
 import lussac.utils as utils
+import spikeinterface.core as si
 
 
 class RemoveBadUnits(MonoSortingModule):
@@ -10,7 +11,11 @@ class RemoveBadUnits(MonoSortingModule):
 	The definition of "bad" unit is given by the parameters dictionary.
 	"""
 
-	def run(self, params: dict) -> si.BaseSorting:
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
+
+	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		units_to_remove = np.zeros(self.sorting.get_num_units(), dtype=bool)
 
 		for attribute, p in params.items():
@@ -40,7 +45,7 @@ class RemoveBadUnits(MonoSortingModule):
 		"""
 
 		if bad_sorting.get_num_units() == 0:
-			return
+			return  # TODO: Should be removed with SpikeInterface PR #1055.
 
 		wvf_extractor = self.extract_waveforms(sorting=bad_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
 		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/bad_units")

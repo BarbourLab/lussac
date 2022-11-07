@@ -1,5 +1,6 @@
 import copy
 import pytest
+from typing import Any
 import numpy as np
 from lussac.core.lussac_data import LussacData
 from lussac.core.module import MonoSortingModule, MultiSortingsModule
@@ -128,6 +129,10 @@ class TestMonoSortingModule(MonoSortingModule):
 
 	__test__ = False
 
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
+
 	def run(self, params: dict) -> si.BaseSorting:
 		if self.sorting.get_annotation('name') == "ks2_cs":
 			sorting = CurationSorting(self.sorting)
@@ -140,6 +145,10 @@ class TestMonoSortingModule(MonoSortingModule):
 class TestMultiSortingsModule(MultiSortingsModule):
 
 	__test__ = False
+
+	@property
+	def default_params(self) -> dict[str, Any]:
+		return {}
 
 	def run(self, params: dict) -> dict[str, si.BaseSorting]:
 		sorting = CurationSorting(self.sortings['ks2_cs'])

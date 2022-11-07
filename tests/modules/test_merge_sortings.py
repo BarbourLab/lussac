@@ -9,6 +9,10 @@ from lussac.core.lussac_data import LussacData, MultiSortingsData
 from lussac.modules.merge_sortings import MergeSortings
 
 
+def test_default_params(merge_sortings_module: MergeSortings) -> None:
+	assert isinstance(merge_sortings_module.default_params, dict)
+
+
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
