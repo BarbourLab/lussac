@@ -16,7 +16,7 @@ def test_default_params(merge_sortings_module: MergeSortings) -> None:
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4, 'censored_period': 0.2}})
+	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4}, 'refractory_period': [0.2, 1.0]})
 
 	assert len(sortings) == 1
 	assert 'merged_sorting' in sortings

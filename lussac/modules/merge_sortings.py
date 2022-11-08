@@ -20,8 +20,8 @@ class MergeSortings(MultiSortingsModule):
 	@override
 	def default_params(self) -> dict[str, Any]:
 		return {
+			'refractory_period': [0.2, 1.0],
 			'similarity': {
-				'censored_period': 0.2,
 				'min_similarity': 0.3
 			}
 		}
@@ -29,10 +29,10 @@ class MergeSortings(MultiSortingsModule):
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		# TODO: recenter units between them before comparing them.
-		similarity_matrices = self._compute_similarity_matrices(params['similarity']['censored_period'])
+		similarity_matrices = self._compute_similarity_matrices(params['refractory_period'][0])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
-		self.remove_merged_units(graph)
-		merged_sorting = self.merge_sortings(graph, params['similarity']['censored_period'])
+		self.remove_merged_units(graph, params['refractory_period'])
+		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
 
 		return {'merged_sorting': merged_sorting}
 
@@ -101,7 +101,7 @@ class MergeSortings(MultiSortingsModule):
 
 		return graph
 
-	def remove_merged_units(self, graph: nx.Graph) -> None:
+	def remove_merged_units(self, graph: nx.Graph, refractory_period) -> None:
 		"""
 		Detects and remove merged units from the graph.
 		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
@@ -113,6 +113,8 @@ class MergeSortings(MultiSortingsModule):
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param refractory_period: float
+			The (censored_period, refractory_period) in ms.
 		"""
 
 		logs = open(f"{self.logs_folder}/merged_units_logs.txt", 'w+')
@@ -129,7 +131,7 @@ class MergeSortings(MultiSortingsModule):
 				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
-				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, (0.0, 1.0), limit=0.3)  # TODO: Don't hardcode the refractory period and limit!
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=0.3)
 
 				logs.write(f"Unit {node} is connected to {node1} and {node2}: cc = {cross_cont:.2%} (p_value={p_value:.3f})\n")
 				if p_value > 1e-5:
@@ -144,28 +146,27 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	def merge_sortings(self, graph: nx.Graph, censored_period: float) -> si.NpzSortingExtractor:
+	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
-		@param censored_period: float
-			The censored period in ms.
+		@param refractory_period: float
+			The (censored_period, refractory_period) in ms.
 		@return merged_sorting: si.NpzSortingExtractor
 			The merged sorting.
 		"""
 
-		min_sortings_per_neuron = 2
 		max_units_merge = 2
 		k = 2.5
-		t_c = int(round(censored_period * 1e-3 * self.recording.sampling_frequency))
+		t_c = int(round(refractory_period[0] * 1e-3 * self.recording.sampling_frequency))
 		new_spike_trains = {}
 		logs = open(f"{self.logs_folder}/merge_sortings_logs.txt", 'w+')
 
 		for nodes in nx.connected_components(graph):  # For each putative neuron.
 			nodes = list(nodes)
-			if len(nodes) < min_sortings_per_neuron:  # TODO: Add a check for the number of different sortings.
+			if len(nodes) == 1 and not graph.nodes[nodes[0]]['connected']:
 				continue
 
 			new_unit_id = len(new_spike_trains)
@@ -180,7 +181,7 @@ class MergeSortings(MultiSortingsModule):
 					spike_train = np.delete(spike_train, indices_of_duplicates)
 
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
-					C = utils.estimate_contamination(spike_train, (censored_period, 1.0))  # TODO: Don't hardcode the refractory period!
+					C = utils.estimate_contamination(spike_train, refractory_period)
 					score = f * (1 - (k+1)*C)
 					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]")
 
