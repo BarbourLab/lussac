@@ -1,4 +1,5 @@
 from typing import Any
+from overrides import override
 import numpy as np
 from lussac.core.module import MonoSortingModule
 import lussac.utils as utils
@@ -12,9 +13,11 @@ class RemoveBadUnits(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		units_to_remove = np.zeros(self.sorting.get_num_units(), dtype=bool)
 

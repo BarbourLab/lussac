@@ -6,6 +6,28 @@ from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
 
 
+def test_update_params(mono_sorting_data: MonoSortingData) -> None:
+	module = TestMonoSortingModule(mono_sorting_data)
+	params = {
+		'cat1': {
+			'a': 1,
+			'c': 3
+		},
+		'cat3': 2
+	}
+	new_params = module.update_params(params)
+
+	assert new_params == {
+		'cat1': {
+			'a': 1,
+			'b': 2,
+			'c': 3
+		},
+		'cat2': 3,
+		'cat3': 2
+	}
+
+
 def test_recording(mono_sorting_module: MonoSortingModule) -> None:
 	assert mono_sorting_module.recording == mono_sorting_module.data.recording
 
@@ -40,6 +62,11 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	assert templates.shape == (n_units, n_samples, n_channels)
 	assert np.all(wvf_extractor.unit_ids == mono_sorting_module.sorting.unit_ids)
 
+	templates = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], sub_folder="templates2", return_extractor=False)
+
+	assert templates is not None
+	assert templates.shape == (n_units, n_samples, n_channels)
+
 
 @pytest.fixture(scope="function")
 def mono_sorting_module(mono_sorting_data: MonoSortingData) -> MonoSortingModule:
@@ -58,7 +85,13 @@ class TestMonoSortingModule(MonoSortingModule):
 
 	@property
 	def default_params(self) -> dict[str, Any]:
-		return {}
+		return {
+			'cat1': {
+				'a': -1,
+				'b': 2
+			},
+			'cat2': 3
+		}
 
 	def run(self, params: dict):
 		pass

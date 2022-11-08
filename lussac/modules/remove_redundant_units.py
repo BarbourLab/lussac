@@ -1,4 +1,5 @@
 from typing import Any
+from overrides import override
 from lussac.core.module import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -12,6 +13,7 @@ class RemoveRedundantUnits(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'wvf_extraction': {
@@ -28,6 +30,7 @@ class RemoveRedundantUnits(MonoSortingModule):
 			}
 		}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		sorting_or_wvf_extractor = self.extract_waveforms(**params['wvf_extraction']) if params['wvf_extraction'] is not None else self.sorting
 

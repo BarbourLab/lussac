@@ -1,6 +1,8 @@
 from typing import Any
+from overrides import override
 from lussac.core.module import MonoSortingModule
 import spikeinterface.core as si
+import spikeinterface.curation as scur
 
 
 class RemoveDuplicatedSpikes(MonoSortingModule):
@@ -10,8 +12,13 @@ class RemoveDuplicatedSpikes(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
-		return {}
+		return {
+			'censored_period': 0.3,
+			'method': "random"
+		}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		return self.sorting
+		return scur.remove_duplicated_spikes(self.sorting, params['censored_period'], params['method'])

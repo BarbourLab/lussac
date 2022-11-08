@@ -44,7 +44,8 @@ class LussacPipeline:
 			else:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
-			# TODO: Maybe convert sorting objects to Numpy to avoid having a big tree.
+			# Maybe convert sorting objects to Numpy to avoid having a big tree?
+		 	# TODO: Save the state of the sorting objects at each module and reload if they exist.
 
 	def _run_mono_sorting_module(self, module: Type[MonoSortingModule], module_name: str, category: str, params: dict) -> None:
 		"""
@@ -72,7 +73,7 @@ class LussacPipeline:
 
 			data = MonoSortingData(self.data, sub_sorting)
 			module_instance = module(module_name, data, category)
-			# TODO: Update params with default parameters.
+			params = module_instance.update_params(params)
 
 			sub_sorting = module_instance.run(params)
 
@@ -105,7 +106,7 @@ class LussacPipeline:
 
 			data = MultiSortingsData(self.data, sub_sortings)
 			module_instance = module(module_name, data, category)
-			# TODO: Update params with default parameters.
+			params = module_instance.update_params(params)
 
 			sub_sortings = module_instance.run(params)
 

@@ -73,6 +73,25 @@ class LussacModule(ABC):
 		"""
 		...
 
+	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
+		"""
+		Updates the parameters with the default parameters (if there is a conflict, the given parameters are taken).
+		Need to update recursively because the parameters are usually a nested dictionary.
+		This is done by flattening then unflattening the dictionaries.
+
+		@param params: dict[str, Any]
+			The parameters to update.
+		@return updated_params: dict[str, Any]
+			The parameters updated with the module's default parameters.
+		"""
+		sep = ':'
+
+		flattened_params = utils.flatten_dict(params, sep=sep)
+		flattened_default = utils.flatten_dict(self.default_params, sep=sep)
+		updated_params = flattened_default | flattened_params
+
+		return utils.unflatten_dict(updated_params, sep=sep)
+
 
 @dataclass(slots=True)
 class MonoSortingModule(LussacModule):
@@ -142,7 +161,7 @@ class MonoSortingModule(LussacModule):
 		return si.extract_waveforms(self.data.recording, sorting, folder_path, allow_unfiltered=True, **params)
 
 	def get_templates(self, params: dict, filter_band: tuple[float, float] | list[float, float] | np.ndarray | None = None, margin: float = 3.0,
-					  return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:
+					  sub_folder: str = "templates", return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:
 		"""
 		Extract the templates for all the units.
 		If filter_band is not None, will also filter them using a Gaussian filter.
@@ -153,6 +172,8 @@ class MonoSortingModule(LussacModule):
 			If not none, the highpass and lowpass cutoff frequencies (in Hz).
 		@param margin: float
 			The margin (in ms) to extract (useful for filtering).
+		@param sub_folder: str
+			The sub-folder used for the waveform extractor.
 		@param return_extractor: bool
 			If true, will also return the waveform extractor and margin (in samples).
 		@return templates: np.ndarray (n_units, n_samples, n_channels)
@@ -167,7 +188,7 @@ class MonoSortingModule(LussacModule):
 
 		params['ms_before'] += margin
 		params['ms_after'] += margin
-		wvf_extractor = self.extract_waveforms(sub_folder="templates", **params)
+		wvf_extractor = self.extract_waveforms(sub_folder=sub_folder, **params)
 		templates = wvf_extractor.get_all_templates()
 
 		if filter_band is not None:

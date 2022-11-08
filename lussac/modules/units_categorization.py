@@ -1,4 +1,5 @@
 from typing import Any
+from overrides import override
 import numpy as np
 import numpy.typing as npt
 from lussac.core.module import MonoSortingModule
@@ -11,9 +12,11 @@ class UnitsCategorization(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		units_to_categorize = self._init_units_to_categorize()
 

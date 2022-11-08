@@ -1,8 +1,67 @@
 import math
-import numpy as np
-import numba
 import scipy.stats
+import numba
+import numpy as np
 from .variables import Utils
+
+
+def flatten_dict(d: dict, sep: str = ':', parent_key: str = '') -> dict:
+	"""
+	Flattens a nested dictionary.
+
+	@param d: dict
+		The dictionary to flatten.
+	@param parent_key: str
+		The parent key.
+	@param sep: str
+		The separator between keys.
+	@return flattened_dict: dict
+		The flattened dictionary.
+	"""
+
+	items = []
+	for k, v in d.items():
+		new_key = parent_key + sep + k if parent_key else k
+		if v and isinstance(v, dict):
+			items.extend(flatten_dict(v, sep, parent_key=new_key).items())
+		else:
+			items.append((new_key, v))
+	return dict(items)
+
+
+def unflatten_dict(d: dict, sep: str = ':', base: dict | None = None) -> dict:
+	"""
+	Unflattens a dictionary.
+
+	@param d: dict
+		The dictionary to unflatten.
+	@param sep: str
+		The separator between keys.
+	@param base: dict | None
+		TODO
+	@return unflattened_dict: dict
+		The unflattened dictionary.
+	"""
+
+	if base is None:
+		base = {}
+
+	for key, value in d.items():
+		root = base
+
+		if sep in key:
+			*parts, key = key.split(sep)
+
+			for part in parts:
+				root.setdefault(part, {})
+				root = root[part]
+
+		if isinstance(value, dict):
+			value = unflatten_dict(value, base=root.get(key, {}))
+
+		root[key] = value
+
+	return base
 
 
 def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, truncate: float = 5., margin_reflect: bool = False) -> np.ndarray:

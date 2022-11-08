@@ -1,8 +1,9 @@
 import itertools
 import pickle
 from typing import Any
-import numpy as np
+from overrides import override
 import networkx as nx
+import numpy as np
 from lussac.core.module import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -14,14 +15,23 @@ class MergeSortings(MultiSortingsModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'similarity': {
-				'window': 6,  # TODO: switch to ms.
+				'window': 0.2,
 				'min_similarity': 0.3
 			}
 		}
 
+	@override
+	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
+		params = super().update_params(params)
+		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.recording.sampling_frequency))
+
+		return params
+
+	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		# TODO: recenter units between them before comparing them.
 		similarity_matrices = self._compute_similarity_matrices(params['similarity']['window'])

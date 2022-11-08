@@ -2,11 +2,11 @@ import os
 import copy
 import pickle
 import pytest
-import numpy as np
 import networkx as nx
-import spikeinterface.core as si
+import numpy as np
 from lussac.core.lussac_data import LussacData, MultiSortingsData
 from lussac.modules.merge_sortings import MergeSortings
+import spikeinterface.core as si
 
 
 def test_default_params(merge_sortings_module: MergeSortings) -> None:

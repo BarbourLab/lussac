@@ -1,4 +1,5 @@
 from typing import Any
+from overrides import override
 from lussac.core.module import MonoSortingModule
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
@@ -10,6 +11,7 @@ class ExportToPhy(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'wvf_extraction': {
@@ -28,6 +30,7 @@ class ExportToPhy(MonoSortingModule):
 			}
 		}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		output_folder = self._format_output_path(params['path'])

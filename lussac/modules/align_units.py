@@ -1,4 +1,5 @@
 from typing import Any
+from overrides import override
 import numpy as np
 import plotly.graph_objects as go
 import scipy.signal
@@ -14,6 +15,7 @@ class AlignUnits(MonoSortingModule):
 	"""
 
 	@property
+	@override
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'wvf_extraction': {
@@ -25,6 +27,7 @@ class AlignUnits(MonoSortingModule):
 			'threshold': 0.5
 		}
 
+	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		templates, wvf_extractor, margin = self.get_templates(params['wvf_extraction'], params['filter'], return_extractor=True)
 		best_channels = np.argmax(np.max(np.abs(templates), axis=1), axis=1)

@@ -1,9 +1,33 @@
 import numpy as np
 import numpy.typing as npt
-from scipy.ndimage import gaussian_filter1d
 import lussac.utils as utils
 from lussac.utils.misc import _get_border_probabilities
 import spikeinterface.core as si
+
+
+def test_flatten_dict() -> None:
+	assert utils.flatten_dict({}) == {}
+
+	d = {'a': 1, 'b': 2}
+	assert utils.flatten_dict(d) == d
+
+	d = {'a': {'b': 1, 'c': {'d': 2, 'e': {}}}, 'f': 3}
+	assert utils.flatten_dict(d, sep=':') == {'a:b': 1, 'a:c:d': 2, 'a:c:e': {}, 'f': 3}
+
+
+def test_unflatten_dict() -> None:
+	assert utils.flatten_dict({}) == {}
+
+	d = {'a': 1, 'b': 2}
+	assert utils.flatten_dict(d) == d
+
+	d = {'a:b': 1, 'a:c:d': 2, 'a:c:e': {}, 'f': 3}
+	assert utils.unflatten_dict(d) == {'a': {'b': 1, 'c': {'d': 2, 'e': {}}}, 'f': 3}
+
+	d = {'a': {'b': 1, 'c': {}}, 'd': 3}
+	print(utils.flatten_dict(d))
+	print(utils.unflatten_dict(utils.flatten_dict(d)))
+	assert utils.unflatten_dict(utils.flatten_dict(d)) == d
 
 
 def test_gaussian_histogram() -> None:
