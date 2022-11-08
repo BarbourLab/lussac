@@ -7,6 +7,8 @@ import numpy as np
 from lussac.core.module import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
+import spikeinterface.curation as scur
+from spikeinterface.curation.curation_tools import find_duplicated_spikes
 
 
 class MergeSortings(MultiSortingsModule):
@@ -19,42 +21,35 @@ class MergeSortings(MultiSortingsModule):
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'similarity': {
-				'window': 0.2,
+				'censored_period': 0.2,
 				'min_similarity': 0.3
 			}
 		}
 
 	@override
-	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
-		params = super().update_params(params)
-		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.recording.sampling_frequency))
-
-		return params
-
-	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		# TODO: recenter units between them before comparing them.
-		similarity_matrices = self._compute_similarity_matrices(params['similarity']['window'])
+		similarity_matrices = self._compute_similarity_matrices(params['similarity']['censored_period'])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
 		self.remove_merged_units(graph)
-		merged_sorting = self.merge_sortings(graph)
+		merged_sorting = self.merge_sortings(graph, params['similarity']['censored_period'])
 
 		return {'merged_sorting': merged_sorting}
 
-	def _compute_similarity_matrices(self, max_time: int) -> dict[str, dict[str, np.ndarray]]:
+	def _compute_similarity_matrices(self, censored_period: float) -> dict[str, dict[str, np.ndarray]]:
 		"""
 		Computes the similarity matrix between all sortings.
 
-		@param max_time: int
-			The maximum time difference between spikes to be considered similar (in number samples).
+		@param censored_period: float
+			The maximum time difference between spikes to be considered similar (in ms).
 			Two spikes spaced by exactly max_time are considered coincident.
 		@return similarity_matrices: dict[str, dict[str, np.ndarray]]
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
 		"""
 
+		max_time = int(round(censored_period * 1e-3 * self.recording.sampling_frequency))
 		similarity_matrices = {}
-		# TODO: remove duplicated spikes for sorting before to_spike_vector().
-		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
+		spike_vectors = {name: scur.remove_duplicated_spikes(sorting, censored_period).to_spike_vector() for name, sorting in self.sortings.items()}
 		n_spikes = {name: np.array(list(sorting.get_total_num_spikes().values())) for name, sorting in self.sortings.items()}
 
 		for name1, sorting1 in self.sortings.items():
@@ -149,12 +144,14 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	def merge_sortings(self, graph: nx.Graph) -> si.NpzSortingExtractor:
+	def merge_sortings(self, graph: nx.Graph, censored_period: float) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param censored_period: float
+			The censored period in ms.
 		@return merged_sorting: si.NpzSortingExtractor
 			The merged sorting.
 		"""
@@ -178,10 +175,11 @@ class MergeSortings(MultiSortingsModule):
 				for sub_nodes in itertools.combinations(nodes, n_units):
 					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
 					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
-					# TODO: Remove duplicated spikes
+					indices_of_duplicates = find_duplicated_spikes(spike_train, int(round(censored_period * 1e-3 * self.recording.sampling_frequency)))
+					spike_train = np.delete(spike_train, indices_of_duplicates)
 
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
-					C = utils.estimate_contamination(spike_train, (0.0, 1.0))  # TODO: Don't hardcode the refractory period!
+					C = utils.estimate_contamination(spike_train, (censored_period, 1.0))  # TODO: Don't hardcode the refractory period!
 					score = f * (1 - (k+1)*C)
 					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]")
 

@@ -16,7 +16,7 @@ def test_default_params(merge_sortings_module: MergeSortings) -> None:
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4, 'window': 6}})
+	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4, 'censored_period': 0.2}})
 
 	assert len(sortings) == 1
 	assert 'merged_sorting' in sortings
@@ -25,11 +25,11 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 
 
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
-	similarity_matrices = merge_sortings_module._compute_similarity_matrices(6)
+	similarity_matrices = merge_sortings_module._compute_similarity_matrices(0.2)
 
 	assert 'ks2_low_thresh' in similarity_matrices
 	assert 'ms4_cs' in similarity_matrices['ms3_best']
-	# assert np.max(similarity_matrices['ks2_low_thresh']['ms3_best']) <= 1.0
+	assert np.max(similarity_matrices['ks2_low_thresh']['ms3_best']) <= 1.0
 
 
 def test_compute_graph(data: LussacData) -> None:

@@ -10,11 +10,11 @@ def flatten_dict(d: dict, sep: str = ':', parent_key: str = '') -> dict:
 	Flattens a nested dictionary.
 
 	@param d: dict
-		The dictionary to flatten.
-	@param parent_key: str
-		The parent key.
 	@param sep: str
 		The separator between keys.
+		The dictionary to flatten.
+	@param parent_key: str
+		The parent key (leave empty, used for recursion).
 	@return flattened_dict: dict
 		The flattened dictionary.
 	"""
@@ -38,7 +38,7 @@ def unflatten_dict(d: dict, sep: str = ':', base: dict | None = None) -> dict:
 	@param sep: str
 		The separator between keys.
 	@param base: dict | None
-		TODO
+		The base dictionary (leave at None, used for recursion).
 	@return unflattened_dict: dict
 		The unflattened dictionary.
 	"""

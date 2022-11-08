@@ -3,6 +3,7 @@ import numpy.typing as npt
 import lussac.utils as utils
 from lussac.utils.misc import _get_border_probabilities
 import spikeinterface.core as si
+from spikeinterface.curation.curation_tools import find_duplicated_spikes
 
 
 def test_flatten_dict() -> None:
@@ -52,9 +53,11 @@ def test_get_border_probabilities() -> None:
 def test_estimate_contamination() -> None:
 	sf = utils.Utils.sampling_frequency
 	firing_rate = 50  # Hz
+	t_c = 0.5
 	t_r = 2.0
 	C = 0.1
 
+	# Test without any censored period.
 	spike_train = generate_spike_train(firing_rate, t_r)
 
 	contaminations = np.empty(50, dtype=np.float32)
@@ -65,16 +68,25 @@ def test_estimate_contamination() -> None:
 
 	assert np.abs(np.mean(contaminations) - C) < 0.01
 
-	# Todo: remove duplicated spikes and test with t_c != 0
+	# Test with a censored period.
+	contaminations = np.empty(200, dtype=np.float32)
+
+	for i in range(len(contaminations)):
+		spike_train = generate_censored_contaminated_spike_train(firing_rate, (t_c, t_r), C)
+		contaminations[i] = utils.estimate_contamination(spike_train, (t_c, 0.9*t_r))
+
+	# TODO: asserts
 
 
 def test_estimate_cross_contamination() -> None:
 	sf = utils.Utils.sampling_frequency
 	firing_rates = (20, 10)  # Hz
 	C = (0.04, 0.06)
+	t_c = 0.5
 	t_r = 2.0
 	cross_contamination = 0.6
 
+	# Testing without any censored period.
 	spike_train1 = generate_contaminated_spike_train(firing_rates[0], t_r, C[0])
 	spike_train2 = generate_contaminated_spike_train(firing_rates[1], t_r, C[1])
 	n_transfer = int(round((1 - cross_contamination) * len(spike_train2) / (cross_contamination - C[0])))
@@ -91,7 +103,8 @@ def test_estimate_cross_contamination() -> None:
 
 	assert np.abs(np.mean(cross_contaminations) - cross_contamination) < 0.1
 
-	# TODO: remove duplicated spikes and test with t_c != 0
+	# Testing with t_c != 0
+	# TODO
 
 
 def test_compute_coincidence_matrix() -> None:
@@ -215,6 +228,26 @@ def generate_contaminated_spike_train(firing_rate: float, t_r: float, C: float) 
 	spike_train = generate_spike_train(firing_rate, t_r)
 	contaminated_spikes = generate_contamination(len(spike_train), C)
 	return np.sort(np.concatenate((spike_train, contaminated_spikes)))
+
+
+def generate_censored_contaminated_spike_train(firing_rate: float, refractory_period: tuple[float, float], C: float) -> npt.NDArray[np.int64]:
+	"""
+	Generates a censored contaminated spike train.
+
+	@param firing_rate: float
+		The mean firing rate of the neuron (in Hz).
+		The contamination is added on top of that.
+	@param refractory_period: tuple[float, float]
+		The (censored_period, refractory_period) of the neuron (in ms).
+	@param C: float
+		The contamination rate.
+	@return: np.ndarray[int64]
+		The generated censored contaminated spike train.
+	"""
+
+	t_c = int(round(refractory_period[0] * 1e-3 * utils.Utils.sampling_frequency))
+	spike_train = generate_contaminated_spike_train(firing_rate, refractory_period[1], C)
+	return np.delete(spike_train, find_duplicated_spikes(spike_train, t_c))
 
 
 def test_filter() -> None:

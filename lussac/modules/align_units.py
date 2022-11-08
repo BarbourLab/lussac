@@ -68,13 +68,16 @@ class AlignUnits(MonoSortingModule):
 
 	def _plot_alignment(self, templates: np.ndarray, nbefore: int, shifts: np.ndarray, threshold: float) -> None:
 		"""
-		TODO
+		Plots the template for each unit with the new center.
 
-		@param templates:
-		@param nbefore:
-		@param shifts:
-		@param threshold:
-		@return:
+		@param templates: np.ndarray (n_units, n_samples)
+			The template for each unit on its best channel.
+		@param nbefore: int
+			The index of t=0 in the templates.
+		@param shifts: np.ndarray (n_units)
+			The new center for each unit.
+		@param threshold: float
+			The threshold parameter used to compute the shifts.
 		"""
 
 		xaxis = (np.arange(templates.shape[1]) - nbefore) / utils.Utils.sampling_frequency * 1e3
