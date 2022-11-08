@@ -159,6 +159,7 @@ class MergeSortings(MultiSortingsModule):
 		min_sortings_per_neuron = 2
 		max_units_merge = 2
 		k = 2.5
+		t_c = int(round(censored_period * 1e-3 * self.recording.sampling_frequency))
 		new_spike_trains = {}
 		logs = open(f"{self.logs_folder}/merge_sortings_logs.txt", 'w+')
 
@@ -175,7 +176,7 @@ class MergeSortings(MultiSortingsModule):
 				for sub_nodes in itertools.combinations(nodes, n_units):
 					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
 					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
-					indices_of_duplicates = find_duplicated_spikes(spike_train, int(round(censored_period * 1e-3 * self.recording.sampling_frequency)))
+					indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max))
 					spike_train = np.delete(spike_train, indices_of_duplicates)
 
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()

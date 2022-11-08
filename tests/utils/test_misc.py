@@ -247,7 +247,7 @@ def generate_censored_contaminated_spike_train(firing_rate: float, refractory_pe
 
 	t_c = int(round(refractory_period[0] * 1e-3 * utils.Utils.sampling_frequency))
 	spike_train = generate_contaminated_spike_train(firing_rate, refractory_period[1], C)
-	return np.delete(spike_train, find_duplicated_spikes(spike_train, t_c))
+	return np.delete(spike_train, find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max)))
 
 
 def test_filter() -> None:
