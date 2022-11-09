@@ -8,7 +8,7 @@ from conftest import params_path
 
 
 if not os.path.exists(params_path):
-	http_response = urlopen("https://zenodo.org/record/7007074/files/lussac2_cerebellar_cortex_dev.zip")
+	http_response = urlopen("https://zenodo.org/record/7308222/files/lussac2_cerebellar_cortex_dev.zip")
 	zip_file = ZipFile(BytesIO(http_response.read()))
 	zip_file.extractall(path="tests/datasets")
 
