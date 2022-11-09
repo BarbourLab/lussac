@@ -41,15 +41,15 @@ def test_launch(pipeline: LussacPipeline) -> None:
 		},
 		'merge_sortings': {
 			'CS': {
+				'refractory_period': [0.7, 25.0],
 				'similarity': {
-					'min_similarity': 0.4,
-					'window': 20
+					'min_similarity': 0.4
 				}
 			},
 			'rest': {
+				'refractory_period': [0.17, 0.99],
 				'similarity': {
-					'min_similarity': 0.4,
-					'window': 5
+					'min_similarity': 0.4
 				}
 			}
 		}
