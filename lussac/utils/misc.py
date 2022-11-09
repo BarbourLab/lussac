@@ -196,7 +196,7 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	n = N1 * N2 * ((1 - C1) * limit + C1)
 	p = 2 * t_r / Utils.t_max
 	if n*p < 30:
-		p_value = 1 - scipy.stats.binom.cdf(n_violations, n, p)
+		p_value = 1 - scipy.stats.binom.cdf(n_violations - 1, n, p)
 	else:  # Approximate the binomial law by a normal law (binom.cdf fails for very high 'n').
 		p_value = 1 - scipy.stats.norm.cdf(n_violations, n*p, math.sqrt(n*p*(1-p)))
 

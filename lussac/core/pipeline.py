@@ -35,9 +35,12 @@ class LussacPipeline:
 			module_name = self._get_module_name(module_key)
 			module = self.module_factory.get_module(module_name)
 
+			print(module_name)
+			print([sorting.get_annotation("name") for name, sorting in self.data.sortings.items()])
+
 			if issubclass(module, MonoSortingModule):
 				for category, params in module_params.items():
-					print(f"Running category {category}:")
+					print(f"Running category '{category}':")
 					self._run_mono_sorting_module(module, module_key, category, params)
 			elif issubclass(module, MultiSortingsModule):
 				self._run_multi_sortings_module(module, module_key, module_params)
@@ -65,7 +68,7 @@ class LussacPipeline:
 			if 'sortings' in params and name not in params['sortings']:
 				continue
 
-			print(f"\t- Sorting  {name:<18}", end='')
+			print(f"\t- Sorting  {name:<18}", end=' ')
 			t1 = time.perf_counter()
 
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
@@ -96,6 +99,9 @@ class LussacPipeline:
 
 		new_sortings = {}
 		for category, params in module_params.items():
+			print(f"Running category '{category}':")
+			t1 = time.perf_counter()
+
 			sub_sortings = {}
 			for name, sorting in self.data.sortings.items():
 				if 'sortings' in params and name not in params['sortings']:
@@ -115,6 +121,9 @@ class LussacPipeline:
 					new_sortings[name] = sub_sorting
 				else:
 					new_sortings[name] = si.UnitsAggregationSorting([new_sortings[name], sub_sorting])
+
+			t2 = time.perf_counter()
+			print(f"\tDone in {t2-t1:.1f} s")
 
 		self.data.sortings = new_sortings
 

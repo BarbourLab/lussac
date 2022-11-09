@@ -47,8 +47,5 @@ class RemoveBadUnits(MonoSortingModule):
 			The sorting object containing the bad units.
 		"""
 
-		if bad_sorting.get_num_units() == 0:
-			return  # TODO: Should be removed with SpikeInterface PR #1055.
-
 		wvf_extractor = self.extract_waveforms(sorting=bad_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
 		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/bad_units")

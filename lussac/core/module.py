@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import os
+import shutil
 from typing import Any
 import numpy as np
 from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
@@ -107,6 +108,14 @@ class MonoSortingModule(LussacModule):
 
 	data: MonoSortingData
 
+	def __del__(self) -> None:
+		"""
+		When the module is garbage collected, remove the temporary folder.
+		"""
+
+		if os.path.exists(f"{self.data.tmp_folder}/{self.name}"):
+			shutil.rmtree(f"{self.data.tmp_folder}/{self.name}")
+
 	@property
 	def sorting(self) -> si.BaseSorting:
 		"""
@@ -186,6 +195,7 @@ class MonoSortingModule(LussacModule):
 			Only if return_extractor is True.
 		"""
 
+		params = params.copy()
 		params['ms_before'] += margin
 		params['ms_after'] += margin
 		wvf_extractor = self.extract_waveforms(sub_folder=sub_folder, **params)
@@ -244,6 +254,12 @@ class MonoSortingModule(LussacModule):
 				mode = params['mode'] if 'mode' in params else "extremum"
 				amplitudes = spost.get_template_extremum_amplitude(wvf_extractor, peak_sign, mode)
 				return amplitudes
+
+			case "SNR":  # Returns the signal-to-noise ratio of each unit on its best channel.
+				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
+				peak_mode = params['peak_mode'] if 'peak_mode' in params else "extremum"
+				SNRs = sqm.compute_snrs(wvf_extractor, peak_sign, peak_mode)
+				return SNRs
 
 			case "amplitude_std":  # Returns the standard deviation of the amplitude of spikes.
 				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"

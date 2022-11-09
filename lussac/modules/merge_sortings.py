@@ -158,7 +158,7 @@ class MergeSortings(MultiSortingsModule):
 			The merged sorting.
 		"""
 
-		max_units_merge = 2
+		max_units_merge = 1
 		k = 2.5
 		t_c = int(round(refractory_period[0] * 1e-3 * self.recording.sampling_frequency))
 		new_spike_trains = {}
@@ -183,7 +183,7 @@ class MergeSortings(MultiSortingsModule):
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
 					C = utils.estimate_contamination(spike_train, refractory_period)
 					score = f * (1 - (k+1)*C)
-					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]")
+					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]\n")
 
 					if score > best_score:
 						best_score = score

@@ -25,6 +25,17 @@ params = {
 		},
 		"min": 20
 	},
+	"SNR": {
+		"wvf_extraction": {
+			"ms_before": 1.0,
+			"ms_after": 1.0,
+			"max_spikes_per_unit": 10
+		},
+		"filter": {
+			"band": [200, 5000]
+		},
+		"min": 1.5
+	},
 	"amplitude_std": {
 		"wvf_extraction": {
 			"ms_before": 1.0,
@@ -77,6 +88,10 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	amplitude = module.get_units_attribute_arr("amplitude", params["amplitude"])
 	assert isinstance(amplitude, np.ndarray)
 	assert amplitude.shape == (data.sorting.get_num_units(), )
+
+	SNRs = module.get_units_attribute_arr("SNR", params['SNR'])
+	assert isinstance(SNRs, np.ndarray)
+	assert SNRs.shape == (data.sorting.get_num_units(), )
 
 	amplitude_std = module.get_units_attribute_arr("amplitude_std", params["amplitude_std"])
 	assert isinstance(amplitude_std, np.ndarray)

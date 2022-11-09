@@ -21,7 +21,9 @@ class AlignUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 2.0,
 				'ms_after': 2.0,
-				'max_spikes_per_unit': 2000
+				'max_spikes_per_unit': 2000,
+				'chunk_duration': '1s',
+				'n_jobs': 6
 			},
 			'filter': [200, 5000],
 			'threshold': 0.5
@@ -37,7 +39,7 @@ class AlignUnits(MonoSortingModule):
 		shifts = self.get_units_shift(templates, wvf_extractor.nbefore - margin, params['threshold'])
 		self._plot_alignment(templates, wvf_extractor.nbefore - margin, shifts, params['threshold'])
 
-		return spost.align_sorting(self.sorting, shifts)
+		return spost.align_sorting(self.sorting, {self.sorting.unit_ids[i]: shifts[i] for i in range(len(shifts))})
 
 	@staticmethod
 	def get_units_shift(templates: np.ndarray, nbefore: int, threshold: float, check_next: int = 10) -> np.ndarray:
@@ -61,6 +63,9 @@ class AlignUnits(MonoSortingModule):
 		for i, template in enumerate(templates):
 			template = np.abs(template)
 			peaks, _ = scipy.signal.find_peaks(template, height=threshold * np.max(template))
+
+			if len(peaks) == 0:
+				peaks = [np.argmax(template)]
 
 			centers[i] = peaks[0] + np.argmax(template[peaks[0]:peaks[0] + check_next])
 

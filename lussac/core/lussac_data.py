@@ -43,7 +43,7 @@ class LussacData:
 		"""
 
 		self.recording = recording
-		self.sortings = sortings
+		self.sortings = {name: sorting.remove_empty_units() for name, sorting in sortings.items()}
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
@@ -214,9 +214,8 @@ class LussacData:
 		"""
 
 		folder_path = pathlib.Path(folder_path)
+		folder_path.parent.mkdir(parents=True, exist_ok=True)
 		tmp_dir = tempfile.TemporaryDirectory(prefix=folder_path.name + '_', dir=folder_path.parent)
-
-		os.mkdir(f"{tmp_dir.name}/spike_interface")
 
 		return tmp_dir
 
@@ -251,8 +250,9 @@ class LussacData:
 		"""
 
 		recording = LussacData._load_recording(params['recording'])
-		recording = LussacData._setup_probe(recording, params['recording']['probe_file'])
-		sortings = LussacData._load_sortings(params['phy_folders'])
+		if 'probe_file' in params['recording']:
+			recording = LussacData._setup_probe(recording, params['recording']['probe_file'])
+		sortings = LussacData._load_sortings(params['analyses'])
 
 		return LussacData(recording, sortings, params)
 
