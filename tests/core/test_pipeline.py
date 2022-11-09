@@ -11,9 +11,10 @@ from spikeinterface.curation import CurationSorting
 
 def test_launch(pipeline: LussacPipeline) -> None:
 	wrong_pipeline = copy.deepcopy(pipeline)
-	pipeline.data.params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
+	wrong_pipeline.data.params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
 	with pytest.raises(ValueError):
-		pipeline.launch()
+		wrong_pipeline.launch()
+	del wrong_pipeline
 
 	light_pipeline = copy.deepcopy(pipeline)
 	light_pipeline.data.sortings.pop('ks2_cs')
