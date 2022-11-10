@@ -1,9 +1,11 @@
+import copy
 from pathlib import Path
 import pytest
 from typing import Any
 import numpy as np
 from lussac.core.lussac_data import MonoSortingData
 from lussac.core.module import MonoSortingModule
+from tests.modules.test_remove_bad_units import params
 
 
 def test_update_params(mono_sorting_data: MonoSortingData) -> None:
@@ -68,6 +70,36 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	assert templates.shape == (n_units, n_samples, n_channels)
 
 
+def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
+	module = TestMonoSortingModule(mono_sorting_data)
+	num_units = module.data.sorting.get_num_units()
+
+	frequencies = module.get_units_attribute_arr("firing_rate", params['firing_rate'])
+	assert isinstance(frequencies, np.ndarray)
+	assert frequencies.shape == (num_units, )
+	assert abs(frequencies[0] - 22.978) < 0.01
+
+	contamination = module.get_units_attribute_arr("contamination", params['contamination'])
+	assert isinstance(contamination, np.ndarray)
+	assert contamination.shape == (num_units, )
+	assert contamination[0] >= 1.0
+
+	amplitude = module.get_units_attribute_arr("amplitude", params['amplitude'])
+	assert isinstance(amplitude, np.ndarray)
+	assert amplitude.shape == (num_units, )
+
+	SNRs = module.get_units_attribute_arr("SNR", params['SNR'])
+	assert isinstance(SNRs, np.ndarray)
+	assert SNRs.shape == (num_units, )
+
+	amplitude_std = module.get_units_attribute_arr("amplitude_std", params['amplitude_std'])
+	assert isinstance(amplitude_std, np.ndarray)
+	assert amplitude_std.shape == (num_units, )
+
+	with pytest.raises(ValueError):
+		module.get_units_attribute("test", {})
+
+
 @pytest.fixture(scope="function")
 def mono_sorting_module(mono_sorting_data: MonoSortingData) -> MonoSortingModule:
 	return TestMonoSortingModule(mono_sorting_data)
@@ -80,7 +112,9 @@ class TestMonoSortingModule(MonoSortingModule):
 
 	__test__ = False
 
-	def __init__(self, data: MonoSortingData):
+	def __init__(self, mono_sorting_data: MonoSortingData):
+		data = copy.deepcopy(mono_sorting_data)
+		data.sorting = data.sorting.select_units([0, 1, 2, 3, 4])
 		super().__init__("test_mono_sorting_module", data, "all")
 
 	@property

@@ -35,11 +35,10 @@ class AlignUnits(MonoSortingModule):
 		best_channels = np.argmax(np.max(np.abs(templates), axis=1), axis=1)
 		templates = templates[np.arange(templates.shape[0]), :, best_channels]  # Only take the best channel for each unit.
 
-		# Wrong nbefore because of margins.
 		shifts = self.get_units_shift(templates, wvf_extractor.nbefore - margin, params['threshold'])
 		self._plot_alignment(templates, wvf_extractor.nbefore - margin, shifts, params['threshold'])
 
-		return spost.align_sorting(self.sorting, {self.sorting.unit_ids[i]: shifts[i] for i in range(len(shifts))})
+		return spost.align_sorting(self.sorting, {self.sorting.unit_ids[i]: -shifts[i] for i in range(len(shifts))})
 
 	@staticmethod
 	def get_units_shift(templates: np.ndarray, nbefore: int, threshold: float, check_next: int = 10) -> np.ndarray:
@@ -71,7 +70,7 @@ class AlignUnits(MonoSortingModule):
 
 		return centers - nbefore
 
-	def _plot_alignment(self, templates: np.ndarray, nbefore: int, shifts: np.ndarray, threshold: float) -> None:
+	def _plot_alignment(self, templates: np.ndarray, nbefore: int, shifts: np.ndarray, threshold_ratio: float) -> None:
 		"""
 		Plots the template for each unit with the new center.
 
@@ -81,7 +80,7 @@ class AlignUnits(MonoSortingModule):
 			The index of t=0 in the templates.
 		@param shifts: np.ndarray (n_units)
 			The new center for each unit.
-		@param threshold: float
+		@param threshold_ratio: float
 			The threshold parameter used to compute the shifts.
 		"""
 
@@ -97,21 +96,27 @@ class AlignUnits(MonoSortingModule):
 		for i in range(templates.shape[0]):
 			unit_id = self.sorting.unit_ids[i]
 			shift = shifts[i] / utils.Utils.sampling_frequency * 1e3
+			threshold = threshold_ratio * np.max(np.abs(templates[i]))
 
 			fig.add_trace(go.Scatter(
 				x=xaxis,
 				y=templates[i],
-				mode="lines"
+				mode="lines",
+				marker_color="CornflowerBlue"
 			))
 
 			new_center_line = {'x0': shift, 'x1': shift, 'y0': 0, 'y1': 1, 'xref': 'x', 'yref': 'y domain', 'line': {'dash': "dash", 'color': "Crimson"}}  #, 'annotation': {'text': "New Center", 'textangle': -90}}
+			threshold_line_up = {'x0': 0, 'x1': 1, 'y0': threshold, 'y1': threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.5}
+			threshold_line_down = {'x0': 0, 'x1': 1, 'y0': -threshold, 'y1': -threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.5}
 			if i == 0:
 				fig.add_shape(**new_center_line)
+				fig.add_shape(**threshold_line_up)
+				fig.add_shape(**threshold_line_down)
 
 			labels.append(f"Unit {unit_id}")
 			args.append({
 				'title_text': f"Unit {unit_id}",
-				'shapes': [old_center_line, new_center_line]
+				'shapes': [old_center_line, new_center_line, threshold_line_up, threshold_line_down]
 			})
 
 		utils.plot_sliders(fig, 1, labels, f"{self.logs_folder}/alignment", args)
