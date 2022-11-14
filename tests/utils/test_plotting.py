@@ -52,7 +52,14 @@ def test_plot_units(data: LussacData) -> None:
 	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5,
 										 max_spikes_per_unit=500, allow_unfiltered=True)
 
-	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units")
+	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units", annotations_fix=[{'text': "I am a fixed annotation"}],
+					 annotations_change=[{'text': f"I am unit {unit_id}"} for unit_id in wvf_extractor.unit_ids])
 	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units_all_channels", n_channels=100000)
 	assert os.path.exists(f"{folder}/plot_units.html")
 	assert os.path.exists(f"{folder}/plot_units_all_channels.html")
+
+	empty_sorting = si.NumpySorting.from_dict({}, sampling_frequency=30000)
+	empty_wvf_extractor = si.extract_waveforms(data.recording, empty_sorting, mode="memory", allow_unfiltered=True)
+
+	utils.plot_units(empty_wvf_extractor, filepath=f"{folder}/plot_units_empty")
+	assert not os.path.exists(f"{folder}/plot_units_empty.html")

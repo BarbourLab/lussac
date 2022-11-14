@@ -35,9 +35,6 @@ class LussacPipeline:
 			module_name = self._get_module_name(module_key)
 			module = self.module_factory.get_module(module_name)
 
-			print(module_name)
-			print([sorting.get_annotation("name") for name, sorting in self.data.sortings.items()])
-
 			if issubclass(module, MonoSortingModule):
 				for category, params in module_params.items():
 					print(f"Running category '{category}':")

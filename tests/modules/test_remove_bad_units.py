@@ -30,9 +30,9 @@ params = {
 			"max_spikes_per_unit": 10
 		},
 		"filter": {
-			"band": [200, 5000]
+			"band": [300, 6000]
 		},
-		"min": 1.5
+		"min": 1.2
 	},
 	"amplitude_std": {
 		"wvf_extraction": {

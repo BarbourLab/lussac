@@ -85,7 +85,7 @@ def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, fi
 
 
 def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: int = 3, max_time_ms: float = 35., bin_size_ms: float = 0.25,
-			   firing_rate_std: float = 5.) -> None:
+			   firing_rate_std: float = 5., annotations_fix: list[dict] | None = None, annotations_change: list[dict] | None = None) -> None:
 	"""
 	Plots all the units in a given sorting.
 
@@ -102,7 +102,23 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		The bin size for ISI and auto-correlogram plots (in ms).
 	@param firing_rate_std: float
 		The standard deviation for the gaussian smoothing of the firing rate.
+	@param annotations_fix: list[dict] | None
+		The annotations that are fixed for all plots.
+	@param annotations_change: list[dict] | None
+		The annotations that change for each unit.
+		Must be in the order [annot1_unit1, annot2_unit1, ... annot1_unit_2, annot2_unit2, ...]
 	"""
+	n_units = len(wvf_extractor.unit_ids)
+	if n_units == 0:
+		return
+
+	if annotations_fix is None:
+		annotations_fix = []
+	if annotations_change is None:
+		annotations_change = []
+	assert len(annotations_change) % n_units == 0, "The number of annotations_change must be a multiple of the number of units!"
+	n_annotations_per_plot = len(annotations_change) // n_units
+
 	sf = wvf_extractor.sampling_frequency
 	max_time = int(round(max_time_ms * 1e-3 * sf))
 	bin_size = int(round(bin_size_ms * 1e-3 * sf))
@@ -114,10 +130,18 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//3, cols=3)
 	args = []
 
-	for unit_id in wvf_extractor.unit_ids:
+	for i, unit_id in enumerate(wvf_extractor.unit_ids):
+		annotations_slice = slice(i*n_annotations_per_plot, (i+1)*n_annotations_per_plot)
+		if i == 0:
+			for annotation in annotations_fix:
+				fig.add_annotation(**annotation)
+			for annotation in annotations_change[annotations_slice]:
+				fig.add_annotation(**annotation)
+
 		spike_train = wvf_extractor.sorting.get_unit_spike_train(unit_id)
 		args.append({
-			"title.text": f"Unit {unit_id}"
+			"title.text": f"Unit {unit_id}",
+			"annotations": [*annotations_fix, *annotations_change[annotations_slice]]
 		})
 
 		ISI, bins = spost.compute_isi_histograms_from_spiketrain(spike_train, max_time, bin_size, sf)

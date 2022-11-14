@@ -63,10 +63,10 @@ class AlignUnits(MonoSortingModule):
 			template = np.abs(template)
 			peaks, _ = scipy.signal.find_peaks(template, height=threshold * np.max(template))
 
-			if len(peaks) == 0:
+			if len(peaks) == 0:  # Can happen if the maximum is at the very start of end of the template.
 				peaks = [np.argmax(template)]
 
-			centers[i] = peaks[0] + np.argmax(template[peaks[0]:peaks[0] + check_next])
+			centers[i] = peaks[0] + np.argmax(template[peaks[0]:peaks[0] + check_next + 1])
 
 		return centers - nbefore
 
@@ -106,8 +106,8 @@ class AlignUnits(MonoSortingModule):
 			))
 
 			new_center_line = {'x0': shift, 'x1': shift, 'y0': 0, 'y1': 1, 'xref': 'x', 'yref': 'y domain', 'line': {'dash': "dash", 'color': "Crimson"}}  #, 'annotation': {'text': "New Center", 'textangle': -90}}
-			threshold_line_up = {'x0': 0, 'x1': 1, 'y0': threshold, 'y1': threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.5}
-			threshold_line_down = {'x0': 0, 'x1': 1, 'y0': -threshold, 'y1': -threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.5}
+			threshold_line_up = {'x0': 0, 'x1': 1, 'y0': threshold, 'y1': threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.4}
+			threshold_line_down = {'x0': 0, 'x1': 1, 'y0': -threshold, 'y1': -threshold, 'xref': 'x domain', 'yref': 'y', 'line': {'dash': "dash", 'color': "LightSeaGreen"}, 'opacity': 0.4}
 			if i == 0:
 				fig.add_shape(**new_center_line)
 				fig.add_shape(**threshold_line_up)

@@ -45,11 +45,12 @@ def test_logs_folder(mono_sorting_module: MonoSortingModule) -> None:
 def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 	wvf_extractor_1 = mono_sorting_module.extract_waveforms(ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
 	wvf_extractor_2 = mono_sorting_module.extract_waveforms(sub_folder="aze", ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
+	tmp_folder = mono_sorting_module.data.tmp_folder
 
 	assert wvf_extractor_1 is not None
 	assert wvf_extractor_2 is not None
-	assert Path(f"{mono_sorting_module.data.tmp_folder}/test_mono_sorting_module/all/ms3_best/wvf_extractor/waveforms").is_dir()
-	assert Path(f"{mono_sorting_module.data.tmp_folder}/test_mono_sorting_module/all/ms3_best/aze/wvf_extractor/waveforms").is_dir()
+	assert Path(f"{tmp_folder}/test_mono_sorting_module/all/ms3_best/wvf_extractor/waveforms").is_dir()
+	assert Path(f"{tmp_folder}/test_mono_sorting_module/all/ms3_best/aze/wvf_extractor/waveforms").is_dir()
 
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
