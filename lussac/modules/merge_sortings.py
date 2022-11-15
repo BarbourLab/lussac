@@ -31,8 +31,9 @@ class MergeSortings(MultiSortingsModule):
 		# TODO: recenter units between them before comparing them.
 		similarity_matrices = self._compute_similarity_matrices(params['refractory_period'][0])
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
-		self.remove_merged_units(graph, params['refractory_period'])
+		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
 		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
+		merged_sorting.annotate(name="merged_sorting")
 
 		return {'merged_sorting': merged_sorting}
 
@@ -87,11 +88,15 @@ class MergeSortings(MultiSortingsModule):
 				if j <= i:
 					continue
 
-				for i, unit_id1 in enumerate(sorting1.unit_ids):
-					graph.add_node((name1, unit_id1), connected=False)
-					for j, unit_id2 in enumerate(sorting2.unit_ids):
-						graph.add_node((name2, unit_id2), connected=False)
-						if similarity := similarity_matrices[name1][name2][i, j] >= min_similarity:
+				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
+					if not graph.has_node((name1, unit_id1)):
+						graph.add_node((name1, unit_id1), connected=False)
+
+					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
+						if not graph.has_node((name2, unit_id2)):
+							graph.add_node((name2, unit_id2), connected=False)
+
+						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= min_similarity:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
 							graph.add_node((name1, unit_id1), connected=True)
 							graph.add_node((name2, unit_id2), connected=True)
@@ -101,7 +106,7 @@ class MergeSortings(MultiSortingsModule):
 
 		return graph
 
-	def remove_merged_units(self, graph: nx.Graph, refractory_period) -> None:
+	def remove_merged_units(self, graph: nx.Graph, refractory_period, min_similarity: float) -> None:
 		"""
 		Detects and remove merged units from the graph.
 		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
@@ -115,6 +120,8 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing all the units and connected by their similarity.
 		@param refractory_period: float
 			The (censored_period, refractory_period) in ms.
+		@param min_similarity: float
+			TODO
 		"""
 
 		logs = open(f"{self.logs_folder}/merged_units_logs.txt", 'w+')
@@ -122,6 +129,7 @@ class MergeSortings(MultiSortingsModule):
 
 		for node in graph.nodes:
 			for node1, node2 in itertools.combinations(graph.neighbors(node), 2):
+				sorting_name, unit_id = node
 				sorting1_name, unit_id1 = node1
 				sorting2_name, unit_id2 = node2
 
@@ -131,18 +139,38 @@ class MergeSortings(MultiSortingsModule):
 				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
-				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=0.3)
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=min_similarity)
 
-				logs.write(f"Unit {node} is connected to {node1} and {node2}: cc = {cross_cont:.2%} (p_value={p_value:.3f})\n")
-				if p_value > 1e-5:
+				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
+				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
+				if p_value > 1e-5:  # No problem, it's probably a split.
 					continue
 
-				if node not in nodes_to_remove:
-					nodes_to_remove.append(node)
+				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
+				cross_cont1, p_value1 = utils.estimate_cross_contamination(spike_train, spike_train1, refractory_period, limit=0.1)
+				cross_cont2, p_value2 = utils.estimate_cross_contamination(spike_train, spike_train2, refractory_period, limit=0.1)
+				p_value1, p_value2 = 1 - p_value1, 1 - p_value2  # Reverse the p-values because we want to know the probability <= and not >=.
 
+				logs.write(f"\tcheck1 = {cross_cont1:.2%} (p_value={p_value1:.3f})\n")
+				logs.write(f"\tcheck2 = {cross_cont2:.2%} (p_value={p_value2:.3f})\n")
+
+				if p_value1 < 1e-5:  # node2 is the problematic unit.
+					if node2 not in nodes_to_remove:
+						nodes_to_remove.append(node2)
+					continue
+				elif p_value2 < 1e-5:  # node1 is the problematic unit.
+					if node1 not in nodes_to_remove:
+						nodes_to_remove.append(node1)
+					continue
+				else:  # node is probably a merged unit.
+					if node not in nodes_to_remove:
+						nodes_to_remove.append(node)
+
+		logs.write("\nRemoved units:\n")
 		for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
 			graph.remove_node(node)
 			graph.add_node(node, merged=True, connected=False)
+			logs.write(f"\t- {node}\n")
 
 		logs.close()
 

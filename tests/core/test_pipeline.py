@@ -58,6 +58,7 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	light_pipeline.launch()
 
 	# TODO: add assert tests.
+	# TODO: Check that the sortings have been exported.
 
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:

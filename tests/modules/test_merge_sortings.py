@@ -20,6 +20,7 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 
 	assert len(sortings) == 1
 	assert 'merged_sorting' in sortings
+	assert sortings['merged_sorting'].get_annotation('name') == "merged_sorting"
 	assert sortings['merged_sorting'].get_num_units() > 10
 	assert os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
@@ -59,7 +60,7 @@ def test_compute_graph(data: LussacData) -> None:
 	graph = module._compute_graph(similarity_matrices, min_similarity=0.4)
 
 	assert graph.number_of_nodes() == 8
-	assert graph.number_of_edges() == 5
+	assert graph.number_of_edges() == 6
 	assert graph.has_edge(('1', 0), ('2', 0))
 	assert graph.has_edge(('1', 1), ('2', 1))
 	assert graph.has_edge(('2', 2), ('3', 0))

@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Type
 from dataclasses import dataclass
@@ -28,9 +29,13 @@ class LussacPipeline:
 		"""
 
 		for module_key, module_params in self.data.params['lussac']['pipeline'].items():
-			print('\n' + '*'*30)
-			print(f"{' ' + module_key + ' ':*^30}")
-			print('*' * 30)
+			print('\n' + '*'*34)
+			print(f"{' ' + module_key + ' ':*^34}")
+			print('*' * 34)
+
+			if os.path.exists(f"{self.data.logs_folder}/{module_key}/output"):
+				self.data.sortings = self._load_sortings(module_key)
+				continue
 
 			module_name = self._get_module_name(module_key)
 			module = self.module_factory.get_module(module_name)
@@ -44,8 +49,9 @@ class LussacPipeline:
 			else:
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
+			self._save_sortings(module_key)
+
 			# Maybe convert sorting objects to Numpy to avoid having a big tree?
-		 	# TODO: Save the state of the sorting objects at each module and reload if they exist.
 
 	def _run_mono_sorting_module(self, module: Type[MonoSortingModule], module_name: str, category: str, params: dict) -> None:
 		"""
@@ -77,7 +83,7 @@ class LussacPipeline:
 
 			sub_sorting = module_instance.run(params)
 
-			self.data.sortings[name] = si.UnitsAggregationSorting([sub_sorting, other_sorting]) if other_sorting is not None else sub_sorting
+			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
 			t2 = time.perf_counter()
 			print(f"(Done in {t2-t1:.1f} s)")
@@ -123,6 +129,36 @@ class LussacPipeline:
 			print(f"\tDone in {t2-t1:.1f} s")
 
 		self.data.sortings = new_sortings
+
+	def _save_sortings(self, module_name: str) -> None:
+		"""
+		Saves the current state of the sortings after a module run.
+
+		@param module_name: str
+			The module's name/key in the json file.
+		"""
+
+		for name, sorting in self.data.sortings.items():
+			sorting.save_to_folder(folder=f"{self.data.logs_folder}/{module_name}/output/{name}", verbose=False)
+
+	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
+		"""
+		Loads the sortings from a previous module run.
+
+		@param module_name: str
+			The module's name/key in the json file.
+		@return sortings: dict[str, si.BaseSorting]
+			The loaded sortings.
+		"""
+
+		print("Loading sortings from previous run...")
+		t1 = time.perf_counter()
+		sortings_name = os.listdir(f"{self.data.logs_folder}/{module_name}/output")
+		sortings = {name: si.load_extractor(f"{self.data.logs_folder}/{module_name}/output/{name}") for name in sortings_name}
+		t2 = time.perf_counter()
+		print(f"Done in {t2-t1:.2f} s")
+
+		return sortings
 
 	@staticmethod
 	def _get_module_name(name: str) -> str:
@@ -172,7 +208,7 @@ class LussacPipeline:
 		return np.sort(np.unique(unit_ids))
 
 	@staticmethod
-	def split_sorting(sorting: si.BaseSorting, unit_ids: npt.ArrayLike) -> tuple[si.BaseSorting, si.BaseSorting | None]:
+	def split_sorting(sorting: si.BaseSorting, unit_ids: npt.ArrayLike) -> tuple[si.BaseSorting, si.BaseSorting]:
 		"""
 		Splits a sorting into two based on the given unit ids.
 
@@ -185,10 +221,33 @@ class LussacPipeline:
 		"""
 
 		if len(unit_ids) == sorting.get_num_units():
-			return sorting, None
+			return sorting, si.NumpySorting.from_dict({}, sampling_frequency=sorting.get_sampling_frequency())
+		if len(unit_ids) == 0:
+			return si.NumpySorting.from_dict({}, sampling_frequency=sorting.get_sampling_frequency()), sorting
 
 		other_unit_ids = [unit_id for unit_id in sorting.get_unit_ids() if unit_id not in unit_ids]
 		sorting1 = sorting.select_units(unit_ids)
 		sorting2 = sorting.select_units(other_unit_ids)
 
 		return sorting1, sorting2
+
+	@staticmethod
+	def merge_sortings(sorting1: si.BaseSorting, sorting2: si.BaseSorting) -> si.BaseSorting:
+		"""
+		Merges two split sortings into one.
+
+		@param sorting1: si.BaseSorting
+			The first sorting.
+		@param sorting2: si.BaseSorting
+			The second sorting.
+		@return merged_sorting: si.BaseSorting
+			The merged sorting.
+		"""
+
+		if sorting2.get_num_units() == 0:
+			return sorting1
+		if sorting1.get_num_units() == 0:
+			return sorting2
+
+		renamed_unit_ids = [*sorting1.unit_ids, *sorting2.unit_ids]  # TODO: Check for duplicates! unit_ids might not be unique.
+		return si.UnitsAggregationSorting([sorting1, sorting2], renamed_unit_ids=renamed_unit_ids)

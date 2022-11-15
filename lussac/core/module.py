@@ -160,11 +160,10 @@ class MonoSortingModule(LussacModule):
 		@return wvf_extractor: WaveformExtractor
 			The waveform extractor object.
 		"""
+		if sub_folder is None:
+			sub_folder = "wvf_extractor"
 
-		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.data.name}"
-		if sub_folder is not None:
-			folder_path += f"/{sub_folder}"
-		folder_path += f"/wvf_extractor"
+		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.data.name}/{sub_folder}"
 
 		sorting = self.sorting if sorting is None else sorting
 		return si.extract_waveforms(self.data.recording, sorting, folder_path, allow_unfiltered=True, **params)
