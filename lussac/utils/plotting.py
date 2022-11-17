@@ -84,8 +84,8 @@ def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, fi
 		sub_fig.write_html(filename, include_plotlyjs=get_path_to_plotlyJS(Path(filename).parent))
 
 
-def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: int = 3, max_time_ms: float = 35., bin_size_ms: float = 0.25,
-			   firing_rate_std: float = 5., annotations_fix: list[dict] | None = None, annotations_change: list[dict] | None = None) -> None:
+def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: int = 4, max_time_ms: float = 35., bin_size_ms: float = 0.25,
+			   firing_rate_std: float = 8., annotations_fix: list[dict] | None = None, annotations_change: list[dict] | None = None) -> None:
 	"""
 	Plots all the units in a given sorting.
 
@@ -101,7 +101,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	@param bin_size_ms: float
 		The bin size for ISI and auto-correlogram plots (in ms).
 	@param firing_rate_std: float
-		The standard deviation for the gaussian smoothing of the firing rate.
+		The standard deviation (in s) for the gaussian smoothing of the firing rate.
 	@param annotations_fix: list[dict] | None
 		The annotations that are fixed for all plots.
 	@param annotations_change: list[dict] | None
@@ -127,7 +127,9 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	if n_channels > wvf_extractor.recording.get_num_channels():
 		n_channels = wvf_extractor.recording.get_num_channels()
 
-	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//3, cols=3)
+	spike_amplitudes = spost.compute_spike_amplitudes(wvf_extractor, load_if_exists=True, return_scaled=True, outputs="by_unit", chunk_duration='1s', n_jobs=12)[0]
+
+	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//4, cols=4)
 	args = []
 
 	for i, unit_id in enumerate(wvf_extractor.unit_ids):
@@ -175,6 +177,14 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 			marker_color="CornflowerBlue"
 		), row=1, col=3)
 
+		fig.add_trace(go.Scatter(
+			x=wvf_extractor.sorting.get_unit_spike_train(unit_id) / sf,
+			y=spike_amplitudes[unit_id],
+			mode="markers",
+			name="Spike amplitudes",
+			marker_color="CornflowerBlue"
+		), row=1, col=4)
+
 		template = wvf_extractor.get_template(unit_id, mode="average")
 		best_channels = np.argsort(np.max(np.abs(template), axis=0))[::-1]
 		for i in range(n_channels): # TODO: share y axis for all templates in a unit.
@@ -185,16 +195,18 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 				mode="lines",
 				name=f"Template channel {wvf_extractor.channel_ids[channel]}",
 				marker_color="CornflowerBlue"
-			), row=2 + i//3, col=1 + i%3)
+			), row=2 + i//4, col=1 + i%4)
 
 	fig.update_xaxes(title_text="Time (ms)", row=1, col=1)
 	fig.update_xaxes(title_text="Time (ms)", row=1, col=2)
 	fig.update_xaxes(title_text="Time (s)", row=1, col=3)
+	fig.update_xaxes(title_text="Time (s)", row=1, col=4)
 	fig.update_yaxes(title_text="ISI", rangemode="tozero", row=1, col=1)
 	fig.update_yaxes(title_text="Auto-correlogram", rangemode="tozero", row=1, col=2)
 	fig.update_yaxes(title_text="Firing rate (Hz)", rangemode="tozero", row=1, col=3)
+	fig.update_yaxes(title_text="Voltage (µV)", rangemode="tozero", row=1, col=4)
 	for i in range(n_channels):
-		fig.update_xaxes(title_text="Time (ms)", row=2 + i//3, col=1 + i%3)
-		fig.update_yaxes(title_text=f"Amplitude ({'µV' if wvf_extractor.return_scaled else 'A.U.'})", rangemode="tozero", row=2 + i//3, col=1 + i%3)
+		fig.update_xaxes(title_text="Time (ms)", row=2 + i//4, col=1 + i%4)
+		fig.update_yaxes(title_text=f"Amplitude ({'µV' if wvf_extractor.return_scaled else 'A.U.'})", rangemode="tozero", row=2 + i//4, col=1 + i%4)
 
-	plot_sliders(fig, 3 + n_channels, labels=wvf_extractor.unit_ids, filepath=filepath, args=args)
+	plot_sliders(fig, 4 + n_channels, labels=wvf_extractor.unit_ids, filepath=filepath, args=args)

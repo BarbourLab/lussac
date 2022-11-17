@@ -57,6 +57,7 @@ class MergeSortings(MultiSortingsModule):
 		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+		self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
@@ -205,26 +206,26 @@ class MergeSortings(MultiSortingsModule):
 				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
-				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=min_similarity)
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=0.22)
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
-				if p_value > 1e-4:  # No problem, it's probably a split.
+				if p_value > 5e-3:  # No problem, it's probably a split.
 					continue
 
 				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
-				cross_cont1, p_value1 = utils.estimate_cross_contamination(spike_train, spike_train1, refractory_period, limit=0.1)
-				cross_cont2, p_value2 = utils.estimate_cross_contamination(spike_train, spike_train2, refractory_period, limit=0.1)
+				cross_cont1, p_value1 = utils.estimate_cross_contamination(spike_train1, spike_train, refractory_period, limit=0.1)
+				cross_cont2, p_value2 = utils.estimate_cross_contamination(spike_train2, spike_train, refractory_period, limit=0.1)
 				p_value1, p_value2 = 1 - p_value1, 1 - p_value2  # Reverse the p-values because we want to know the probability <= and not >=.
 
 				logs.write(f"\tcheck1 = {cross_cont1:.2%} (p_value={p_value1:.3f})\n")
 				logs.write(f"\tcheck2 = {cross_cont2:.2%} (p_value={p_value2:.3f})\n")
 
-				if p_value1 < 1e-4:  # node2 is the problematic unit.
+				if p_value1 < 1e-3:  # node2 is the problematic unit.
 					if node2 not in nodes_to_remove:
 						nodes_to_remove.append(node2)
 					continue
-				elif p_value2 < 1e-4:  # node1 is the problematic unit.
+				elif p_value2 < 1e-3:  # node1 is the problematic unit.
 					if node1 not in nodes_to_remove:
 						nodes_to_remove.append(node1)
 					continue
@@ -294,6 +295,18 @@ class MergeSortings(MultiSortingsModule):
 					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=cross_corr, mode="lines", name="cross_corr"))
 					fig.update_layout(title_text=f"Nodes {node1} and {node2} have a correlation difference of {corr_diff:.1%} (shift = {shift})")
 					fig.show()"""
+
+	def clean_graph(self, graph: nx.Graph) -> None:
+		"""
+		TODO
+
+		@param graph:
+		@return:
+		"""
+
+		for node1, node2, data in list(graph.edges(data=True)):
+			if data['corr_diff'] > 0.22:
+				graph.remove_edge(node1, node2)
 
 	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
 		"""
