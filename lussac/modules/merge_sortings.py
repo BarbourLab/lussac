@@ -57,7 +57,7 @@ class MergeSortings(MultiSortingsModule):
 		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		self.clean_graph(graph)
+		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
@@ -287,14 +287,6 @@ class MergeSortings(MultiSortingsModule):
 
 				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, len(spike_train1), len(spike_train2))
 				graph[node1][node2]['corr_diff'] = corr_diff
-
-				"""if corr_diff > 0.3:
-					fig = go.Figure()
-					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=auto_correlograms[node1], mode="lines", name="auto_corr1"))
-					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=auto_correlograms[node2], mode="lines", name="auto_corr2"))
-					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=cross_corr, mode="lines", name="cross_corr"))
-					fig.update_layout(title_text=f"Nodes {node1} and {node2} have a correlation difference of {corr_diff:.1%} (shift = {shift})")
-					fig.show()"""
 
 	def clean_graph(self, graph: nx.Graph) -> None:
 		"""

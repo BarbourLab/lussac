@@ -177,12 +177,12 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 			marker_color="CornflowerBlue"
 		), row=1, col=3)
 
-		fig.add_trace(go.Scatter(
+		fig.add_trace(go.Scattergl(
 			x=wvf_extractor.sorting.get_unit_spike_train(unit_id) / sf,
 			y=spike_amplitudes[unit_id],
 			mode="markers",
 			name="Spike amplitudes",
-			marker_color="CornflowerBlue"
+			marker_color="cornflowerblue"
 		), row=1, col=4)
 
 		template = wvf_extractor.get_template(unit_id, mode="average")

@@ -73,7 +73,25 @@ def test_compute_graph(data: LussacData) -> None:
 		assert nx.is_isomorphic(graph, graph_loaded)
 
 
-# TODO: Test save_graph.
+def test_graph(merge_sortings_module: MergeSortings) -> None:
+	G = nx.Graph()
+	G.add_node('A', connected=True)
+	G.add_node('B', connected=True)
+	G.add_node('C', connected=False)
+	G.add_edge('A', 'B', similarity=0.9, corr_diff=0.05)
+
+	merge_sortings_module._save_graph(G, "test_save_graph")
+
+	filepath = f"{merge_sortings_module.logs_folder}/test_save_graph.pkl"
+	assert os.path.exists(filepath)
+	graph = pickle.load(open(filepath, 'rb'))
+
+	assert graph.number_of_nodes() == 3
+	assert graph.number_of_edges() == 1
+	assert 'A' in graph.nodes
+	assert not graph.nodes['C']['connected']
+	assert graph.get_edge_data('A', 'B')['similarity'] == 0.9
+	assert graph.get_edge_data('A', 'B')['corr_diff'] == 0.05
 
 
 def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:

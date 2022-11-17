@@ -165,6 +165,11 @@ class MonoSortingModule(LussacModule):
 
 		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.data.name}/{sub_folder}"
 
+		if 'chunk_duration' not in params:
+			params['chunk_duration'] = '1s'
+		if 'n_jobs' not in params:
+			params['n_jobs'] = 6
+
 		sorting = self.sorting if sorting is None else sorting
 		return si.extract_waveforms(self.data.recording, sorting, folder_path, allow_unfiltered=True, **params)
 
