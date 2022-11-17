@@ -3,6 +3,7 @@ import scipy.stats
 import numba
 import numpy as np
 from .variables import Utils
+from spikeinterface.postprocessing.correlograms import _compute_crosscorr_numba
 
 
 def flatten_dict(d: dict, sep: str = ':', parent_key: str = '') -> dict:
@@ -396,6 +397,67 @@ def compute_similarity_matrix(coincidence_matrix: np.ndarray, n_spikes1: np.ndar
 	return (similarity_matrix - expected_matrix) / (1 - expected_matrix)
 
 
+def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, max_shift: int, gaussian_std: float = 1.5):
+	"""
+	TODO.
+
+	@param spike_vector1:
+	@param spike_vector2:
+	@param max_shift:
+	@param gaussian_std:
+	@return:
+	"""
+
+	return compute_cross_shift(spike_vector1['sample_ind'], spike_vector1['unit_ind'], spike_vector2['sample_ind'], spike_vector2['unit_ind'], max_shift, gaussian_std)
+
+
+@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.float32),
+		   nopython=True, nogil=True, cache=True, parallel=True)
+def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2, max_shift, gaussian_std):
+	"""
+	TODO.
+
+	@param spike_times1:
+	@param spike_labels1:
+	@param spike_times2:
+	@param spike_labels2:
+	@param max_shift:
+	@param gaussian_std:
+	@return:
+	"""
+
+	n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
+	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
+	cross_shift_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
+
+	N = math.ceil(5 * gaussian_std)
+	gaussian = np.exp(-np.arange(-N, N+1)**2 / (2 * gaussian_std**2)) / (gaussian_std * math.sqrt(2*math.pi))
+
+	spike_trains1 = numba.typed.List()
+	spike_trains2 = numba.typed.List()
+	for unit1 in range(n_units1):
+		spike_trains1.append(spike_times1[spike_labels1 == unit1])
+	for unit2 in range(n_units2):
+		spike_trains2.append(spike_times2[spike_labels2 == unit2])
+
+	for unit1 in numba.prange(n_units1):
+		for unit2 in range(n_units2):
+			spike_train1 = spike_trains1[unit1]
+			spike_train2 = spike_trains2[unit2]
+			threshold = 0.1 * min(len(spike_train1), len(spike_train2))
+
+			cross_corr = _compute_crosscorr_numba(spike_train1, spike_train2, max_shift, 1)
+			cross_corr = np.convolve(cross_corr, gaussian)
+			idx = np.argmax(cross_corr)
+
+			if np.sum(cross_corr[idx-1:idx+2]) < threshold:  # TODO: Better way than idx-1 : idx+2
+				continue
+
+			cross_shift_matrix[unit1, unit2] = idx - len(cross_corr) // 2
+
+	return cross_shift_matrix
+
+
 def filter(data: np.ndarray, band: tuple[float, float] | list[float, float] | np.ndarray, axis: int = -1) -> np.ndarray:
 	"""
 	Filters the data using a Gaussian bandpass filter.
@@ -445,3 +507,34 @@ def _create_fft_gaussian(N: int, cutoff_freq: float) -> np.ndarray:
 	else:
 		freq_axis = np.fft.fftfreq(N, d=1/Utils.sampling_frequency)
 		return scipy.stats.norm.pdf(freq_axis / cutoff_freq) * math.sqrt(2 * math.pi)
+
+
+def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarray, cross_corr: np.ndarray, n1: int, n2: int) -> float:
+	"""
+	TODO.
+
+	@param auto_corr1:
+	@param auto_corr2:
+	@param cross_corr:
+	@param n1:
+	@param n2:
+	@return:
+	"""
+
+	# Normalize correlograms
+	if np.sum(auto_corr1) > 0:
+		auto_corr1 /= np.mean(auto_corr1)
+	if np.sum(auto_corr2) > 0:
+		auto_corr2 /= np.mean(auto_corr2)
+	if np.sum(cross_corr) > 0:
+		cross_corr /= np.mean(cross_corr)
+
+	# Windows
+	middle = len(auto_corr1) // 2
+	window = slice(middle - 75, middle + 75)
+
+	diff1 = np.sum(np.abs(cross_corr[window] - auto_corr1[window])) / (window.stop - window.start)
+	diff2 = np.sum(np.abs(cross_corr[window] - auto_corr2[window])) / (window.stop - window.start)
+	weighted_diff = (n1*diff1 + n2*diff2) / (n1+n2)
+
+	return weighted_diff

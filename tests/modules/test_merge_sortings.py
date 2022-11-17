@@ -16,7 +16,9 @@ def test_default_params(merge_sortings_module: MergeSortings) -> None:
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	sortings = merge_sortings_module.run({'similarity': {'min_similarity': 0.4}, 'refractory_period': [0.2, 1.0]})
+	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}}
+	params = merge_sortings_module.update_params(params)
+	sortings = merge_sortings_module.run(params)
 
 	assert len(sortings) == 1
 	assert 'merged_sorting' in sortings
@@ -71,6 +73,9 @@ def test_compute_graph(data: LussacData) -> None:
 		assert nx.is_isomorphic(graph, graph_loaded)
 
 
+# TODO: Test save_graph.
+
+
 def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
 	# TODO: Use other module to not repeat test_merge_sortings()
 
@@ -84,6 +89,9 @@ def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
 	assert os.path.exists(logs_file)"""
 
 	# TODO: Check that the units have been removed with correct attributes.
+
+
+# TODO: test compute_correlogram_difference
 
 
 def test_merge_sortings_func() -> None:

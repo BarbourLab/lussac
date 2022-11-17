@@ -1,14 +1,17 @@
 import itertools
+import math
 import pickle
 from typing import Any
 from overrides import override
 import networkx as nx
 import numpy as np
+import scipy.stats
 from lussac.core.module import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 from spikeinterface.curation.curation_tools import find_duplicated_spikes
+import spikeinterface.postprocessing as spost
 
 
 class MergeSortings(MultiSortingsModule):
@@ -21,23 +24,75 @@ class MergeSortings(MultiSortingsModule):
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'refractory_period': [0.2, 1.0],
+			'max_shift': 1.33,
 			'similarity': {
 				'min_similarity': 0.3
+			},
+			'correlogram_validation': {
+				'max_time': 70.0,
+				'max_difference': 0.25,
+				'gaussian_std': 0.6,
+				'gaussian_truncate': 5.0
 			}
 		}
 
 	@override
+	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
+		params = super().update_params(params)
+
+		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
+		if isinstance(params['correlogram_validation'], dict) and 'max_time' in params['correlogram_validation']:
+			params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
+			params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
+			params['correlogram_validation']['censored_period'] = int(round(params['refractory_period'][0] * 1e-3 * self.sampling_f))
+
+		return params
+
+	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
-		# TODO: recenter units between them before comparing them.
+		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 		similarity_matrices = self._compute_similarity_matrices(params['refractory_period'][0])
+
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
 		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
+		if params['correlogram_validation']:
+			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+		self._save_graph(graph, "final_graph")
+
 		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
 		merged_sorting.annotate(name="merged_sorting")
 
 		return {'merged_sorting': merged_sorting}
 
-	def _compute_similarity_matrices(self, censored_period: float) -> dict[str, dict[str, np.ndarray]]:
+	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
+		"""
+		Computes the cross shifts between units of different sortings.
+		This is important when comparing units to make sure they are aligned properly between them.
+		If two units don't come from the same neuron, the computed cross shift should be 0.
+		A cross shift of -2 means the first unit is generally 2 samples earlier than the second unit.
+
+		@param max_shift: int
+			The maximum shift to consider (in samples).
+		@return: dict[str, dict[str, np.ndarray]]
+			For each pair of analyses, the cross-shifts matrix.
+		"""
+
+		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
+		cross_shifts = {name1: {name2: 0 for name2 in self.sortings.keys() if name1 != name2} for name1 in self.sortings.keys()}
+
+		for i, (name1, sorting1) in enumerate(self.sortings.items()):
+			for j, (name2, sorting2) in enumerate(self.sortings.items()):
+				if i >= j:
+					continue
+
+				shifts = utils.compute_cross_shift_from_vector(spike_vectors[name1], spike_vectors[name2], max_shift)
+
+				cross_shifts[name1][name2] = shifts
+				cross_shifts[name2][name1] = -shifts.T
+
+		return cross_shifts
+
+	def _compute_similarity_matrices(self, censored_period: float) -> dict[str, dict[str, np.ndarray]]:  # TODO: use cross_shifts.
 		"""
 		Computes the similarity matrix between all sortings.
 
@@ -101,10 +156,21 @@ class MergeSortings(MultiSortingsModule):
 							graph.add_node((name1, unit_id1), connected=True)
 							graph.add_node((name2, unit_id2), connected=True)
 
-		with open(f"{self.logs_folder}/similarity_graph.pkl", 'wb+') as file:
-			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
-
+		self._save_graph(graph, "similarity_graph")
 		return graph
+
+	def _save_graph(self, graph: nx.Graph, name: str) -> None:
+		"""
+		Saves the current state of the graph in the pickle format.
+
+		@param graph: nx.Graph
+			The graph to save.
+		@param name: str
+			The name of the file (without the .pkl extension)
+		"""
+
+		with open(f"{self.logs_folder}/{name}.pkl", 'wb+') as file:
+			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 	def remove_merged_units(self, graph: nx.Graph, refractory_period, min_similarity: float) -> None:
 		"""
@@ -143,7 +209,7 @@ class MergeSortings(MultiSortingsModule):
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
-				if p_value > 1e-5:  # No problem, it's probably a split.
+				if p_value > 1e-4:  # No problem, it's probably a split.
 					continue
 
 				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
@@ -154,11 +220,11 @@ class MergeSortings(MultiSortingsModule):
 				logs.write(f"\tcheck1 = {cross_cont1:.2%} (p_value={p_value1:.3f})\n")
 				logs.write(f"\tcheck2 = {cross_cont2:.2%} (p_value={p_value2:.3f})\n")
 
-				if p_value1 < 1e-5:  # node2 is the problematic unit.
+				if p_value1 < 1e-4:  # node2 is the problematic unit.
 					if node2 not in nodes_to_remove:
 						nodes_to_remove.append(node2)
 					continue
-				elif p_value2 < 1e-5:  # node1 is the problematic unit.
+				elif p_value2 < 1e-4:  # node1 is the problematic unit.
 					if node1 not in nodes_to_remove:
 						nodes_to_remove.append(node1)
 					continue
@@ -173,6 +239,61 @@ class MergeSortings(MultiSortingsModule):
 			logs.write(f"\t- {node}\n")
 
 		logs.close()
+
+	def compute_correlogram_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> None:
+		"""
+		Computes the correlogram difference for each edge of the graph, and adds it as an attribute to the edge.
+
+		@param graph: nx.Graph
+			The graph containing all the units and connected by their similarity.
+		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+			The cross-shifts between units.
+		@param params: dict
+			The parameters for the correlogram difference.
+		"""
+
+		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'])
+		gaussian = scipy.stats.norm.pdf(np.arange(-N, N+1), loc=0.0, scale=params['gaussian_std'])
+
+		for nodes in nx.connected_components(graph):  # For each community.
+			nodes = list(nodes)
+			if len(nodes) <= 1:
+				continue
+
+			subgraph = graph.subgraph(nodes)
+
+			auto_correlograms = {}
+			for node in nodes:
+				sorting_name, unit_id = node
+				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
+				auto_corr = spost.compute_autocorrelogram_from_spiketrain(spike_train, window_size=params['max_time'], bin_size=1)
+				auto_correlograms[node] = np.convolve(auto_corr, gaussian, mode="same")
+
+			for node1, node2 in subgraph.edges:
+				sorting1_name, unit_id1 = node1
+				sorting2_name, unit_id2 = node2
+				unit_ind1 = self.sortings[sorting1_name].id_to_index(unit_id1)
+				unit_ind2 = self.sortings[sorting2_name].id_to_index(unit_id2)
+
+				shift = cross_shifts[sorting1_name][sorting2_name][unit_ind1, unit_ind2]
+				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
+				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2) + shift
+				cross_corr = spost.compute_crosscorrelogram_from_spiketrain(spike_train1, spike_train2, window_size=params['max_time'], bin_size=1)
+
+				middle = len(cross_corr) // 2
+				cross_corr[middle-params['censored_period']:middle+params['censored_period']] = 0  # Remove duplicates before filtering.
+				cross_corr = np.convolve(cross_corr, gaussian, mode="same")
+
+				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, len(spike_train1), len(spike_train2))
+				graph[node1][node2]['corr_diff'] = corr_diff
+
+				"""if corr_diff > 0.3:
+					fig = go.Figure()
+					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=auto_correlograms[node1], mode="lines", name="auto_corr1"))
+					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=auto_correlograms[node2], mode="lines", name="auto_corr2"))
+					fig.add_trace(go.Scatter(x=np.arange(-params['max_time'], params['max_time']+1)/30, y=cross_corr, mode="lines", name="cross_corr"))
+					fig.update_layout(title_text=f"Nodes {node1} and {node2} have a correlation difference of {corr_diff:.1%} (shift = {shift})")
+					fig.show()"""
 
 	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
 		"""

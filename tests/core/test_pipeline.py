@@ -6,6 +6,7 @@ from lussac.core.lussac_data import LussacData
 from lussac.core.module import MonoSortingModule, MultiSortingsModule
 from lussac.core.pipeline import LussacPipeline
 import spikeinterface.core as si
+from spikeinterface.core.testing import check_sortings_equal
 from spikeinterface.curation import CurationSorting
 
 
@@ -125,6 +126,18 @@ def test_split_sorting(data: LussacData) -> None:
 
 	assert sorting1.unit_ids.size == 8
 	assert sorting2.unit_ids.size == len(sorting.unit_ids) - 8
+
+
+# TODO: test_merge_sortings
+
+def test_save_load_sortings(pipeline: LussacPipeline) -> None:
+	pipeline._save_sortings("test_save_sortings")
+	loaded_sortings = pipeline._load_sortings("test_save_sortings")
+
+	assert len(loaded_sortings) == len(pipeline.data.sortings)
+	for sorting_name in pipeline.data.sortings.keys():
+		assert sorting_name in loaded_sortings
+		check_sortings_equal(pipeline.data.sortings[sorting_name], loaded_sortings[sorting_name])
 
 
 class TestMonoSortingModule(MonoSortingModule):
