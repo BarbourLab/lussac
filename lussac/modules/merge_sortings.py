@@ -325,7 +325,7 @@ class MergeSortings(MultiSortingsModule):
 
 			new_unit_id = len(new_spike_trains)
 			best_score = -100000
-			logs.write(f"Making unit {new_unit_id} from {nodes}\n")
+			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
 
 			for n_units in range(1, max_units_merge+1):
 				for sub_nodes in itertools.combinations(nodes, n_units):

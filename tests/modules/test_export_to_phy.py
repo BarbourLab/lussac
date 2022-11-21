@@ -10,23 +10,25 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
-	folder = "tests/datasets/cerebellar_cortex/lussac/output"
+	folder = "tests/datasets/cerebellar_cortex/lussac/output_phy"
 	params = {
-		"sortings": ['ks2_best', 'ms3_cs'],
-		"path": folder,
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 2.0,
-			"max_spikes_per_unit": 10
+		'sortings': ['ks2_best', 'ms3_cs'],
+		'path': folder,
+		'wvf_extraction': {
+			'ms_before': 1.0,
+			'ms_after': 2.0,
+			'max_spikes_per_unit': 10,
+			'chunk_duration': '1s',
+			'n_jobs': 6
 		},
-		"export_params": {
-			"compute_pc_features": False,
-			"compute_amplitudes": False,
-			"max_channels_per_template": 4,
-			"template_mode": "average",
-			"copy_binary": False,
-			"chunk_duration": '1s',
-			"n_jobs": 6
+		'export_params': {
+			'compute_pc_features': False,
+			'compute_amplitudes': False,
+			'max_channels_per_template': 4,
+			'template_mode': "average",
+			'copy_binary': False,
+			'chunk_duration': '1s',
+			'n_jobs': 6
 		}
 	}
 

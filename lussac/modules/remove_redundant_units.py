@@ -50,5 +50,5 @@ class RemoveRedundantUnits(MonoSortingModule):
 			The sorting object containing the redundant units.
 		"""
 
-		wvf_extractor = self.extract_waveforms(sorting=redundant_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
+		wvf_extractor = self.extract_waveforms(sorting=redundant_sorting, sub_folder="plot_redundant", ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
 		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/redundant_units")  # TODO: Add annotation to say with which unit it is redundant.

@@ -2,12 +2,12 @@ from typing import Any
 from overrides import override
 from lussac.core.module import MonoSortingModule
 import spikeinterface.core as si
-from spikeinterface.exporters import export_to_phy
+import spikeinterface.postprocessing as spost
 
 
-class ExportToPhy(MonoSortingModule):
+class ExportToSIGUI(MonoSortingModule):
 	"""
-	Exports the sorting data to the phy format.
+	Exports the sorting data as a waveform extractor (for SpikeInterface GUI).
 	"""
 
 	@property
@@ -17,25 +17,28 @@ class ExportToPhy(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 1.0,
 				'ms_after': 3.0,
-				'max_spikes_per_unit': 1000
-			},
-			'export_params': {
-				'compute_amplitudes': True,
-				'compute_pc_features': False,
-				'copy_binary': False,
-				'template_mode': "average",
-				'verbose': False,
+				'max_spikes_per_unit': 1000,
+				'return_scaled': True,
+				'allow_unfiltered': True,
 				'chunk_duration': '1s',
 				'n_jobs': 6
-			}
+			},
+			'spike_amplitudes': {
+				'chunk_duration': '1s',
+				'n_jobs': 6
+			},
+			'principal_components': False
 		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
-		output_folder = self._format_output_path(params['path'])
+		path = self._format_output_path(params['path'])
+		wvf_extractor = si.extract_waveforms(self.recording, self.sorting, path, **params['wvf_extraction'])
 
-		export_to_phy(wvf_extractor, output_folder, **params['export_params'])
+		if params['spike_amplitudes']:
+			spost.compute_spike_amplitudes(wvf_extractor, **params['spike_amplitudes'])
+		if params['principal_components']:
+			spost.compute_principal_components(wvf_extractor, **params['principal_components'])
 
 		return self.sorting
 
