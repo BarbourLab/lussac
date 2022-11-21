@@ -136,6 +136,17 @@ def test_compute_coincidence_matrix() -> None:
 	assert np.max(coincidence_matrix) <= mean + 5*std
 	assert mean - 2*std < np.mean(coincidence_matrix) < mean + 2*std
 
+	# Test with cross-shift.
+	sorting1 = si.NumpySorting.from_dict({0: np.array([100, 200, 400])}, sampling_frequency=30000)
+	sorting2 = si.NumpySorting.from_dict({0: np.array([106, 206, 406])}, sampling_frequency=30000)
+	cross_shift = np.array([[-6]])
+
+	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), 2, None)
+	coincidence_shifted = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), 2, cross_shift)
+
+	assert coincidence_matrix[0, 0] == 0
+	assert coincidence_shifted[0, 0] == 3
+
 
 def test_compute_similarity_matrix() -> None:
 	# Test with known result.

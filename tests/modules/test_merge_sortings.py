@@ -28,7 +28,10 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 
 
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
-	similarity_matrices = merge_sortings_module._compute_similarity_matrices(0.2)
+	cross_shifts = {name1: {name2: None for name2 in merge_sortings_module.sortings.keys()} for name1 in merge_sortings_module.sortings.keys()}
+	params = {'refractory_period': [0.2, 1.0], 'similarity': {'window': 6}}
+
+	similarity_matrices = merge_sortings_module._compute_similarity_matrices(cross_shifts, params)
 
 	assert 'ks2_low_thresh' in similarity_matrices
 	assert 'ms4_cs' in similarity_matrices['ms3_best']

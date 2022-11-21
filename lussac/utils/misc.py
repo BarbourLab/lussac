@@ -312,7 +312,7 @@ def compute_nb_coincidence(spike_train1, spike_train2, max_time):
 	return n_coincident + p_high*n_coincident_high + p_low*n_coincident_low
 
 
-def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, window: int):
+def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, window: int, cross_shifts: np.ndarray | None = None) -> np.ndarray:
 	"""
 	Computes the number of coincident spikes between two sortings (given their spike vector).
 
@@ -327,13 +327,16 @@ def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vect
 		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
+	if cross_shifts is not None:
+		cross_shifts = cross_shifts.astype(np.int32)
+
 	return compute_coincidence_matrix(spike_vector1['sample_ind'], spike_vector1['unit_ind'],
-									  spike_vector2['sample_ind'], spike_vector2['unit_ind'], window)
+									  spike_vector2['sample_ind'], spike_vector2['unit_ind'], window, cross_shifts)
 
 
-@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32),
+@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.optional(numba.int32[:, :])),
 		   nopython=True, nogil=True, cache=True)
-def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time):
+def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time, cross_shifts=None):
 	"""
 	Computes the number of coincident spikes between all units in two sortings.
 
@@ -348,6 +351,9 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 	@param max_time: int32
 		The maximum time difference between two spikes to be considered coincident.
 		Two spikes spaced by exactly max_time are considered coincident.
+	@param cross_shifts: None | array[int32] (n_units1, n_units2)
+		If not None, the cross_shifts[i, j] is the shift between the spike times of the i-th unit of the first sorting
+		and the j-th unit of the second sorting.
 	@return coincidence_matrix: array[int64] (n_units1, n_units2)
 		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
@@ -356,10 +362,13 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
 	coincidence_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
 
+	if cross_shifts is None:
+		cross_shifts = np.zeros((n_units1, n_units2), dtype=np.int32)
+
 	start_j = 0
 	for i in range(len(spike_times1)):
 		for j in range(start_j, len(spike_times2)):
-			diff = spike_times1[i] - spike_times2[j]
+			diff = spike_times1[i] - spike_times2[j] - cross_shifts[spike_labels1[i], spike_labels2[j]]
 
 			if diff > max_time:
 				start_j += 1

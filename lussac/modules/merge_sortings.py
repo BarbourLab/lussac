@@ -26,7 +26,8 @@ class MergeSortings(MultiSortingsModule):
 			'refractory_period': [0.2, 1.0],
 			'max_shift': 1.33,
 			'similarity': {
-				'min_similarity': 0.3
+				'min_similarity': 0.3,
+				'window': 0.2
 			},
 			'correlogram_validation': {
 				'max_time': 70.0,
@@ -41,19 +42,21 @@ class MergeSortings(MultiSortingsModule):
 		params = super().update_params(params)
 
 		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
+		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
 		if isinstance(params['correlogram_validation'], dict) and 'max_time' in params['correlogram_validation']:
 			params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 			params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
-			params['correlogram_validation']['censored_period'] = int(round(params['refractory_period'][0] * 1e-3 * self.sampling_f))
+			params['correlogram_validation']['censored_period'] = params['similarity']['window']
 
 		return params
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
-		similarity_matrices = self._compute_similarity_matrices(params['refractory_period'][0])
 
+		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
+
 		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
@@ -93,18 +96,20 @@ class MergeSortings(MultiSortingsModule):
 
 		return cross_shifts
 
-	def _compute_similarity_matrices(self, censored_period: float) -> dict[str, dict[str, np.ndarray]]:  # TODO: use cross_shifts.
+	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:  # TODO: use cross_shifts.
 		"""
 		Computes the similarity matrix between all sortings.
 
-		@param censored_period: float
-			The maximum time difference between spikes to be considered similar (in ms).
-			Two spikes spaced by exactly max_time are considered coincident.
+		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+			The cross-shifts between units.
+		@param params: dict
+			The parameters of the merge_sorting module.
 		@return similarity_matrices: dict[str, dict[str, np.ndarray]]
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
 		"""
+		window = params['similarity']['window']
+		censored_period = params['refractory_period'][0]
 
-		max_time = int(round(censored_period * 1e-3 * self.recording.sampling_frequency))
 		similarity_matrices = {}
 		spike_vectors = {name: scur.remove_duplicated_spikes(sorting, censored_period).to_spike_vector() for name, sorting in self.sortings.items()}
 		n_spikes = {name: np.array(list(sorting.get_total_num_spikes().values())) for name, sorting in self.sortings.items()}
@@ -117,9 +122,9 @@ class MergeSortings(MultiSortingsModule):
 				if name2 not in similarity_matrices:
 					similarity_matrices[name2] = {}
 
-				coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vectors[name1], spike_vectors[name2], max_time)
+				coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vectors[name1], spike_vectors[name2], window, cross_shifts[name1][name2])
 
-				similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes[name1], n_spikes[name2], max_time)
+				similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes[name1], n_spikes[name2], window)
 				similarity_matrices[name1][name2] = similarity_matrix
 				similarity_matrices[name2][name1] = similarity_matrix.T
 
