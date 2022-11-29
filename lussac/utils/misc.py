@@ -3,6 +3,7 @@ import scipy.stats
 import numba
 import numpy as np
 from .variables import Utils
+from spikeinterface.curation.auto_merge import get_unit_adaptive_window, normalize_correlogram
 from spikeinterface.postprocessing.correlograms import _compute_crosscorr_numba
 
 
@@ -530,17 +531,17 @@ def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarra
 	@return:
 	"""
 
-	# Normalize correlograms
-	if np.sum(auto_corr1) > 0:
-		auto_corr1 /= np.mean(auto_corr1)
-	if np.sum(auto_corr2) > 0:
-		auto_corr2 /= np.mean(auto_corr2)
-	if np.sum(cross_corr) > 0:
-		cross_corr /= np.mean(cross_corr)
+	auto_corr1 = normalize_correlogram(auto_corr1)
+	auto_corr2 = normalize_correlogram(auto_corr2)
+	cross_corr = normalize_correlogram(cross_corr)
 
 	# Windows
 	middle = len(auto_corr1) // 2
-	window = slice(middle - 75, middle + 75)
+	w1 = get_unit_adaptive_window(auto_corr1, 0.5)
+	w2 = get_unit_adaptive_window(auto_corr2, 0.5)
+	w = int(round((w1*n1 + w2*n2) / (n1 + n2)))
+	window = slice(middle - w, middle + w + 1)
+	print(window)
 
 	diff1 = np.sum(np.abs(cross_corr[window] - auto_corr1[window])) / (window.stop - window.start)
 	diff2 = np.sum(np.abs(cross_corr[window] - auto_corr2[window])) / (window.stop - window.start)

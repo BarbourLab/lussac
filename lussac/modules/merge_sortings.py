@@ -96,7 +96,7 @@ class MergeSortings(MultiSortingsModule):
 
 		return cross_shifts
 
-	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:  # TODO: use cross_shifts.
+	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:
 		"""
 		Computes the similarity matrix between all sortings.
 
@@ -215,7 +215,7 @@ class MergeSortings(MultiSortingsModule):
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
-				if p_value > 5e-3:  # No problem, it's probably a split.
+				if p_value > 5e-3:  # No problem, node1 and node2 are probably just a split.
 					continue
 
 				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
