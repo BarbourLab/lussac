@@ -123,6 +123,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	max_time = int(round(max_time_ms * 1e-3 * sf))
 	bin_size = int(round(bin_size_ms * 1e-3 * sf))
 	xaxis = (np.arange(wvf_extractor.nsamples) - wvf_extractor.nbefore) / sf * 1e3
+	wvfs_unit = "µV" if wvf_extractor.return_scaled else "A.U."
 
 	if n_channels > wvf_extractor.recording.get_num_channels():
 		n_channels = wvf_extractor.recording.get_num_channels()
@@ -204,9 +205,9 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	fig.update_yaxes(title_text="ISI", rangemode="tozero", row=1, col=1)
 	fig.update_yaxes(title_text="Auto-correlogram", rangemode="tozero", row=1, col=2)
 	fig.update_yaxes(title_text="Firing rate (Hz)", rangemode="tozero", row=1, col=3)
-	fig.update_yaxes(title_text="Voltage (µV)", rangemode="tozero", row=1, col=4)
+	fig.update_yaxes(title_text=f"Voltage (µV)", rangemode="tozero", row=1, col=4)
 	for i in range(n_channels):
-		fig.update_xaxes(title_text="Time (ms)", row=2 + i//4, col=1 + i%4)
-		fig.update_yaxes(title_text=f"Amplitude ({'µV' if wvf_extractor.return_scaled else 'A.U.'})", rangemode="tozero", row=2 + i//4, col=1 + i%4)
+		fig.update_xaxes(title_text="Time (ms)", matches='x5', row=2 + i//4, col=1 + i%4)
+		fig.update_yaxes(title_text=f"Amplitude ({wvfs_unit})", rangemode="tozero", matches='y5', row=2 + i//4, col=1 + i%4)
 
 	plot_sliders(fig, 4 + n_channels, labels=wvf_extractor.unit_ids, filepath=filepath, args=args)

@@ -88,6 +88,7 @@ class MergeUnits(MonoSortingModule):
 		fig = go.Figure().set_subplots(rows=2, cols=2)
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
 		t_axis = np.arange(-wvf_extractor.nbefore, wvf_extractor.nafter) / wvf_extractor.sampling_frequency * 1e3
+		wvfs_unit = "µV" if wvf_extractor.return_scaled else "A.U."
 		labels = []
 		args = []
 
@@ -169,8 +170,11 @@ class MergeUnits(MonoSortingModule):
 				), row=2, col=1+i)
 
 		fig.update_xaxes(title_text="Time (ms)", row=1, col=1)
-		fig.update_xaxes(title_text="Time (ms)", row=1, col=2)
+		fig.update_xaxes(title_text="Time (ms)", matches='x', row=1, col=2)
 		fig.update_xaxes(title_text="Time (ms)", row=2, col=1)
+		fig.update_xaxes(title_text="Time (ms)", matches='x3', row=2, col=2)
+		fig.update_yaxes(title_text=f"Voltage ({wvfs_unit})", row=2, col=1)
+		fig.update_yaxes(title_text=f"Voltage ({wvfs_unit})", matches='y3', row=2, col=2)
 
 		utils.plotting.plot_sliders(fig, 10, labels, f"{self.logs_folder}/results", args=args)
 
