@@ -146,7 +146,7 @@ class MonoSortingModule(LussacModule):
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		...
 
-	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, **params) -> si.WaveformExtractor:
+	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, filter: dict[str, Any] | None = None, **params) -> si.WaveformExtractor:
 		"""
 		Creates the WaveformExtractor object and returns it.
 
@@ -157,6 +157,8 @@ class MonoSortingModule(LussacModule):
 			The sub-folder where to save the waveforms.
 		@param params
 			The parameters for the waveform extractor.
+		@param filter: dict | None
+			The filter to apply to the recording.
 		@return wvf_extractor: WaveformExtractor
 			The waveform extractor object.
 		"""
@@ -170,8 +172,12 @@ class MonoSortingModule(LussacModule):
 		if 'n_jobs' not in params:
 			params['n_jobs'] = 6
 
+		recording = self.recording
+		if filter is not None:
+			recording = spre.filter(recording, **filter)
+
 		sorting = self.sorting if sorting is None else sorting
-		return si.extract_waveforms(self.data.recording, sorting, folder_path, allow_unfiltered=True, **params)
+		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
 
 	def get_templates(self, params: dict, filter_band: tuple[float, float] | list[float, float] | np.ndarray | None = None, margin: float = 3.0,
 					  sub_folder: str = "templates", return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:

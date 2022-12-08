@@ -21,9 +21,14 @@ class MergeUnits(MonoSortingModule):
 		return {
 			'refractory_period': [0.2, 1.0],
 			'wvf_extraction': {
-				'ms_before': 1.5,
+				'ms_before': 1.0,
 				'ms_after': 1.5,
-				'max_spikes_per_unit': 1000
+				'max_spikes_per_unit': 2000,
+				'filter': {
+					'band': [100, 9000],
+					'filter_order': 2,
+					'ftype': 'bessel'
+				}
 			},
 			'auto_merge_params': {
 				'bin_ms': 0.05,
