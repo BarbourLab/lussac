@@ -541,7 +541,6 @@ def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarra
 	w2 = get_unit_adaptive_window(auto_corr2, 0.5)
 	w = int(round((w1*n1 + w2*n2) / (n1 + n2)))
 	window = slice(middle - w, middle + w + 1)
-	print(window)
 
 	diff1 = np.sum(np.abs(cross_corr[window] - auto_corr1[window])) / (window.stop - window.start)
 	diff2 = np.sum(np.abs(cross_corr[window] - auto_corr2[window])) / (window.stop - window.start)

@@ -24,6 +24,20 @@ def get_path_to_plotlyJS(path: str | Path) -> str:
 	return os.path.relpath(utils.Utils.plotly_js_file, start=path)
 
 
+def export_figure(fig: go.Figure, filepath: str) -> None:
+	"""
+	Exports a figure to html with the correct path to plotly.js.
+
+	@param fig: Figure
+		The figure to export.
+	@param filepath: str
+		The path where to save the plot.
+	"""
+
+	plotly_js = get_path_to_plotlyJS(Path(filepath).parent)
+	fig.write_html(filepath, include_plotlyjs=plotly_js)
+
+
 def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, filepath: str, args: list[dict] | None = None, plots_per_file: int = 30) -> None:
 	"""
 	Takes a figure with multiple traces and plots, and decomposes it with a slider for each plot.
@@ -81,7 +95,7 @@ def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, fi
 		sub_fig.update_layout(**args[start])
 
 		filename = f"{filepath}_{n+1}.html" if n_files > 1 else f"{filepath}.html"
-		sub_fig.write_html(filename, include_plotlyjs=get_path_to_plotlyJS(Path(filename).parent))
+		export_figure(sub_fig, filename)
 
 
 def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: int = 4, max_time_ms: float = 35., bin_size_ms: float = 0.25,

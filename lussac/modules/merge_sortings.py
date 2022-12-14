@@ -336,7 +336,8 @@ class MergeSortings(MultiSortingsModule):
 				for sub_nodes in itertools.combinations(nodes, n_units):
 					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
 					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
-					indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max))
+					# indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max))  # TODO: Fix 'method="random"' begin super slow right now.
+					indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="keep_first_iterative")
 					spike_train = np.delete(spike_train, indices_of_duplicates)
 
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()

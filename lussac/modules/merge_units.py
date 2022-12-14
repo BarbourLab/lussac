@@ -64,14 +64,19 @@ class MergeUnits(MonoSortingModule):
 		"""
 		Makes different plots about the merging process.
 
-		@param potential_merges:
-		@param wvf_extractor:
-		@param extra_outputs:
-		@param params:
+		@param potential_merges: list[tuple]
+			List of potential merges pairwise.
+		@param wvf_extractor: WaveformExtractor
+			Waveform extractor used to extract the waveforms.
+		@param extra_outputs: dict[str, Any]
+			Extra outputs given by the merging process.
+		@param params: dict[str, Any]
+			Parameters given to the merging process.
+			i.e. params['auto_merge_params']
 		"""
 
 		self.plot_results(extra_outputs, params, wvf_extractor)
-		self.plot_difference_matrix(extra_outputs)
+		self.plot_difference_matrix(extra_outputs, params)
 
 	def plot_results(self, extra_outputs: dict[str, Any], params: dict[str, Any], wvf_extractor: si.WaveformExtractor) -> None:
 		"""
@@ -183,14 +188,20 @@ class MergeUnits(MonoSortingModule):
 
 		utils.plotting.plot_sliders(fig, 10, labels, f"{self.logs_folder}/results", args=args)
 
-	def plot_difference_matrix(self, extra_outputs: dict[str, Any]) -> None:
+	def plot_difference_matrix(self, extra_outputs: dict[str, Any], params: dict[str, Any]) -> None:
 		"""
-		TODO
+		Plots the difference matrix between units pairwise.
+		i.e. for each pair, plots the correlogram (x-axis) and template (y-axis) difference.
 
-		@param extra_outputs:
+		@param extra_outputs: dict[str, Any]
+			Extra outputs given by the merging process.
+		@param params: dict[str, Any]
+			Parameters given to the merging process.
+			i.e. params['auto_merge_params']
 		"""
 		correlogram_diff = extra_outputs['correlogram_diff']
 		templates_diff = extra_outputs['templates_diff']
+		np.save(f"{self.logs_folder}/difference_matrix.npy", np.dstack((correlogram_diff, templates_diff)))
 
 		unit_ids = self.sorting.unit_ids
 		N = len(unit_ids)
@@ -206,8 +217,15 @@ class MergeUnits(MonoSortingModule):
 			marker_color="CornflowerBlue"
 		))
 
+		fig.add_shape(
+			type="rect",
+			x0=0, x1=params['corr_diff_thresh'],
+			y0=0, y1=params['template_diff_thresh'],
+			line={'color': "Crimson", 'dash': "dash"}
+		)
+
 		fig.update_xaxes(title_text="Correlograms difference")
 		fig.update_yaxes(title_text="Templates difference")
 
-		fig.write_html(f"{self.logs_folder}/difference_matrix.html")  # TODO: include plotly js.
+		utils.plotting.export_figure(fig, f"{self.logs_folder}/difference_matrix.html")
 

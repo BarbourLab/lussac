@@ -185,7 +185,7 @@ class LussacPipeline:
 
 		@param category: str
 			The category to get the unit ids for.
-		@param sorting: se.SortingExtractor
+		@param sorting: BaseSorting
 			The sorting to get the unit ids from.
 		@return unit_ids: np.ndarray[int]
 			The unit ids for the given category.
