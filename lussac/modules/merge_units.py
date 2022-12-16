@@ -75,13 +75,14 @@ class MergeUnits(MonoSortingModule):
 			i.e. params['auto_merge_params']
 		"""
 
-		self.plot_results(extra_outputs, params, wvf_extractor)
+		self.plot_results(potential_merges, extra_outputs, params, wvf_extractor)
 		self.plot_difference_matrix(extra_outputs, params)
 
-	def plot_results(self, extra_outputs: dict[str, Any], params: dict[str, Any], wvf_extractor: si.WaveformExtractor) -> None:
+	def plot_results(self, potential_merges: list[tuple], extra_outputs: dict[str, Any], params: dict[str, Any], wvf_extractor: si.WaveformExtractor) -> None:
 		"""
 		TODO
 
+		@param potential_merges:
 		@param extra_outputs:
 		@param params:
 		@param wvf_extractor:
@@ -111,9 +112,10 @@ class MergeUnits(MonoSortingModule):
 
 			unit_id_1 = self.sorting.unit_ids[i]
 			unit_id_2 = self.sorting.unit_ids[j]
+			color = "black" if (unit_id_1, unit_id_2) in potential_merges or (unit_id_2, unit_id_1) in potential_merges else "red"
 			labels.append(f"Units {unit_id_1} & {unit_id_2}")
 			args.append({'title.text': f"Units {unit_id_1} & {unit_id_2}: corr_diff = {correlogram_diff[i, j]:.1%} ; temp_diff = {templates_diff[i, j]:.1%}",
-						 'title.font.color': "black" if correlogram_diff[i, j] <= corr_diff_threshold else "red"})  # color based on if in potential_merges.
+						 'title.font.color': color})
 
 			fig.add_trace(go.Scatter(
 				x=bins,
@@ -228,4 +230,3 @@ class MergeUnits(MonoSortingModule):
 		fig.update_yaxes(title_text="Templates difference")
 
 		utils.plotting.export_figure(fig, f"{self.logs_folder}/difference_matrix.html")
-

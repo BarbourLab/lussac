@@ -267,7 +267,7 @@ def test_compute_cross_shift() -> None:
 	spike_labels1 = np.zeros(len(spike_times1), dtype=np.int64)
 	spike_labels1[1::2] = 1
 
-	# Unit 1 is clearly shifted by 1 sample. Unit 0 has only one spike shifted (doesn't cross the threshold). Unit 2 has no correlation.
+	# Unit 1 is clearly shifted by 2 samples. Unit 0 has only one spike shifted (doesn't cross the threshold). Unit 2 has no correlation.
 	spike_times2 = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 2002, 6002, 10001, 14003, 18002, 22002, 24002, 25648, 30002, 31578], dtype=np.int64)
 	spike_labels2 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 2, 1, 2], dtype=np.int64)
 

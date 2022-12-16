@@ -262,7 +262,7 @@ class MonoSortingModule(LussacModule):
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
 				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
 				mode = params['mode'] if 'mode' in params else "extremum"
-				amplitudes = spost.get_template_extremum_amplitude(wvf_extractor, peak_sign, mode)
+				amplitudes = si.template_tools.get_template_extremum_amplitude(wvf_extractor, peak_sign, mode)
 				return amplitudes
 
 			case "SNR":  # Returns the signal-to-noise ratio of each unit on its best channel.
