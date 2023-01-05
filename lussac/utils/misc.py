@@ -409,13 +409,19 @@ def compute_similarity_matrix(coincidence_matrix: np.ndarray, n_spikes1: np.ndar
 
 def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, max_shift: int, gaussian_std: float = 1.5):
 	"""
-	TODO.
+	Computes the shift between units pairwise between 2 sortings (given their spike vector).
+	Looks at their spike times and creates a cross-correlogram to look for a central peak.
 
-	@param spike_vector1:
-	@param spike_vector2:
-	@param max_shift:
-	@param gaussian_std:
-	@return:
+	@param spike_vector1: np.ndarray (n_spikes1)
+		The spike vector of the first sorting.
+	@param spike_vector2: np.ndarray (n_spikes2)
+		The spike vector of the second sorting.
+	@param max_shift: int32
+		The maximum shift to consider (in samples).
+	@param gaussian_std: float32
+		The standard deviation of the Gaussian kernel used to smooth the cross-correlogram.
+	@return cross_shift_matrix: array[int32] (n_units1, n_units2)
+		The cross-shift matrix containing the shift between each pair of units.
 	"""
 
 	return compute_cross_shift(spike_vector1['sample_ind'], spike_vector1['unit_ind'], spike_vector2['sample_ind'], spike_vector2['unit_ind'], max_shift, gaussian_std)
@@ -425,20 +431,28 @@ def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np
 		   nopython=True, nogil=True, cache=True, parallel=True)
 def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2, max_shift, gaussian_std):
 	"""
-	TODO.
+	Computes the shift between units pairwise between 2 sortings.
+	Looks at their spike times and creates a cross-correlogram to look for a central peak.
 
-	@param spike_times1:
-	@param spike_labels1:
-	@param spike_times2:
-	@param spike_labels2:
-	@param max_shift:
-	@param gaussian_std:
-	@return:
+	@param spike_times1: array[int64] (n_spikes1)
+		All the spike timings of the first sorting.
+	@param spike_labels1: array[int64] (n_spikes1)
+		The unit labels of the first sorting (i.e. unit index of each spike).
+	@param spike_times2: array[int64] (n_spikes2)
+		All the spike timings of the second sorting.
+	@param spike_labels2: array[int64] (n_spikes2)
+		The unit labels of the second sorting (i.e. unit index of each spike).
+	@param max_shift: int32
+		The maximum shift to consider (in samples).
+	@param gaussian_std: float32
+		The standard deviation of the Gaussian kernel used to smooth the cross-correlogram.
+	@return cross_shift_matrix: array[int32] (n_units1, n_units2)
+		The cross-shift matrix containing the shift between each pair of units.
 	"""
 
 	n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
 	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
-	cross_shift_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
+	cross_shift_matrix = np.zeros((n_units1, n_units2), dtype=np.int32)
 
 	N = math.ceil(5 * gaussian_std)
 	gaussian = np.exp(-np.arange(-N, N+1)**2 / (2 * gaussian_std**2)) / (gaussian_std * math.sqrt(2*math.pi))

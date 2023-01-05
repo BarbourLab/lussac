@@ -29,7 +29,7 @@ class LussacPipeline:
 		"""
 
 		for module_key, module_params in self.data.params['lussac']['pipeline'].items():
-			print('\n' + '*'*34)
+			print('\n\n' + '*'*34)
 			print(f"{' ' + module_key + ' ':*^34}")
 			print('*' * 34)
 

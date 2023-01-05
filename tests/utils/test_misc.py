@@ -177,9 +177,14 @@ def test_compute_similarity_matrix() -> None:
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), window)
 	similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
 	corrected_similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2, window)
+	uncorrected_similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
 
+	# Test for corrected similarity matrix.
 	assert np.abs(np.mean(corrected_similarity_matrix)) < 1e-3
-	# TODO: Add tests for uncorrected similarity_matrix
+
+	# Test for uncorrected similarity matrix.
+	n_expected = n_spikes**2 * (2*window + 1) / T
+	assert np.abs(np.mean(uncorrected_similarity_matrix) - n_expected / n_spikes) < 1e-3
 
 
 def generate_spike_train(firing_rate: float, t_r: float) -> npt.NDArray[np.int64]:

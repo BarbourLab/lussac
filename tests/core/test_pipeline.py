@@ -1,4 +1,5 @@
 import copy
+import os
 import pytest
 from typing import Any
 import numpy as np
@@ -58,8 +59,12 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	}
 	light_pipeline.launch()
 
-	# TODO: add assert tests.
-	# TODO: Check that the sortings have been exported.
+	assert len(light_pipeline.data.sortings) == 1
+	assert light_pipeline.data.sortings['merged_sorting'].get_num_units() > 0
+
+	# Check that the sortings have been exported.
+	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/remove_bad_units/output/ks2_best")
+	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/merge_sortings/output/merged_sorting")
 
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:

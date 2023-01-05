@@ -34,6 +34,9 @@ class MergeSortings(MultiSortingsModule):
 				'max_difference': 0.25,
 				'gaussian_std': 0.6,
 				'gaussian_truncate': 5.0
+			},
+			'merge_check': {
+				'cross_cont_limit': 0.22
 			}
 		}
 
@@ -57,7 +60,8 @@ class MergeSortings(MultiSortingsModule):
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
 
-		self.remove_merged_units(graph, params['refractory_period'], params['similarity']['min_similarity'])
+		if params['merge_check']:
+			self.remove_merged_units(graph, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
 		# self.clean_graph(graph)
@@ -178,7 +182,7 @@ class MergeSortings(MultiSortingsModule):
 		with open(f"{self.logs_folder}/{name}.pkl", 'wb+') as file:
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-	def remove_merged_units(self, graph: nx.Graph, refractory_period, min_similarity: float) -> None:
+	def remove_merged_units(self, graph: nx.Graph, refractory_period, params: dict[str, Any]) -> None:
 		"""
 		Detects and remove merged units from the graph.
 		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
@@ -192,8 +196,8 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing all the units and connected by their similarity.
 		@param refractory_period: float
 			The (censored_period, refractory_period) in ms.
-		@param min_similarity: float
-			TODO
+		@param params: dict[str, Any]
+			The parameters for the remove_merge function.
 		"""
 
 		logs = open(f"{self.logs_folder}/merged_units_logs.txt", 'w+')
@@ -211,7 +215,7 @@ class MergeSortings(MultiSortingsModule):
 				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
-				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=0.22)
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")

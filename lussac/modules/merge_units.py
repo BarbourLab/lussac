@@ -80,12 +80,16 @@ class MergeUnits(MonoSortingModule):
 
 	def plot_results(self, potential_merges: list[tuple], extra_outputs: dict[str, Any], params: dict[str, Any], wvf_extractor: si.WaveformExtractor) -> None:
 		"""
-		TODO
+		Plots the result of the merging process (i.e. the pairs merged or closed to be merged).
 
-		@param potential_merges:
-		@param extra_outputs:
-		@param params:
-		@param wvf_extractor:
+		@param potential_merges: list[tuple]
+			List of potential merges pairwise (containing the unit ids).
+		@param extra_outputs: dict[str, Any]
+			The extra outputs given by the merging process.
+		@param params: dict[str, Any]
+			The parameters given to the merging process.
+		@param wvf_extractor: WaveformExtractor
+			The waveform extractor used by the merging process.
 		"""
 		bins = extra_outputs['bins']
 		correlograms = extra_outputs['correlograms']
@@ -94,7 +98,6 @@ class MergeUnits(MonoSortingModule):
 		templates_diff = extra_outputs['templates_diff']
 		window_sizes = extra_outputs['win_sizes']
 		corr_diff_threshold = params['corr_diff_thresh']
-		template_diff_threshold = params['template_diff_thresh']
 
 		fig = go.Figure().set_subplots(rows=2, cols=2)
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
@@ -160,6 +163,7 @@ class MergeUnits(MonoSortingModule):
 				name=f"Cross-corr unit {unit_id_1} - {unit_id_2}",
 				marker_color="Crimson"
 			), row=1, col=2)
+			# TODO: Plot window size for correlogram.
 
 			templates1 = wvf_extractor.get_template(unit_id_1)
 			templates2 = wvf_extractor.get_template(unit_id_2)
@@ -227,6 +231,6 @@ class MergeUnits(MonoSortingModule):
 		)
 
 		fig.update_xaxes(title_text="Correlograms difference")
-		fig.update_yaxes(title_text="Templates difference")
+		fig.update_yaxes(title_text="Templates difference", range=[-0.03, 1.03])
 
 		utils.plotting.export_figure(fig, f"{self.logs_folder}/difference_matrix.html")
