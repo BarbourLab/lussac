@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 from typing import Type
@@ -79,9 +80,10 @@ class LussacPipeline:
 
 			data = MonoSortingData(self.data, sub_sorting)
 			module_instance = module(module_name, data, category)
-			params = module_instance.update_params(params)
+			params0 = copy.deepcopy(params)
+			params0 = module_instance.update_params(params0)
 
-			sub_sorting = module_instance.run(params)
+			sub_sorting = module_instance.run(params0)
 
 			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
@@ -115,6 +117,7 @@ class LussacPipeline:
 
 			data = MultiSortingsData(self.data, sub_sortings)
 			module_instance = module(module_name, data, category)
+			params = copy.deepcopy(params)
 			params = module_instance.update_params(params)
 
 			sub_sortings = module_instance.run(params)

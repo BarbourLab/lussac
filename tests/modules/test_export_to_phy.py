@@ -24,7 +24,10 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 		'export_params': {
 			'compute_pc_features': False,
 			'compute_amplitudes': False,
-			'max_channels_per_template': 4,
+			'sparsity': {
+				'method': "radius",
+				'radius_um': 50
+			},
 			'template_mode': "average",
 			'copy_binary': False,
 			'chunk_duration': '1s',
