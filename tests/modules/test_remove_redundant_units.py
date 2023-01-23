@@ -20,3 +20,9 @@ def test_remove_redundant_units(mono_sorting_data: MonoSortingData) -> None:
 	assert os.path.exists(f"{module.logs_folder}/redundant_units.html")
 
 	assert sorting.get_num_units() < data.sorting.get_num_units()
+
+
+def test_get_redundancies() -> None:
+	assert RemoveRedundantUnits._get_redundancies([], []) == {}
+	assert RemoveRedundantUnits._get_redundancies([1], []) == {1: []}
+	assert RemoveRedundantUnits._get_redundancies([1, 2], [[1, 5], [2, 8], [8, 13], [2, 7], [3, 4]]) == {1: [5], 2: [8, 7]}

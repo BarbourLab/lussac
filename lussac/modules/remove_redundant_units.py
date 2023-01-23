@@ -1,4 +1,5 @@
 from typing import Any
+import numpy as np
 from overrides import override
 from lussac.core.module import MonoSortingModule
 import lussac.utils as utils
@@ -34,15 +35,39 @@ class RemoveRedundantUnits(MonoSortingModule):
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		sorting_or_wvf_extractor = self.extract_waveforms(**params['wvf_extraction']) if params['wvf_extraction'] is not None else self.sorting
 
-		new_sorting = scur.remove_redundant_units(sorting_or_wvf_extractor, **params['arguments'])
+		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(sorting_or_wvf_extractor, extra_outputs=True, **params['arguments'])
 
 		redundant_unit_ids = [unit_id for unit_id in self.sorting.unit_ids if unit_id not in new_sorting.unit_ids]
 		redundant_sorting = self.sorting.select_units(redundant_unit_ids)
-		self._plot_redundant_units(redundant_sorting)
+		redundancies = self._get_redundancies(redundant_unit_ids, redundant_unit_pairs)
+		self._plot_redundant_units(redundant_sorting, redundancies)
 
 		return new_sorting
 
-	def _plot_redundant_units(self, redundant_sorting: si.BaseSorting) -> None:
+	@staticmethod
+	def _get_redundancies(redundant_unit_ids: list, redundant_unit_pairs: list[list]) -> dict:
+		"""
+		For each redundant units, finds which units it is redundant with.
+
+		@param redundant_unit_ids: list
+			A list of all redundant units' id.
+		@param redundant_unit_pairs: list[list]
+			A list of pairs of redundant units.
+		@return redundancies: dict
+			For each redundant unit (key = id), a list of the units it is redundant with (value = list of ids).
+		"""
+
+		redundancies = {}
+		for unit_id in redundant_unit_ids:
+			redundant_with = []
+			for pair in redundant_unit_pairs:
+				if unit_id in pair:
+					redundant_with.append(pair[0] if unit_id == pair[1] else pair[1])
+			redundancies[unit_id] = redundant_with
+
+		return redundancies
+
+	def _plot_redundant_units(self, redundant_sorting: si.BaseSorting, redundancies: dict) -> None:
 		"""
 		Plots the units that were removed.
 
@@ -51,4 +76,6 @@ class RemoveRedundantUnits(MonoSortingModule):
 		"""
 
 		wvf_extractor = self.extract_waveforms(sorting=redundant_sorting, sub_folder="plot_redundant", ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
-		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/redundant_units")  # TODO: Add annotation to say with which unit it is redundant.
+		annotations = [{'text': f"Unit {unit_id} is redundant with unit(s): {' '.join(np.array(redundancies[unit_id]).astype(str))}", 'x': 0.6, 'y': 1.07,
+						'xref': "paper", 'yref': "paper", 'showarrow': False} for unit_id in redundant_sorting.unit_ids]
+		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/redundant_units", annotations_change=annotations)

@@ -1,10 +1,30 @@
+import inspect
 import math
+from typing import Any, Callable
 import scipy.stats
 import numba
 import numpy as np
 from .variables import Utils
 from spikeinterface.curation.auto_merge import get_unit_adaptive_window, normalize_correlogram
 from spikeinterface.postprocessing.correlograms import _compute_crosscorr_numba
+
+
+def filter_kwargs(kwargs: dict[str, Any], function: Callable):
+	"""
+	Filters the kwargs to only keep the keys that are accepted by the function.
+
+	@param kwargs: dict[str, Any]
+		The kwargs to filter.
+	@param function: Callable
+		The function receiving the arguments.
+	@return filtered_kwargs: dict[str, Any]
+		The filtered kwargs.
+	"""
+
+	signature = inspect.signature(function)
+	filter_keys = [param.name for param in signature.parameters.values() if param.kind == param.POSITIONAL_OR_KEYWORD]
+
+	return {filter_key: kwargs[filter_key] for filter_key in filter_keys if filter_key in kwargs}
 
 
 def flatten_dict(d: dict, sep: str = ':', parent_key: str = '') -> dict:

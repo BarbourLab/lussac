@@ -6,6 +6,11 @@ import spikeinterface.core as si
 from spikeinterface.curation.curation_tools import find_duplicated_spikes
 
 
+def test_filter_kwargs() -> None:
+	assert utils.filter_kwargs({}, test_flatten_dict) == {}
+	assert utils.filter_kwargs({'t_r': 2.0, 't_c': 1.0}, generate_spike_train) == {'t_r': 2.0}
+
+
 def test_flatten_dict() -> None:
 	assert utils.flatten_dict({}) == {}
 
@@ -69,13 +74,13 @@ def test_estimate_contamination() -> None:
 	assert np.abs(np.mean(contaminations) - C) < 0.01
 
 	# Test with a censored period.
-	contaminations = np.empty(200, dtype=np.float32)
+	contaminations = np.empty(100, dtype=np.float32)
 
 	for i in range(len(contaminations)):
 		spike_train = generate_censored_contaminated_spike_train(firing_rate, (t_c, t_r), C)
 		contaminations[i] = utils.estimate_contamination(spike_train, (t_c, 0.9*t_r))
 
-	# TODO: asserts
+	assert np.abs(np.mean(contaminations) - C) < 0.05
 
 
 def test_estimate_cross_contamination() -> None:
@@ -263,7 +268,6 @@ def generate_censored_contaminated_spike_train(firing_rate: float, refractory_pe
 
 	t_c = int(round(refractory_period[0] * 1e-3 * utils.Utils.sampling_frequency))
 	spike_train = generate_contaminated_spike_train(firing_rate, refractory_period[1], C)
-	# return np.delete(spike_train, find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max)))  # TODO: Fix 'method="random"' begin super slow right now.
 	return np.delete(spike_train, find_duplicated_spikes(spike_train, t_c, method="keep_first_iterative"))
 
 

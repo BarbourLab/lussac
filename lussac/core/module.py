@@ -1,3 +1,4 @@
+import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import os
@@ -239,6 +240,20 @@ class MonoSortingModule(LussacModule):
 		@return attribute: np.ndarray
 			The attribute for all the units.
 		"""
+		params = copy.deepcopy(params)
+		default_params = {
+			'firing_rate': {},
+			'contamination': {},
+			'amplitude': {'peak_sign': "both", 'mode': "extremum"},
+			'SNR': {'peak_sign': "both", 'mode': "extremum"},
+			'amplitude_std': {'peak_sign': "both", 'return_scaled': True, 'chunk_duration': '1s', 'n_jobs': 6},
+			'ISI_portion': {}
+		}
+
+		if attribute not in default_params:
+			raise ValueError(f"Unknown attribute '{attribute}'.")
+		params = default_params[attribute] | params
+
 		recording = self.data.recording
 		sorting = self.sorting
 		if 'filter' in params:
@@ -247,7 +262,6 @@ class MonoSortingModule(LussacModule):
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
 						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
 
-		# TODO: Probably a better way to handle 'params' than manually setting each parameter individually.
 		match attribute:
 			case "firing_rate":  # Returns the firing rate of each unit (in Hz).
 				n_spikes = {unit_id: len(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
@@ -260,23 +274,18 @@ class MonoSortingModule(LussacModule):
 				return contamination
 
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
-				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
-				mode = params['mode'] if 'mode' in params else "extremum"
-				amplitudes = si.template_tools.get_template_extremum_amplitude(wvf_extractor, peak_sign, mode)
+				params = utils.filter_kwargs(params, si.template_tools.get_template_extremum_amplitude)
+				amplitudes = si.template_tools.get_template_extremum_amplitude(wvf_extractor, **params)
 				return amplitudes
 
 			case "SNR":  # Returns the signal-to-noise ratio of each unit on its best channel.
-				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
-				peak_mode = params['peak_mode'] if 'peak_mode' in params else "extremum"
-				SNRs = sqm.compute_snrs(wvf_extractor, peak_sign, peak_mode)
+				params = utils.filter_kwargs(params, sqm.compute_snrs)
+				SNRs = sqm.compute_snrs(wvf_extractor, **params)
 				return SNRs
 
 			case "amplitude_std":  # Returns the standard deviation of the amplitude of spikes.
-				peak_sign = params['peak_sign'] if 'peak_sign' in params else "both"
-				return_scaled = params['return_scaled'] if 'return_scaled' in params else True
-				chunk_duration = params['chunk_duration'] if 'chunk_duration' in params else '1s'
-				n_jobs = params['n_jobs'] if 'n_jobs' in params else 6
-				amplitudes = spost.compute_spike_amplitudes(wvf_extractor, peak_sign=peak_sign, return_scaled=return_scaled, outputs='by_unit', chunk_duration=chunk_duration, n_jobs=n_jobs)[0]
+				params = utils.filter_kwargs(params, spost.compute_spike_amplitudes)
+				amplitudes = spost.compute_spike_amplitudes(wvf_extractor, outputs='by_unit', **params)[0]
 				std_amplitudes = {unit_id: np.std(amp) for unit_id, amp in amplitudes.items()}
 				return std_amplitudes
 
@@ -287,7 +296,7 @@ class MonoSortingModule(LussacModule):
 				return ISI_portion
 
 			case _:
-				raise ValueError(f"Unknown attribute: {attribute}")
+				raise ValueError(f"Unknown attribute: '{attribute}'")
 
 	def get_units_attribute_arr(self, attribute: str, params: dict) -> np.array:
 		"""
