@@ -270,7 +270,7 @@ class MonoSortingModule(LussacModule):
 
 			case "contamination":  # Returns the estimated contamination of each unit.
 				censored_period, refractory_period = params['refractory_period']
-				contamination = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period, censored_period)[1]
+				contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period, censored_period)
 				return contamination
 
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).

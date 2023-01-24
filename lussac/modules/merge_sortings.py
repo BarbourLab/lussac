@@ -215,10 +215,15 @@ class MergeSortings(MultiSortingsModule):
 				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
+				C1 = utils.estimate_contamination(spike_train1, refractory_period)
+				C2 = utils.estimate_contamination(spike_train1, refractory_period)
+				if C2 < C1:
+					spike_train1, spike_train2 = spike_train2, spike_train1
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
+				logs.write(f"\tC1 = {C1:.1%} ; C2 = {C2:.1%}\n")
 				if p_value > 5e-3:  # No problem, node1 and node2 are probably just a split.
 					continue
 
