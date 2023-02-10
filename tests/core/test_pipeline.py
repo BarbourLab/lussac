@@ -12,13 +12,17 @@ from spikeinterface.curation import CurationSorting
 
 
 def test_launch(pipeline: LussacPipeline) -> None:
-	wrong_pipeline = copy.deepcopy(pipeline)
-	wrong_pipeline.data.params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
+	sortings = pipeline.data.sortings.copy()  # Creates a new dict but not a deepcopy --> same sorting objects.
+	params = copy.deepcopy(pipeline.data.params)
+	params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
+	data = LussacData(pipeline.data.recording, sortings, params)
+
+	wrong_pipeline = LussacPipeline(data)
 	with pytest.raises(ValueError):
 		wrong_pipeline.launch()
 	del wrong_pipeline
 
-	light_pipeline = copy.deepcopy(pipeline)
+	light_pipeline = LussacPipeline(data)
 	light_pipeline.data.sortings.pop('ks2_cs')
 	light_pipeline.data.sortings.pop('ks2_low_thresh')
 	light_pipeline.data.sortings.pop('ms3_cs')

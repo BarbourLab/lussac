@@ -1,4 +1,3 @@
-import copy
 import os
 from lussac.core.lussac_data import MonoSortingData
 from lussac.modules.remove_bad_units import RemoveBadUnits
@@ -53,8 +52,8 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
-	data = copy.deepcopy(mono_sorting_data)
-	data.sorting = data.sorting.select_units([2, 7, 11, 14, 21, 23, 24])
+	# Create a smaller data object for testing (faster).
+	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([2, 7, 11, 14, 21, 23, 24]))
 
 	module = RemoveBadUnits("test_rbu", data, "all")
 	assert not os.path.exists(f"{module.logs_folder}/bad_units.html")

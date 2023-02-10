@@ -1,4 +1,3 @@
-import copy
 import os
 from lussac.core.lussac_data import MonoSortingData
 from lussac.modules.remove_redundant_units import RemoveRedundantUnits
@@ -10,8 +9,8 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_remove_redundant_units(mono_sorting_data: MonoSortingData) -> None:
-	data = copy.deepcopy(mono_sorting_data)
-	data.sorting = data.sorting.select_units([80, 81, 84, 85])
+	# Create a smaller data object for testing (faster).
+	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([80, 81, 84, 85]))
 	params = {'wvf_extraction': None, 'arguments': {'align': False, 'agreement_threshold': 0.1, 'duplicate_threshold': 0.7, 'remove_strategy': 'max_spikes'}}
 
 	module = RemoveRedundantUnits("test_rru", data, "all")

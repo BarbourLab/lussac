@@ -1,4 +1,3 @@
-import copy
 import os
 import numpy as np
 from lussac.core.lussac_data import MonoSortingData
@@ -22,8 +21,8 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_align_units(mono_sorting_data: MonoSortingData) -> None:
-	data = copy.deepcopy(mono_sorting_data)
-	data.sorting = data.sorting.select_units([14, 22, 70, 71])
+	# Create a smaller data object for testing (faster).
+	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([14, 22, 70, 71]))
 
 	module = AlignUnits("test_align_units", data, "all")
 	assert not os.path.exists(f"{module.logs_folder}/alignment.html")

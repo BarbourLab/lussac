@@ -243,9 +243,10 @@ class MergeSortings(MultiSortingsModule):
 					if node1 not in nodes_to_remove:
 						nodes_to_remove.append(node1)
 					continue
-				else:  # node is probably a merged unit.
+				elif min(C1, C2) < 0.1:  # node is probably a merged unit.
 					if node not in nodes_to_remove:
 						nodes_to_remove.append(node)
+						logs.write(f"\t-> Unit {node} is considered a merged unit.\n")
 
 		logs.write("\nRemoved units:\n")
 		for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
@@ -339,13 +340,13 @@ class MergeSortings(MultiSortingsModule):
 
 			new_unit_id = len(new_spike_trains)
 			best_score = -100000
+			unit_label = ""
 			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
 
 			for n_units in range(1, max_units_merge+1):
 				for sub_nodes in itertools.combinations(nodes, n_units):
 					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
 					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
-					# indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="random", seed=np.random.randint(low=0, high=np.iinfo(np.int32).max))  # TODO: Fix 'method="random"' begin super slow right now.
 					indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="keep_first_iterative")
 					spike_train = np.delete(spike_train, indices_of_duplicates)
 
@@ -357,6 +358,9 @@ class MergeSortings(MultiSortingsModule):
 					if score > best_score:
 						best_score = score
 						new_spike_trains[new_unit_id] = spike_train
+						unit_label = sub_nodes
+
+			logs.write(f"\t--> Unit(s) chosen: {unit_label}\n")
 
 		logs.close()
 

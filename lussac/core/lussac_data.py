@@ -49,7 +49,7 @@ class LussacData:
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 		self._setup_logs_directory(params['lussac']['logs_folder'])
 
-		# TODO: Globzl job kwargs for si
+		# TODO: Global job kwargs for si
 		si.set_global_job_kwargs(progress_bar=False)
 
 		self._sanity_check()

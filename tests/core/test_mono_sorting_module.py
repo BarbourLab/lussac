@@ -1,4 +1,3 @@
-import copy
 from pathlib import Path
 import pytest
 from typing import Any
@@ -39,6 +38,7 @@ def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
 
 
 def test_logs_folder(mono_sorting_module: MonoSortingModule) -> None:
+	print(mono_sorting_module.data.name)
 	assert mono_sorting_module.logs_folder == f"{mono_sorting_module.data.logs_folder}/test_mono_sorting_module/all/ms3_best"
 
 
@@ -114,8 +114,8 @@ class TestMonoSortingModule(MonoSortingModule):
 	__test__ = False
 
 	def __init__(self, mono_sorting_data: MonoSortingData):
-		data = copy.deepcopy(mono_sorting_data)
-		data.sorting = data.sorting.select_units([0, 1, 2, 3, 4])
+		# Create a smaller data object for testing (faster).
+		data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([0, 1, 2, 3, 4]))
 		super().__init__("test_mono_sorting_module", data, "all")
 
 	@property
