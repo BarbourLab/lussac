@@ -23,6 +23,7 @@ def data(params: dict) -> LussacData:
 def mono_sorting_data(data: LussacData) -> MonoSortingData:
 	return MonoSortingData(data, data.sortings['ms3_best'])
 
+
 @pytest.fixture(scope="session")
 def multi_sortings_data(data: LussacData) -> MultiSortingsData:
 	return MultiSortingsData(data, data.sortings)
@@ -37,6 +38,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 	# Remove lussac folder if exists.
 	shutil.rmtree("tests/datasets/cerebellar_cortex/lussac", ignore_errors=True)
 	os.makedirs("tests/tmp", exist_ok=True)
+
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int | pytest.ExitCode) -> None:
 	# Remove temporary directories

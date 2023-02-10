@@ -56,7 +56,6 @@ def test_get_border_probabilities() -> None:
 
 
 def test_estimate_contamination() -> None:
-	sf = utils.Utils.sampling_frequency
 	firing_rate = 50  # Hz
 	t_c = 0.5
 	t_r = 2.0
@@ -84,7 +83,6 @@ def test_estimate_contamination() -> None:
 
 
 def test_estimate_cross_contamination() -> None:
-	sf = utils.Utils.sampling_frequency
 	firing_rates = (20, 10)  # Hz
 	C = (0.04, 0.06)
 	t_c = 0.5

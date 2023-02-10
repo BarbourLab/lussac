@@ -1,5 +1,5 @@
 numpy>=1.22
-scipy>=1.8
+scipy>=1.9
 scikit-learn>=1.0
 matplotlib>=3.4
 plotly>=5.8.2
@@ -7,12 +7,13 @@ kaleido
 pandas>=1.4.2
 networkx>=2.7
 jsmin>=3.0
-setuptools>=63.0
+setuptools>=65.6.3
 numba>=0.56.2
 overrides>=7.3.1
 spikeinterface>=0.96
 probeinterface>=0.2.14
 neo>=0.11.0
+h5py>=3.7
 sphinx>=6.0
-pytest>=7.1.0
+pytest>=7.1.3
 pytest-cov>=3.0.0
