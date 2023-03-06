@@ -21,6 +21,9 @@ class PhyData:
 		self.sampling_f = params['recording']['sampling_rate']
 		self.recording = spikeextractors.BinDatRecordingExtractor(params['recording']['file'], params['recording']['sampling_rate'], params['recording']['n_channels'], params['recording']['dtype'])
 
+		if 'prb' in params['recording']:
+			self.recording = self.recording.load_probe_file(params['recording']['prb'])
+
 		self.uvolt_ratio = params['recording']['uvolt'] if 'uvolt' in params['recording'] else None
 
 		self._sortings = []
