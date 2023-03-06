@@ -217,12 +217,12 @@ class WaveformExtractor:
 		before	= int(round(params['ms_before'] * recording.get_sampling_frequency() / 1e3))
 		after	= int(round(params['ms_after'] * recording.get_sampling_frequency() / 1e3)) + 1
 
-		t_max	= recording._timeseries.shape[1]
+		t_max	= recording.get_num_frames()
 		indices = np.tile(spike_train[:, None], (1, before+after)) + np.arange(-before, after)
 		indices[:before] = np.where(indices[:before]<0, 0, indices[:before])			# Check that first waveforms don't have negative indices.
 		indices[-after:] = np.where(indices[-after:]>=t_max, t_max-1, indices[-after:])	# Check that last waveforms don't go beyond recording.
 
-		waveforms = np.swapaxes(recording._timeseries[:, indices.astype(np.uint64)], 0, 1)
+		waveforms = np.swapaxes(recording.get_traces()[:, indices.astype(np.uint64)], 0, 1)
 
 		if isinstance(params['max_channels_per_waveforms'], list) or isinstance(params['max_channels_per_waveforms'], np.ndarray):
 			channels_idx = np.array(params['max_channels_per_waveforms'], dtype=np.uint16)
