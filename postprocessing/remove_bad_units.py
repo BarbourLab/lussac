@@ -74,7 +74,7 @@ def rm_bad_units(data: PhyData, unit_ids: list, params: dict, plot_folder: str):
 			mean_wvf = np.mean(waveforms, axis=0, dtype=np.float32)
 
 			spike_train = data.get_unit_spike_train(unit_id)
-			amplitudes = data.recording._timeseries[channel_idx[0], spike_train] * data.uvolt_ratio
+			amplitudes = data.recording.get_traces()[channel_idx[0], spike_train] * data.uvolt_ratio
 			std_amplitudes = np.std(amplitudes)
 
 			if 'min' in params['std_amplitudes'] and std_amplitudes < params['std_amplitudes']['min']:
