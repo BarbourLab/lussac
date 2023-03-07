@@ -949,3 +949,4 @@ def plot_units_correlograms(unit_ids: list, save_folder: str, ISI: tuple, auto_c
 
 	fig.update_layout(width=1440, height=900, sliders=sliders)
 	fig.write_html("{0}/{1}.html".format(save_folder, filename))
+

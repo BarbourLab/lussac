@@ -921,3 +921,4 @@ def _plot_waveform_checks(waveforms: np.ndarray, pairs: np.ndarray, shifts: np.n
 
 	fig.update_layout(width=1440, height=810, sliders=sliders)
 	fig.write_html("{0}/waveform_validation.html".format(plot_folder))
+

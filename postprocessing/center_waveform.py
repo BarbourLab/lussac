@@ -536,3 +536,4 @@ def _plot_result(data: PhyData, unit_ids: list, old_means: np.ndarray, reference
 		fig.savefig("{0}/unit_{1}.png".format(save_folder, unit_id))
 	
 	plt.close("all")
+

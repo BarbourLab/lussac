@@ -3,7 +3,6 @@ import argparse
 import json
 from jsmin import jsmin
 
-import init
 import phy_data
 import postprocessing.pipeline
 import spike_sorting.kilosort2
@@ -80,3 +79,4 @@ if __name__ == "__main__":
 	postprocessing.pipeline.launch(data, params['post_processing']['pipeline'], params['recording']['prb'])
 
 	shutil.rmtree(params['post_processing']['tmp_folder'])
+

@@ -1000,3 +1000,4 @@ def _plot_similarity(data: PhyData, unit_ids: list, shifts: np.ndarray, params: 
 	np.save("{0}/corr_diff.npy".format(plot_folder), corr_diff)
 	np.save("{0}/wvf_diff.npy".format(plot_folder), wvf_diff)
 	np.save("{0}/units_diff.npy".format(plot_folder), all_pairs)
+

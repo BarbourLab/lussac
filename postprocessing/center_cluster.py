@@ -174,3 +174,4 @@ def _plot_result(data: PhyData, mean_waveforms: np.ndarray, unit_ids: list, cent
 
 	fig.update_layout(width=1440, height=810, sliders=sliders)
 	fig.write_html("{0}/results.html".format(plot_folder))
+

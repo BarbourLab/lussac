@@ -98,3 +98,4 @@ def _discriminate_duplicates(data: PhyData, unit_id: int, duplicates_train: np.n
 		spikes_to_delete[i] = duplicates_train[i] + (0 if wf_1 >= wf_2 else 1)
 
 	return spikes_to_delete
+

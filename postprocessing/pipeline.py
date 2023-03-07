@@ -423,3 +423,4 @@ def _update_units_id(data: PhyData, potential_units: dict, category: str, new_un
 				potential_units[category][idx] = new_id
 
 		potential_units[category] = np.unique(potential_units[category])
+
