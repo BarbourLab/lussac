@@ -512,7 +512,11 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 		if unit_id < starting_ID:
 			continue
 
-		wvfs = data.get_unit_waveforms(unit_id, **wvf_extraction_kwargs)
+		spike_train = data.merged_sorting.get_unit_spike_train(unit_id).astype(np.uint64)
+		if len(spike_train) > wvf_extraction_kwargs['max_spikes_per_unit']:
+			spike_train = np.sort(np.random.choice(spike_train, params['max_spikes_per_unit'], False))
+
+		wvfs = data.get_waveforms_from_spiketrain(spike_train, **wvf_extraction_kwargs)
 		mean_wvf = np.mean(wvfs, axis=0, dtype=np.float32)
 		mean_wvf = filter.filter(mean_wvf, b, a, dtype=np.float32)
 		mean_wvfs[unit_id] = mean_wvf
