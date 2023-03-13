@@ -501,9 +501,10 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 	wvf_extraction_kwargs = {}
 	wvf_extraction_kwargs['ms_before'] = params['waveform_validation']['waveforms']['ms_before'] + params['max_reshift']
 	wvf_extraction_kwargs['ms_after']  = params['waveform_validation']['waveforms']['ms_after']  + params['max_reshift']
-	wvf_extraction_kwargs['max_spikes_per_unit'] = 1000
+	wvf_extraction_kwargs['max_spikes_per_unit'] = 10000
 	wvf_extraction_kwargs['max_channels_per_waveforms'] = None
 	b, a = filter.get_filter_params(params['waveform_validation']['filter'][0], params['waveform_validation']['filter'][1], params['waveform_validation']['filter'][2], btype="bandpass")
+	noise_levels = utils.get_noise_levels(data.recording, filtering=(b, a))
 
 	mean_wvfs = dict()
 	deviations = dict()
@@ -512,7 +513,7 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 			continue
 
 		spike_train = data.merged_sorting.get_unit_spike_train(unit_id).astype(np.uint64)
-		wvfs = data.get_waveforms_from_spiketrain(spike_train, **wvf_extraction_kwargs)
+		wvfs = data.get_unit_waveforms(spike_train, **wvf_extraction_kwargs)
 		mean_wvf = np.mean(wvfs, axis=0, dtype=np.float32)
 		mean_wvf = filter.filter(mean_wvf, b, a, dtype=np.float32)
 		mean_wvfs[unit_id] = mean_wvf
@@ -520,7 +521,7 @@ def check_conflicts(data: PhyData, starting_ID: int, params: dict, plot_folder: 
 		best_channel = np.argmax(np.max(np.abs(mean_wvf), axis=1))
 		center = np.argmax(np.abs(mean_wvf[best_channel]))
 		mean_deviation = np.std(wvfs[:, best_channel, center] - mean_wvf[best_channel, center])
-		noise_level = scipy.stats.median_abs_deviation(filter.filter(data.recording.get_traces(channel_ids=[best_channel])[0], b, a, dtype=np.int16), scale="normal")
+		noise_level = noise_levels[best_channel]
 		deviations[unit_id] = np.abs((mean_deviation - noise_level) / mean_wvf[best_channel, center])
 
 

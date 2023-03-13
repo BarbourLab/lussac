@@ -604,6 +604,37 @@ def get_spiketrain_supression_period(spike_train: np.ndarray, contamination: flo
 	return suppression_period
 
 
+def get_noise_levels(recording, num_chunks: int = 60, chunk_size: int = 10000, margin: int = 150, filtering = None):
+	"""
+	Computes the noise level on a recording based on the MAD (more robust than std).
+	Code copied from SpikeInterface 0.97.1.
+
+	@param recording (RecordingExtractor):
+		The recording object.
+	@param num_chunks (int):
+		The number of random chunks to sample to compute the noise levels.
+		By default 20.
+	@param chunk_size (int):
+		The size of a single chunk.
+		By default 10,000.
+	"""
+
+	chunk_list = []
+	random_starts = np.random.randint(margin, recording.get_num_frames() - chunk_size - margin, size=num_chunks)
+
+	for start_frame in random_starts:
+		chunk = recording.get_traces(start_frame=start_frame-margin, end_frame=start_frame+chunk_size+margin)
+		if filtering != None:
+			b, a = filtering
+			chunk = filter.filter(chunk, b, a, dtype=chunk.dtype)
+
+		chunk_list.append(chunk[margin:-margin])
+
+	random_chunks = np.concatenate(np.swapaxes(chunk_list, 1, 2), axis=0)
+	med = np.median(random_chunks, axis=0, keepdims=True)
+	noise_levels = np.median(np.abs(random_chunks - med), axis=0) / 0.6744897501960817
+
+	return noise_levels
 
 
 def plot_unit(data, unit_id: int, save_folder: str, bin_size: float=1.0/3.0, max_time: float=50.0, fr_bin_size: float=2.0, ms_before: float=2, ms_after: float=2):

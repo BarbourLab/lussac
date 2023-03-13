@@ -103,7 +103,7 @@ def launch(data: PhyData, params: dict, prb_file: str):
 			else:
 				recording = data.recording
 
-			export_params = dict(compute_pc_features=True, compute_amplitudes=True, max_channels_per_template=recording.get_num_channels(), max_spikes_per_unit=None,
+			export_params = dict(compute_pc_features=True, compute_amplitudes=True, max_channels_per_template=min(32, recording.get_num_channels()), max_spikes_per_unit=None,
 														copy_binary=False, ms_before=1.0, ms_after=3.0, dtype=np.int16, recompute_info=True, n_jobs=3, filter_flag=False)
 			export_params.update(params0['export_params'])
 
@@ -157,7 +157,7 @@ def launch(data: PhyData, params: dict, prb_file: str):
 				folder = "{0}/sorting_{1}".format(params0['path'], sorting)
 				os.makedirs(folder, exist_ok=True)
 
-				export_params = dict(compute_pc_features=False, compute_amplitudes=False, max_channels_per_template=recording.get_num_channels(), max_spikes_per_unit=5000,
+				export_params = dict(compute_pc_features=False, compute_amplitudes=False, max_channels_per_template=min(32, recording.get_num_channels()), max_spikes_per_unit=2000,
 														copy_binary=False, ms_before=1.0, ms_after=3.0, dtype=np.int16, recompute_info=True, n_jobs=3, filter_flag=False)
 				export_params.update(params0['export_params'])
 				spiketoolkit.postprocessing.export_to_phy(recording, data._sortings[sorting], folder, **export_params)
