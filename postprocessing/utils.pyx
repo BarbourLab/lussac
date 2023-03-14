@@ -621,21 +621,19 @@ def get_noise_levels(recording, num_chunks: int = 60, chunk_size: int = 10000, m
 
 	chunk_list = []
 	random_starts = np.random.randint(margin, recording.get_num_frames() - chunk_size - margin, size=num_chunks)
-	print(random_starts.shape)
 
 	for start_frame in random_starts:
 		chunk = recording.get_traces(start_frame=start_frame-margin, end_frame=start_frame+chunk_size+margin)
+
 		if filtering != None:
 			b, a = filtering
 			chunk = filter.filter(chunk, b, a, dtype=chunk.dtype)
 
-		chunk_list.append(chunk[margin:-margin])
+		chunk_list.append(chunk[:, margin:-margin])
 
 	random_chunks = np.concatenate(np.swapaxes(chunk_list, 1, 2), axis=0)
-	print(random_chunks.shape)
 	med = np.median(random_chunks, axis=0, keepdims=True)
 	noise_levels = np.median(np.abs(random_chunks - med), axis=0) / 0.6744897501960817
-	print(noise_levels.shape)
 
 	return noise_levels
 
