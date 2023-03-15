@@ -103,12 +103,16 @@ def launch(data: PhyData, params: dict, prb_file: str):
 			else:
 				recording = data.recording
 
+			if 'filter' in params0:
+				recording = spiketoolkit.preprocessing.bandpass_filter(recording, freq_min=params0['filter'][1], freq_max=params0['filter'][2],
+																	   filter_type='butter', order=params0['filter'][0])
+
 			export_params = dict(compute_pc_features=True, compute_amplitudes=True, max_channels_per_template=min(32, recording.get_num_channels()), max_spikes_per_unit=None,
 														copy_binary=False, ms_before=1.0, ms_after=3.0, dtype=np.int16, recompute_info=True, n_jobs=3, filter_flag=False)
 			export_params.update(params0['export_params'])
 
 			t1 = time.perf_counter()
-			spiketoolkit.postprocessing.export_to_phy(data.recording, data.merged_sorting, params0['path'], **export_params)
+			spiketoolkit.postprocessing.export_to_phy(recording, data.merged_sorting, params0['path'], **export_params)
 			t2 = time.perf_counter()
 			print("export_to_phy took {0:.0f} s".format(t2-t1))
 
@@ -148,6 +152,10 @@ def launch(data: PhyData, params: dict, prb_file: str):
 				recording = data.recording.load_probe_file(params0['prb'])
 			else:
 				recording = data.recording
+
+			if 'filter' in params0:
+				recording = spiketoolkit.preprocessing.bandpass_filter(recording, freq_min=params0['filter'][1], freq_max=params0['filter'][2],
+																	   filter_type='butter', order=params0['filter'][0])
 
 			for sorting in range(len(data._sortings)):
 				data.set_sorting(sorting)
