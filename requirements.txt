@@ -11,4 +11,4 @@ setuptools>=58.0.4
 spikesorters==0.4.5
 spikeextractors==0.9.11
 spiketoolkit==0.7.7
-
+spikefeatures==0.1.2

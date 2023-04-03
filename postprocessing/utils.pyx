@@ -18,6 +18,9 @@ ctypedef np.int64_t DTYPE_t
 ctypedef stdint.int64_t Int64
 
 
+np.import_array()  # Recommended whenever 'cimport numpy' is called.
+
+
 def get_ISI(data, unit_id: int, bin_size: float=1.0, max_time: float=50.0):
 	"""
 	Computes the Inter-Spike Interval (time difference between consecutive spikes) of a unit.
