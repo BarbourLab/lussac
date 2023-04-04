@@ -49,8 +49,8 @@ class LussacData:
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
 		self._setup_logs_directory(params['lussac']['logs_folder'])
 
-		# TODO: Global job kwargs for si
-		si.set_global_job_kwargs(progress_bar=False)
+		if 'si_global_job_kwargs' in params['lussac']:
+			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
 
 		self._sanity_check()
 
