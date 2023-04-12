@@ -63,3 +63,11 @@ def test_plot_units(data: LussacData) -> None:
 
 	utils.plot_units(empty_wvf_extractor, filepath=f"{folder}/plot_units_empty")
 	assert not os.path.exists(f"{folder}/plot_units_empty.html")
+
+
+def test_create_gt_annotations() -> None:
+	sorting = si.NumpySorting.from_dict({0: np.ndarray([0, 60], dtype=np.int64), 1: np.ndarray([90, 187, 601], dtype=np.int64)}, 30000)
+	assert len(utils.create_gt_annotations(sorting)) == 0
+
+	sorting.set_property(key="gt_label", values=['Good', 'Bad'])
+	assert len(utils.create_gt_annotations(sorting)) == 2

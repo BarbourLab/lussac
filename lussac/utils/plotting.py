@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import copy
 from pathlib import Path
 import numpy as np
@@ -133,6 +134,8 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	assert len(annotations_change) % n_units == 0, "The number of annotations_change must be a multiple of the number of units!"
 	n_annotations_per_plot = len(annotations_change) // n_units
 
+	annotations_gt = create_gt_annotations(wvf_extractor.sorting)
+
 	sf = wvf_extractor.sampling_frequency
 	max_time = int(round(max_time_ms * 1e-3 * sf))
 	bin_size = int(round(bin_size_ms * 1e-3 * sf))
@@ -142,7 +145,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	if n_channels > wvf_extractor.recording.get_num_channels():
 		n_channels = wvf_extractor.recording.get_num_channels()
 
-	spike_amplitudes = spost.compute_spike_amplitudes(wvf_extractor, load_if_exists=True, return_scaled=True, outputs="by_unit", chunk_duration='1s', n_jobs=12)[0]
+	spike_amplitudes = spost.compute_spike_amplitudes(wvf_extractor, load_if_exists=True, return_scaled=wvf_extractor.return_scaled, outputs="by_unit")[0]
 
 	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//4, cols=4)
 	args = []
@@ -154,11 +157,13 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 				fig.add_annotation(**annotation)
 			for annotation in annotations_change[annotations_slice]:
 				fig.add_annotation(**annotation)
+			if len(annotations_gt) > 0:
+				fig.add_annotation(**annotations_gt[i])
 
 		spike_train = wvf_extractor.sorting.get_unit_spike_train(unit_id)
 		args.append({
 			"title.text": f"Unit {unit_id}",
-			"annotations": [*annotations_fix, *annotations_change[annotations_slice]]
+			"annotations": [*annotations_fix, *annotations_change[annotations_slice], *annotations_gt[i:i+1]]
 		})
 
 		ISI, bins = spost.compute_isi_histograms_from_spiketrain(spike_train, max_time, bin_size, sf)
@@ -219,9 +224,42 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	fig.update_yaxes(title_text="ISI", rangemode="tozero", row=1, col=1)
 	fig.update_yaxes(title_text="Auto-correlogram", rangemode="tozero", row=1, col=2)
 	fig.update_yaxes(title_text="Firing rate (Hz)", rangemode="tozero", row=1, col=3)
-	fig.update_yaxes(title_text=f"Voltage (µV)", rangemode="tozero", row=1, col=4)
+	fig.update_yaxes(title_text=f"Spike amplitudes ({wvfs_unit})", rangemode="tozero", row=1, col=4)
 	for i in range(n_channels):
 		fig.update_xaxes(title_text="Time (ms)", matches='x5', row=2 + i//4, col=1 + i%4)
-		fig.update_yaxes(title_text=f"Amplitude ({wvfs_unit})", rangemode="tozero", matches='y5', row=2 + i//4, col=1 + i%4)
+		fig.update_yaxes(title_text=f"Voltage ({wvfs_unit})", rangemode="tozero", matches='y5', row=2 + i//4, col=1 + i%4)
 
 	plot_sliders(fig, 4 + n_channels, labels=wvf_extractor.unit_ids, filepath=filepath, args=args)
+
+
+def create_gt_annotations(sorting: si.BaseSorting) -> list[dict[str, Any]]:
+	"""
+	Creates the Ground Truth annotations for the plot.
+	Returns an empty array if property 'gt_label' is not found in the sorting object.
+
+	@param sorting: BaseSorting
+		The sorting for which to create the annotations.
+	@return gt_annotations: list[dict[str, Any]]
+		The Ground Truth annotations for the plot.
+	"""
+
+	annotations_gt = []
+
+	if 'gt_label' in sorting.get_property_keys():
+		for unit_id in sorting.unit_ids:
+			gt_label = sorting.get_unit_property(unit_id, 'gt_label')
+			annotations_gt.append({
+				'x': 1.0,
+				'y': 1.05,
+				'xref': 'paper',
+				'yref': 'paper',
+				'xanchor': 'right',
+				'yanchor': 'top',
+				'text': f"GT: {gt_label}",
+				'font': {
+					'color': "rgba(73, 42, 189, 1.0)"
+				},
+				'showarrow': False
+			})
+
+	return annotations_gt
