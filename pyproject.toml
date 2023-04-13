@@ -40,6 +40,35 @@ repository = "https://github.com/BarbourLab/lussac"
 # TODO: Add documentation link
 # TODO: Add changelog link
 
+[tool.coverage.run]
+data_file = "tests/.coverage"
+source = ["src/lussac/"]
+
+[tool.coverage.report]
+exclude_lines = [
+	# Have to re-enable the standard pragma
+	"pragma: no cover",
+
+	# Don't complain about abstract methods
+	"@(abc.)?abstractmethod",
+
+	# Numba code isn't correctly checked for coverage
+	"@numba.jit"
+]
+
+[tool.coverage.html]
+directory = "tests/coverage_html_report"
+
+[tool.coverage.xml]
+output = "tests/coverage.xml"
+
+[tool.pytest.ini_options]
+cache_dir = "tests/.pytest_cache"
+minversion = "6.0"
+python_files = "test_*.py"
+python_functions = "test_*"
+testpaths = ["tests/"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["lussac"]

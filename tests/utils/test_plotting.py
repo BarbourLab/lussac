@@ -66,7 +66,7 @@ def test_plot_units(data: LussacData) -> None:
 
 
 def test_create_gt_annotations() -> None:
-	sorting = si.NumpySorting.from_dict({0: np.ndarray([0, 60], dtype=np.int64), 1: np.ndarray([90, 187, 601], dtype=np.int64)}, 30000)
+	sorting = si.NumpySorting.from_dict({0: np.array([3, 60], dtype=np.int64), 1: np.array([90, 187, 601], dtype=np.int64)}, 30000)
 	assert len(utils.create_gt_annotations(sorting)) == 0
 
 	sorting.set_property(key="gt_label", values=['Good', 'Bad'])

@@ -45,7 +45,7 @@ jobs:
         key: ${{ runner.os }}-datasets
     - name: Test with pytest
       run: |
-        python -m pytest --cov
+        pytest --cov
         coverage xml
     - name: Upload coverage report to codecov.io
       uses: codecov/codecov-action@v3
