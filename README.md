@@ -19,12 +19,11 @@ conda create -n lussac python=3.10
 conda activate lussac
 
 # Install Lussac.
-pip install -r requirements.txt
-python setup.py install
+pip install -e .
 ```
 
 If you want to check whether the installation was successful, you can run the tests (this may take a while as it will download some testing datasets):
 
 ```bash
-python -m pytest
+pytest
 ```
