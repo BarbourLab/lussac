@@ -29,7 +29,7 @@ dependencies = [
 	"sphinx>=6.0",
 	"pytest>=7.1.3",
 	"pytest-cov>=3.0.0",
-	"sphinxemoji",
+	"sphinxemoji>=0.2.0",
 	"sphinx-rtd-theme>=1.1.0"
 ]
 
@@ -40,7 +40,7 @@ lussac = "lussac.main:main"
 homepage = "https://github.com/BarbourLab/lussac"
 repository = "https://github.com/BarbourLab/lussac"
 # TODO: Add documentation link
-# TODO: Add changelog link
+changelog = "https://github.com/BarbourLab/lussac/releases"
 
 [tool.coverage.run]
 data_file = "tests/.coverage"
