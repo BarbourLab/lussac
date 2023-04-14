@@ -1,11 +1,14 @@
 import os
+import pathlib
 import shutil
+import sys
 import pytest
 from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
 from lussac.core.pipeline import LussacPipeline
 import lussac.main
 
 
+sys.path.append(str(pathlib.Path(__file__).parent.parent.absolute()))  # Otherwise the tests are not found properly with 'pytest'.
 params_path = "tests/datasets/cerebellar_cortex/params.json"
 
 
