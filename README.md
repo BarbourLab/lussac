@@ -1,4 +1,5 @@
 [![Python version](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
+[![Documentation Status](https://readthedocs.org/projects/lussac/badge/?version=latest)](http://lussac.readthedocs.io/)
 [![Build status](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests.yml)
 [![Coverage report](https://codecov.io/gh/barbourlab/lussac/graphs/badge.svg)](https://app.codecov.io/github/barbourlab/lussac)
 
@@ -27,3 +28,8 @@ pip install -e .
 # (this may take a while as it will download some testing datasets).
 pytest
 ```
+
+
+## Documentation
+
+You can find the documentation [here](https://lussac.readthedocs.io/).
