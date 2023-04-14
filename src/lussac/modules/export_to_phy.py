@@ -24,9 +24,7 @@ class ExportToPhy(MonoSortingModule):
 				'compute_pc_features': False,
 				'copy_binary': False,
 				'template_mode': "average",
-				'verbose': False,
-				'chunk_duration': '1s',
-				'n_jobs': 6
+				'verbose': False
 			}
 		}
 

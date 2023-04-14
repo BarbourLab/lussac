@@ -19,13 +19,10 @@ class ExportToSIGUI(MonoSortingModule):
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1000,
 				'return_scaled': True,
-				'allow_unfiltered': True,
-				'chunk_duration': '1s',
-				'n_jobs': 6
+				'allow_unfiltered': True
 			},
 			'spike_amplitudes': {
-				'chunk_duration': '1s',
-				'n_jobs': 6
+
 			},
 			'principal_components': False
 		}
