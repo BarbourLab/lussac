@@ -148,19 +148,21 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		graph = nx.Graph()
+		for (name, sorting) in self.sortings.items():
+			for unit_id in sorting.unit_ids:
+				attr = {'connected': False}
+				if 'gt_label' in sorting.get_property_keys():
+					attr['gt_label'] = sorting.get_unit_property(unit_id, 'gt_label')
+
+				graph.add_node((name, unit_id), **attr)
+
 		for i, (name1, sorting1) in enumerate(self.sortings.items()):
 			for j, (name2, sorting2) in enumerate(self.sortings.items()):
 				if j <= i:
 					continue
 
 				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
-					if not graph.has_node((name1, unit_id1)):
-						graph.add_node((name1, unit_id1), connected=False)
-
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
-						if not graph.has_node((name2, unit_id2)):
-							graph.add_node((name2, unit_id2), connected=False)
-
 						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= min_similarity:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
 							graph.add_node((name1, unit_id1), connected=True)
@@ -250,8 +252,10 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.write("\nRemoved units:\n")
 		for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
+			attr = graph.nodes[node]
+			attr['connected'] = False  # Since we're removing all connections.
 			graph.remove_node(node)
-			graph.add_node(node, merged=True, connected=False)
+			graph.add_node(node, merged=True, **attr)
 			logs.write(f"\t- {node}\n")
 
 		logs.close()

@@ -116,9 +116,30 @@ class MergeUnits(MonoSortingModule):
 			unit_id_1 = self.sorting.unit_ids[i]
 			unit_id_2 = self.sorting.unit_ids[j]
 			color = "black" if (unit_id_1, unit_id_2) in potential_merges or (unit_id_2, unit_id_1) in potential_merges else "red"
+
+			if 'gt_label' in wvf_extractor.sorting.get_property_keys():
+				gt_label_1 = wvf_extractor.sorting.get_unit_property(unit_id_1, 'gt_label')
+				gt_label_2 = wvf_extractor.sorting.get_unit_property(unit_id_2, 'gt_label')
+				annotation_gt = {
+					'x': 1.0,
+					'y': 1.05,
+					'xref': "paper",
+					'yref': 'paper',
+					'xanchor': 'right',
+					'yanchor': 'top',
+					'text': f"GT {unit_id_1}: {gt_label_1}<br />GT {unit_id_2}: {gt_label_2}",
+					'font': {
+						'color': "rgba(73, 42, 189, 1.0)"
+					},
+					'showarrow': False
+				}
+			else:
+				annotation_gt = {}
+
 			labels.append(f"Units {unit_id_1} & {unit_id_2}")
 			args.append({'title.text': f"Units {unit_id_1} & {unit_id_2}: corr_diff = {correlogram_diff[i, j]:.1%} ; temp_diff = {templates_diff[i, j]:.1%}",
-						 'title.font.color': color})
+						 'title.font.color': color,
+						 'annotations': [annotation_gt]})
 
 			fig.add_trace(go.Scatter(
 				x=bins,

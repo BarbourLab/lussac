@@ -162,8 +162,8 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 
 		spike_train = wvf_extractor.sorting.get_unit_spike_train(unit_id)
 		args.append({
-			"title.text": f"Unit {unit_id}",
-			"annotations": [*annotations_fix, *annotations_change[annotations_slice], *annotations_gt[i:i+1]]
+			'title.text': f"Unit {unit_id}",
+			'annotations': [*annotations_fix, *annotations_change[annotations_slice], *annotations_gt[i:i+1]]
 		})
 
 		ISI, bins = spost.compute_isi_histograms_from_spiketrain(spike_train, max_time, bin_size, sf)
