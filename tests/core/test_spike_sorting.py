@@ -10,13 +10,12 @@ def test_spike_sorting(data: LussacData) -> None:
 	recording = data.recording.frame_slice(9_000_000, 18_000_000)
 	params = {
 		'sorter': "spykingcircus2",
-		'preprocess': {
+		'preprocessing': {
 			'filter': {'band': [150., 6000.], 'filter_order': 2, 'ftype': "bessel"},
 			'common_reference': {'operator': "median"}
 		},
 		'sorter_params': {
-			'output_folder': f"{data.tmp_folder}/sc2_ss_test",
-			'apply_preprocessing': True
+			'output_folder': f"{data.tmp_folder}/sc2_ss_test"
 		}
 	}
 
