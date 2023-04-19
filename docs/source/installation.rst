@@ -21,7 +21,7 @@ It is recommended to install :code:`lussac` in an environment, such as conda:
 
 You can install :code:`lussac` from source by cloning the GitHub repository. This will ensure you have the latest updates, but some features might still be experimental!
 
-.. code-block: bash
+.. code-block:: bash
 
 	# Download Lussac in any directory you want.
 	git clone https://github.com/BarbourLab/lussac.git

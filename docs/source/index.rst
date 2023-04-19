@@ -13,6 +13,8 @@ For more information, check out our `preprint <https://www.biorxiv.org/content/1
 
    installation
    contact
+   run
+   params
 
 
 
