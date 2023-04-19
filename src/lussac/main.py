@@ -4,6 +4,7 @@ import json
 import jsmin
 from lussac.core.lussac_data import LussacData
 from lussac.core.pipeline import LussacPipeline
+from lussac.core.spike_sorting import LussacSpikeSorter
 
 
 def parse_arguments(args: list | None) -> str:
@@ -51,7 +52,10 @@ def main() -> None:  # pragma: no cover
 	data = LussacData.create_from_params(params)
 
 	# STEP 1: Running the spike sorting.
-	pass
+	if 'spike_sorting' in params:
+		for name, params0 in params['spike_sorting'].items():
+			spike_sorter = LussacSpikeSorter(data.recording)
+			data.sortings[name] = spike_sorter.launch(params0)
 
 	# STEP 2: Running the pipeline.
 	pipeline = LussacPipeline(data)

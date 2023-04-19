@@ -351,8 +351,8 @@ def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vect
 	if cross_shifts is not None:
 		cross_shifts = cross_shifts.astype(np.int32)
 
-	return compute_coincidence_matrix(spike_vector1['sample_ind'], spike_vector1['unit_ind'],
-									  spike_vector2['sample_ind'], spike_vector2['unit_ind'], window, cross_shifts)
+	return compute_coincidence_matrix(spike_vector1['sample_index'], spike_vector1['unit_ind'],
+									  spike_vector2['sample_index'], spike_vector2['unit_ind'], window, cross_shifts)
 
 
 @numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.optional(numba.int32[:, :])),
@@ -444,7 +444,7 @@ def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np
 		The cross-shift matrix containing the shift between each pair of units.
 	"""
 
-	return compute_cross_shift(spike_vector1['sample_ind'], spike_vector1['unit_ind'], spike_vector2['sample_ind'], spike_vector2['unit_ind'], max_shift, gaussian_std)
+	return compute_cross_shift(spike_vector1['sample_index'], spike_vector1['unit_ind'], spike_vector2['sample_index'], spike_vector2['unit_ind'], max_shift, gaussian_std)
 
 
 @numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.float32),

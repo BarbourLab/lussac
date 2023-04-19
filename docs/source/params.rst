@@ -101,4 +101,45 @@ Example for a SpikeGLX recording:
 The :code:`spike_sorting` section
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Work in progress ...
+This section contains the information for Lussac to run the spike sorting algorithms (optional). You can also not include this section and instead provide yourself the analyses in the :code:`analyses` section.
+
+| If you want to run spike sorting through Lussac, you will need to either have the spike sorters installed in the same environment, or you can have :code:`docker` or :code:`singularity` installed to run the spike sorters in a container.
+| SpikeInterface allows you to run sorters in a **container**, which can be really neat. You'll need to install either :code:`docker` or :code:`singularity` (which can take a while), but once installed you'll have access to a lot of spike sorters without needing to have them installed (and without requiring matlab!)
+| See the `SpikeInterface documentation <https://spikeinterface.readthedocs.io/en/latest/modules/sorters.html#running-sorters-in-docker-singularity-containers>`_ on the installation if you are interested.
+| For Linux user, we recommend installing `singularity` as it is easier than docker to deal with root access.
+
+To run sorters, the :code:`spike_sorting` section is made like this:
+
+- A :code:`dict` mapping the run name to another :code:`dict`, containing:
+	- :code:`sorter_name`: the name of the sorter in SpikeInterface.
+	- :code:`preprocessing`: (optional) a :code:`dict` mapping a function in `spikeinterface.preprocessing` to a :code:`dict` containing the arguments for that function.
+	- :code:`sorter_params`: the parameters for the sorter.
+
+Example for running 2 spike sorters
+"""""""""""""""""""""""""""""""""""
+
+The following code will run kilosort 3 (with singularity) and SpykingCircus (installed locally):
+
+.. code-block:: json
+
+	"spike_sorting": {
+		"ks3_sing": {  // Kilosort 3 analysis using singularity and some custom parameters.
+			"sorter_name": "kilosort3",
+			"preprocessing": {
+				"filter": {"band": [300., 6000.], "filter_order": 2, "ftype": "bessel"},  // Custom bessel filter
+				"common_reference": {"operator": "median"}  // Common median reference.
+			},
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks3_sing",
+				"singularity_image": true,
+				"projection_threshold": [8, 8],  // Lower Kilosort's threshold.
+				"freq_min": 40  // Filter already applied in preprocessing.
+			}
+		},
+		"sc_default": {  // Spyking Circus analysis using the default parameters.
+			"sorter_name": "spykingcircus",
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/sc_default"
+			}
+		}
+	}
