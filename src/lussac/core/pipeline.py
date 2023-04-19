@@ -47,7 +47,7 @@ class LussacPipeline:
 					self._run_mono_sorting_module(module, module_key, category, params)
 			elif issubclass(module, MultiSortingsModule):
 				self._run_multi_sortings_module(module, module_key, module_params)
-			else:
+			else:  # pragma: no cover (unreachable code)
 				raise Exception("Error: Module does not inherit from MonoSortingModule or MultiSortingsModule.")
 
 			self._save_sortings(module_key)

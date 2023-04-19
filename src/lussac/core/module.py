@@ -290,7 +290,7 @@ class MonoSortingModule(LussacModule):
 				ISI_portion = {unit_id: np.sum((low < d) & (d < high)) / len(d) for unit_id, d in diff.items()}
 				return ISI_portion
 
-			case _:
+			case _:  # pragma: no cover (unreachable code)
 				raise ValueError(f"Unknown attribute: '{attribute}'")
 
 	def get_units_attribute_arr(self, attribute: str, params: dict) -> np.array:

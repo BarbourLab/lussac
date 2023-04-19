@@ -49,6 +49,7 @@ def test_plot_sliders() -> None:
 
 def test_plot_units(data: LussacData) -> None:
 	sorting = data.sortings['ks2_best'].select_units([13, 19, 40, 41])
+	sorting.set_property("gt_label", np.array([f"label{unit_id}" for unit_id in sorting.unit_ids]))
 	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5,
 										 max_spikes_per_unit=500, allow_unfiltered=True)
 
