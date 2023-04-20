@@ -86,6 +86,34 @@ def unflatten_dict(d: dict, sep: str = ':', base: dict | None = None) -> dict:
 	return base
 
 
+def merge_dict(d1: dict, d2: dict) -> dict:
+	"""
+	Merges two dictionaries (even in nested).
+	If a key is present in both dictionaries, the value of the first dictionary is kept.
+
+	@param d1: dict
+		The first dictionary (which takes priority).
+	@param d2: dict
+		The second dictionary.
+	@return merged_dict: dict
+		The merged dictionary.
+	"""
+
+	res = {}
+
+	for key in d1.keys() | d2.keys():
+		if key not in d2:
+			res[key] = d1[key]
+		elif key not in d1:
+			res[key] = d2[key]
+		elif isinstance(d1[key], dict) and isinstance(d2[key], dict):
+			res[key] = merge_dict(d1[key], d2[key])
+		else:
+			res[key] = d1[key]
+
+	return res
+
+
 def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, truncate: float = 5., margin_reflect: bool = False) -> np.ndarray:
 	"""
 	Computes a gaussian histogram for the given events.

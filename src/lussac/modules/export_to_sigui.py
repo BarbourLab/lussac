@@ -10,6 +10,8 @@ class ExportToSIGUI(MonoSortingModule):
 	Exports the sorting data as a waveform extractor (for SpikeInterface GUI).
 	"""
 
+	export_sortings = False
+
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:

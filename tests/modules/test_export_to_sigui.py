@@ -22,8 +22,8 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 			'chunk_duration': '1s',
 			'n_jobs': 6
 		},
-		'spike_amplitudes': False,
-		'principal_components': False
+		'spike_amplitudes': {'chunk_duration': '1s', 'n_jobs': 6},
+		'principal_components': {'n_components': 3, 'chunk_duration': '1s', 'n_jobs': 6}
 	}
 
 	pipeline._run_mono_sorting_module(ExportToSIGUI, "export_to_sigui", "all", params)

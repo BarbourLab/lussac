@@ -10,6 +10,8 @@ class ExportToPhy(MonoSortingModule):
 	Exports the sorting data to the phy format.
 	"""
 
+	export_sortings = False
+
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:

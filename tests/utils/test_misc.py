@@ -36,6 +36,22 @@ def test_unflatten_dict() -> None:
 	assert utils.unflatten_dict(utils.flatten_dict(d)) == d
 
 
+def test_merge_dict() -> None:
+	d1 = {'a': 1, 'b': [1, 2, 3], 'c': {'d': 2, 'e': 3, 'f': {'g': False}}, 1: 2}
+	d2 = {'a': 2, 'b': [1, 2, 4], 'c': {'d': 2, 'e': True, 'f': {'g': {'g': 0}}}, 2: 1}
+
+	d3 = utils.merge_dict(d1, d2)
+	d4 = utils.merge_dict(d2, d1)
+
+	for key in d1:
+		assert d3[key] == d1[key]
+	assert d3[2] == 1
+
+	for key in d2:
+		assert d4[key] == d2[key]
+	assert d4[1] == 2
+
+
 def test_gaussian_histogram() -> None:
 	dt = 2e-4
 	histogram1 = utils.gaussian_histogram(np.array([3.0, 10.0, 20.0]), np.arange(0, 20 + dt, dt), 0.5)

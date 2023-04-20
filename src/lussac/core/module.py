@@ -20,15 +20,16 @@ class LussacModule(ABC):
 	Every module used in Lussac must inherit from this class.
 
 	Attributes:
-		name		Module's name (i.e. the key in the pipeline dictionary).
-		data 		Reference to the data object.
-		category	What category is used for the module (i.e. the key in the dictionary).
-		logs_folder	Path to the folder where to output the logs.
+		name			Module's name (i.e. the key in the pipeline dictionary).
+		data 			Reference to the data object.
+		category		What category is used for the module (i.e. the key in the dictionary).
+		export_sortings	Whether to export the sortings after the module is executed.
 	"""
 
 	name: str
 	data: MonoSortingData | MultiSortingsData
 	category: str
+	export_sortings: bool = True
 
 	@property
 	def recording(self) -> si.BaseRecording:
@@ -86,13 +87,8 @@ class LussacModule(ABC):
 		@return updated_params: dict[str, Any]
 			The parameters updated with the module's default parameters.
 		"""
-		sep = ':'
 
-		flattened_params = utils.flatten_dict(params, sep=sep)
-		flattened_default = utils.flatten_dict(self.default_params, sep=sep)
-		updated_params = flattened_default | flattened_params
-
-		return utils.unflatten_dict(updated_params, sep=sep)
+		return utils.merge_dict(params, self.default_params)
 
 
 @dataclass(slots=True)
@@ -102,9 +98,10 @@ class MonoSortingModule(LussacModule):
 	This is for modules that don't work on multiple sortings at once.
 
 	Attributes:
-		name		Module's name (i.e. the key in the pipeline dictionary).
-		data		Reference to the mono-sorting data object.
-		logs_folder	Path to the folder where to output the logs.
+		name			Module's name (i.e. the key in the pipeline dictionary).
+		data			Reference to the mono-sorting data object.
+		category		What category is used for the module (i.e. the key in the dictionary).
+		export_sortings	Whether to export the sortings after the module is executed.
 	"""
 
 	data: MonoSortingData
@@ -309,9 +306,10 @@ class MultiSortingsModule(LussacModule):
 	This is for modules that work on multiple sortings at once.
 
 	Attributes:
-		name		Module's name (i.e. the key in the pipeline dictionary).
-		data		Reference to Lussac data object.
-		logs_folder	Path to the folder where to output the logs.
+		name			Module's name (i.e. the key in the pipeline dictionary).
+		data			Reference to Lussac data object.
+		category		What category is used for the module (i.e. the key in the dictionary).
+		export_sortings	Whether to export the sortings after the module is executed.
 	"""
 
 	data: MultiSortingsData
