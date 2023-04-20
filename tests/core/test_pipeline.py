@@ -64,11 +64,22 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	light_pipeline.launch()
 
 	assert len(light_pipeline.data.sortings) == 1
-	assert light_pipeline.data.sortings['merged_sorting'].get_num_units() > 0
+	assert not isinstance(light_pipeline.data.sortings['merged_sorting'], si.NpzSortingExtractor)  # The pipeline computed the result.
+	computed_sorting = light_pipeline.data.sortings['merged_sorting']
+	assert computed_sorting.get_num_units() > 0
 
 	# Check that the sortings have been exported.
 	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/remove_bad_units/output/ks2_best")
 	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/merge_sortings/output/merged_sorting")
+
+	light_pipeline.launch()
+	loaded_sorting = light_pipeline.data.sortings['merged_sorting']
+	assert isinstance(loaded_sorting, si.NpzSortingExtractor)  # The pipeline loaded the result.
+
+	print(computed_sorting)
+	print(loaded_sorting)
+
+	check_sortings_equal(computed_sorting, loaded_sorting)
 
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:

@@ -7,7 +7,7 @@ import spikeinterface.core as si
 
 @pytest.mark.skipif(importlib.util.find_spec("hdbscan") is None, reason="Testing the spike sorting requires hdbscan.")
 def test_spike_sorting(data: LussacData) -> None:
-	recording = data.recording.frame_slice(9_000_000, 18_000_000)
+	recording = data.recording.frame_slice(9_000_000, 18_000_000)  # 5-min recording to go faster, don't care about result.
 	params = {
 		'sorter': "spykingcircus2",
 		'preprocessing': {
