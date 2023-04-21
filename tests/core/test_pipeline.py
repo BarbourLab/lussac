@@ -79,7 +79,7 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	print(computed_sorting)
 	print(loaded_sorting)
 
-	check_sortings_equal(computed_sorting, loaded_sorting)
+	check_sortings_equal(computed_sorting, loaded_sorting, check_annotations=True, check_properties=True)
 
 
 def test_run_mono_sorting_module(pipeline: LussacPipeline) -> None:
@@ -157,7 +157,7 @@ def test_save_load_sortings(pipeline: LussacPipeline) -> None:
 	assert len(loaded_sortings) == len(pipeline.data.sortings)
 	for sorting_name in pipeline.data.sortings.keys():
 		assert sorting_name in loaded_sortings
-		check_sortings_equal(pipeline.data.sortings[sorting_name], loaded_sortings[sorting_name])
+		check_sortings_equal(pipeline.data.sortings[sorting_name], loaded_sortings[sorting_name], check_annotations=True, check_properties=True)
 
 
 class TestMonoSortingModule(MonoSortingModule):
