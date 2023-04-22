@@ -1,4 +1,5 @@
 from typing import Any
+import networkx as nx
 import numpy as np
 from overrides import override
 import plotly.graph_objects as go
@@ -53,10 +54,28 @@ class MergeUnits(MonoSortingModule):
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])
 
+		sorting = self._merge(potential_merges)
 		self.plot_merging(potential_merges, wvf_extractor, extra_outputs, params['auto_merge_params'])
 
-		sorting = scur.CurationSorting(self.sorting)
-		# TODO
+		return sorting
+
+	def _merge(self, potential_merges: list[tuple]) -> si.BaseSorting:
+		"""
+
+		"""
+
+		graph = nx.Graph()
+		for potential_merge in potential_merges:
+			graph.add_edge(*potential_merge)
+
+		sorting = scur.CurationSorting(self.sorting, properties_policy="keep")
+
+		for units in nx.connected_components(graph):  # For each putative neuron.
+			print(units)
+			if len(units) > 2:
+				continue  # TODO
+
+			sorting.merge(list(units))
 
 		return sorting.sorting
 
