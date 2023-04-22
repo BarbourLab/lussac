@@ -79,7 +79,8 @@ Example for a binary file:
 			"numchan": 64,
 			"sampling_frequency": 30000,
 			"dtype": "int16",
-			"gain_to_uV": 0.195
+			"gain_to_uV": 0.195,
+			"offset_to_uV": 0.0
 		},
 		"probe_file": "$PARAMS_FOLDER/probe.json"
 
@@ -143,3 +144,58 @@ The following code will run kilosort 3 (with singularity) and SpykingCircus (ins
 			}
 		}
 	}
+
+
+The :code:`analyses` section
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section contains the already spike-sorted analyses you want to feed Lussac. The analyses must be in the `Phy <https://github.com/cortex-lab/phy>`_ format (if they are not, you can use SpikeInterface :code:`export_to_phy`).
+
+This :code:`dict` maps the analysis name to its location. For example:
+
+.. code-block:: json
+
+	"analyses": {
+		"ks2_default": "path/to/ks2_analysis",
+		"tdc_default": "path/to/tridesclous_analysis"
+	}
+
+
+The :code:`lussac` section
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This section contains all the information needed for Lussac to know what to do with your data (i.e. post-processing and merging of multiple analyses). It is divided into 4 keys:
+
+- :code:`logs_folder`: the path where to store the logs for Lussac (you will be able to inspect what Lussac did in this folder). If the directory doesn't exist, Lussac will create it. If the directory already exists and contains information about a previous run, Lussac will load this information (if a previous run crashed, Lussac will pick up where it left off).
+- :code:`tmp_folder`: the path to the temporary directory. To not load everything in memory, Lussac needs to write some information on the disk (preferentially a fast SSD rather than an HDD). The directory will be created by Lussac and removed at the end of the run.
+- :code:`si_global_job_kwargs`: some global keyword arguments for SpikeInterface (such as number of jobs, chunking ...). See example below.
+- :code:`pipeline`: a dictionary containing what modules to run and in which order. See the next section below.
+
+
+Typical structure for the :code:`lussac` section
+================================================
+
+.. code-block:: json
+
+	"lussac": {
+		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
+		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
+		"si_global_job_kwargs": {
+			"n_jobs": 6,  // Number of threads to use on the CPU. Can be increased or decreased depending on your computer.
+			"chunk_duration": "2s",
+			"progress_bar": false,
+			"verbose": false
+		},
+		"pipeline": {
+			/** "first_module_name": {module_1_params},
+				"second_module_name: {module_2_params},
+			   ...
+			*/
+		}
+	}
+
+
+Lussac module system
+--------------------
+
+Work in progress...
