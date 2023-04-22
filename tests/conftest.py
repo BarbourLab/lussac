@@ -9,12 +9,12 @@ import lussac.main
 
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent.absolute()))  # Otherwise the tests are not found properly with 'pytest'.
-params_path = "tests/datasets/cerebellar_cortex/params.json"
+params_path = pathlib.Path(__file__).parent / "datasets" / "cerebellar_cortex" / "params.json"
 
 
 @pytest.fixture(scope="session")
 def params() -> dict:
-	return lussac.main.load_json(params_path)
+	return lussac.main.load_json(str(params_path.resolve()))
 
 
 @pytest.fixture(scope="session")
