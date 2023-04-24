@@ -82,6 +82,8 @@ class LussacPipeline:
 			module_instance = module(module_name, data, category)
 			params0 = copy.deepcopy(params)
 			params0 = module_instance.update_params(params0)
+			if 'sortings' in params0:
+				del params0['sortings']
 
 			sub_sorting = module_instance.run(params0)
 
@@ -252,5 +254,17 @@ class LussacPipeline:
 		if sorting1.get_num_units() == 0:
 			return sorting2
 
-		renamed_unit_ids = [*sorting1.unit_ids, *sorting2.unit_ids]  # TODO: Check for duplicates! unit_ids might not be unique.
-		return si.UnitsAggregationSorting([sorting1, sorting2], renamed_unit_ids=renamed_unit_ids)
+		# Check for unit in sorting2 that has the same id as a unit in sorting1.
+		rename_units = {}
+		renamed = False
+		for unit_id in sorting2.unit_ids:
+			if unit_id in sorting1.unit_ids:
+				rename_units[unit_id] = np.max([*sorting1.unit_ids, *sorting2.unit_ids, *rename_units.values()]) + 1
+				renamed = True
+			else:
+				rename_units[unit_id] = unit_id
+
+		if renamed:
+			sorting2 = sorting2.select_units(list(rename_units.keys()), list(rename_units.values()))
+
+		return si.UnitsAggregationSorting([sorting1, sorting2], renamed_unit_ids=[*sorting1.unit_ids, *sorting2.unit_ids])

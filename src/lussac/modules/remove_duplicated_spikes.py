@@ -16,7 +16,7 @@ class RemoveDuplicatedSpikes(MonoSortingModule):
 	def default_params(self) -> dict[str, Any]:
 		return {
 			'censored_period': 0.3,
-			'method': "random"
+			'method': "keep_first_iterative"
 		}
 
 	@override

@@ -71,7 +71,6 @@ class MergeUnits(MonoSortingModule):
 		sorting = scur.CurationSorting(self.sorting, properties_policy="keep")
 
 		for units in nx.connected_components(graph):  # For each putative neuron.
-			print(units)
 			if len(units) > 2:
 				continue  # TODO
 
