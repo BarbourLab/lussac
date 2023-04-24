@@ -75,7 +75,7 @@ Example for a binary file:
 	"recording": {
 		"recording_extractor": "BinaryRecordingExtractor",
 		"extractor_params": {
-			"file_path": "$PARAMS_FOLDER/recording.dat",
+			"file_paths": "$PARAMS_FOLDER/recording.dat",
 			"numchan": 64,
 			"sampling_frequency": 30000,
 			"dtype": "int16",
