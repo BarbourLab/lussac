@@ -137,7 +137,7 @@ def test_compute_coincidence_matrix() -> None:
 	assert coincidence_matrix[1, 0] == 2
 
 	# Test with random data.
-	sf = 30000
+	sf = 30000		# Hz
 	t_max = 3600	# s
 	f = 50.			# Hz
 	T = t_max * sf
@@ -156,8 +156,8 @@ def test_compute_coincidence_matrix() -> None:
 	assert mean - 2*std < np.mean(coincidence_matrix) < mean + 2*std
 
 	# Test with cross-shift.
-	sorting1 = si.NumpySorting.from_dict({0: np.array([100, 200, 400])}, sampling_frequency=30000)
-	sorting2 = si.NumpySorting.from_dict({0: np.array([106, 206, 406])}, sampling_frequency=30000)
+	sorting1 = si.NumpySorting.from_dict({0: np.array([100, 200, 400])}, sampling_frequency=sf)
+	sorting2 = si.NumpySorting.from_dict({0: np.array([106, 206, 406])}, sampling_frequency=sf)
 	cross_shift = np.array([[-6]])
 
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), 2, None)
@@ -181,7 +181,7 @@ def test_compute_similarity_matrix() -> None:
 	assert np.allclose(similarity_matrix, np.array([[0.0, 1.0], [1/3, 1/3]]), atol=1e-4, rtol=1e-4)
 
 	# Test with random data.
-	sf = 30000
+	sf = 30000		# Hz
 	t_max = 3600	# s
 	f = 50.			# Hz
 	T = utils.Utils.t_max

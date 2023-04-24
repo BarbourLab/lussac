@@ -173,7 +173,7 @@ This section contains all the information needed for Lussac to know what to do w
 
 
 Typical structure for the :code:`lussac` section
-================================================
+""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. code-block:: json
 
