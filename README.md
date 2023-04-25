@@ -16,6 +16,7 @@ Lussac is an **automated** and **configurable** analysis pipeline for post-proce
 # Download Lussac in any directory you want.
 git clone https://github.com/BarbourLab/lussac.git
 cd lussac
+git checkout v2.0
 
 # OPTIONAL: Use a conda environment.
 conda create -n lussac python=3.10
@@ -28,6 +29,8 @@ pip install -e .
 # (this may take a while as it will download some testing datasets).
 pytest
 ```
+
+You will also need the latest development version of [SpikeInterface](https://github.com/SpikeInterface/spikeinterface)
 
 
 ## Documentation
