@@ -18,12 +18,11 @@ class UnitsCategorization(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		units_to_categorize = self._init_units_to_categorize()
-
 		for category, rules in params.items():
+			units_to_categorize = self._init_units_to_categorize()
+
 			if category == "clear":
 				self.sorting.set_property("lussac_category", None)
-				units_to_categorize = np.ones(self.sorting.get_num_units(), dtype=bool)
 				continue
 
 			for attribute, p in rules.items():

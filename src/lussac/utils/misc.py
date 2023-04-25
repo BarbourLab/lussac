@@ -101,8 +101,9 @@ def merge_dict(d1: dict, d2: dict) -> dict:
 
 	res = {}
 
-	for key in d1.keys() | d2.keys():
+	for key in list(dict.fromkeys(([*d1.keys(), *d2.keys()]))):  # Important to keep the order of keys!
 		if key not in d2:
+			print(d1)
 			res[key] = d1[key]
 		elif key not in d1:
 			res[key] = d2[key]

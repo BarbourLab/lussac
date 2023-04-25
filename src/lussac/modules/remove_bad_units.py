@@ -25,6 +25,7 @@ class RemoveBadUnits(MonoSortingModule):
 		for attribute, p in params.items():
 			if attribute == "all":
 				units_to_remove[:] = True
+				reasons_for_removal[:] += " ; all"
 				break
 
 			value = self.get_units_attribute_arr(attribute, p)

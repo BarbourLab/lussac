@@ -51,6 +51,12 @@ def test_merge_dict() -> None:
 		assert d4[key] == d2[key]
 	assert d4[1] == 2
 
+	# Order of keys should be preserved.
+	d3_keys = np.array(list(d3.keys()))
+	d4_keys = np.array(list(d4.keys()))
+	assert np.all(d3_keys == ('a', 'b', 'c', 1, 2))
+	assert np.all(d4_keys == ('a', 'b', 'c', 2, 1))
+
 
 def test_gaussian_histogram() -> None:
 	dt = 2e-4

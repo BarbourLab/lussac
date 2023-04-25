@@ -250,13 +250,14 @@ class MergeSortings(MultiSortingsModule):
 						nodes_to_remove.append(node)
 						logs.write(f"\t-> Unit {node} is considered a merged unit.\n")
 
-		logs.write("\nRemoved units:\n")
-		for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
-			attr = graph.nodes[node]
-			attr['connected'] = False  # Since we're removing all connections.
-			graph.remove_node(node)
-			graph.add_node(node, merged=True, **attr)
-			logs.write(f"\t- {node}\n")
+		if len(nodes_to_remove) > 0:
+			logs.write("\nRemoved units:\n")
+			for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
+				attr = graph.nodes[node]
+				attr['connected'] = False  # Since we're removing all connections.
+				graph.remove_node(node)
+				graph.add_node(node, merged=True, **attr)
+				logs.write(f"\t- {node}\n")
 
 		logs.close()
 
