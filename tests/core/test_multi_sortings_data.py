@@ -1,6 +1,6 @@
 import os
+from lussac.core import LussacData, MultiSortingsData
 import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData, MultiSortingsData
 
 
 def test_recording(multi_sortings_data: MultiSortingsData) -> None:

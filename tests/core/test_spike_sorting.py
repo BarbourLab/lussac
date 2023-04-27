@@ -1,7 +1,6 @@
 import importlib.util
 import pytest
-from lussac.core.lussac_data import LussacData
-from lussac.core.spike_sorting import LussacSpikeSorter
+from lussac.core import LussacData, LussacSpikeSorter
 import spikeinterface.core as si
 
 

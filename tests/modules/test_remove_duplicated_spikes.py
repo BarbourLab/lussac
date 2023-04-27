@@ -1,6 +1,6 @@
 import numpy as np
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.remove_duplicated_spikes import RemoveDuplicatedSpikes
+from lussac.core import MonoSortingData
+from lussac.modules import RemoveDuplicatedSpikes
 import spikeinterface.core as si
 
 

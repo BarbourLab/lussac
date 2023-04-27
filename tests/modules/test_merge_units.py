@@ -1,5 +1,5 @@
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.merge_units import MergeUnits
+from lussac.core import MonoSortingData
+from lussac.modules import MergeUnits
 from spikeinterface.core.testing import check_extractor_annotations_equal
 
 

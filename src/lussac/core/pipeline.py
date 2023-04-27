@@ -5,10 +5,8 @@ from typing import Type
 from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
+from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
 import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
-from lussac.core.module import MonoSortingModule, MultiSortingsModule
-from lussac.core.module_factory import ModuleFactory
 
 
 @dataclass(slots=True)

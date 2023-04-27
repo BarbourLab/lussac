@@ -2,9 +2,7 @@ import sys
 import argparse
 import json
 import jsmin
-from lussac.core.lussac_data import LussacData
-from lussac.core.pipeline import LussacPipeline
-from lussac.core.spike_sorting import LussacSpikeSorter
+from lussac.core import LussacData, LussacPipeline, LussacSpikeSorter
 
 
 def parse_arguments(args: list | None) -> str:

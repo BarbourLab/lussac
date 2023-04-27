@@ -4,8 +4,8 @@ import pickle
 import pytest
 import networkx as nx
 import numpy as np
-from lussac.core.lussac_data import LussacData, MultiSortingsData
-from lussac.modules.merge_sortings import MergeSortings
+from lussac.core import LussacData, MultiSortingsData
+from lussac.modules import MergeSortings
 import spikeinterface.core as si
 
 

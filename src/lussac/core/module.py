@@ -5,7 +5,7 @@ import os
 import shutil
 from typing import Any
 import numpy as np
-from lussac.core.lussac_data import MonoSortingData, MultiSortingsData
+from lussac.core import MonoSortingData, MultiSortingsData
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.preprocessing as spre

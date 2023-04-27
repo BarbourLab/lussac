@@ -1,6 +1,6 @@
 import os
 import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData, MonoSortingData
+from lussac.core import LussacData, MonoSortingData
 
 
 def test_recording(mono_sorting_data: MonoSortingData) -> None:

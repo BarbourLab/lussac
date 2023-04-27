@@ -2,8 +2,7 @@ from pathlib import Path
 import pytest
 from typing import Any
 import numpy as np
-from lussac.core.lussac_data import MonoSortingData
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingData, MonoSortingModule
 from tests.modules.test_remove_bad_units import params
 
 

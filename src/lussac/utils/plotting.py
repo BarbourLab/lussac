@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 import plotly.graph_objects as go
+import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.postprocessing as spost
-import lussac.utils as utils
 
 
 def get_path_to_plotlyJS(path: str | Path) -> str:

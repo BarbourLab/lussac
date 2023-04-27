@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 from overrides import override
 import plotly.graph_objects as go
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
@@ -64,11 +64,10 @@ class MergeUnits(MonoSortingModule):
 
 		"""
 
+		sorting = scur.CurationSorting(self.sorting, properties_policy="keep")
 		graph = nx.Graph()
 		for potential_merge in potential_merges:
 			graph.add_edge(*potential_merge)
-
-		sorting = scur.CurationSorting(self.sorting, properties_policy="keep")
 
 		for units in nx.connected_components(graph):  # For each putative neuron.
 			if len(units) > 2:

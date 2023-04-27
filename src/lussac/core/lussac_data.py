@@ -6,10 +6,10 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 from plotly.offline.offline import get_plotlyjs
+from lussac.utils import Utils
 import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.extractors as se
-from lussac.utils import Utils
 
 
 class LussacData:

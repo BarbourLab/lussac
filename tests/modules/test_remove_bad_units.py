@@ -1,6 +1,6 @@
 import os
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.remove_bad_units import RemoveBadUnits
+from lussac.core import MonoSortingData
+from lussac.modules import RemoveBadUnits
 
 
 params = {

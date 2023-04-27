@@ -2,7 +2,7 @@ from typing import Any
 from overrides import override
 import numpy as np
 import numpy.typing as npt
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingModule
 import spikeinterface.core as si
 
 

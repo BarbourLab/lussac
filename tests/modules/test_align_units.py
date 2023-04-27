@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.align_units import AlignUnits
+from lussac.core import MonoSortingData
+from lussac.modules import AlignUnits
 
 
 params = {

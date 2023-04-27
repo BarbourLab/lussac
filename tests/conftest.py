@@ -3,8 +3,7 @@ import pathlib
 import shutil
 import sys
 import pytest
-from lussac.core.lussac_data import LussacData, MonoSortingData, MultiSortingsData
-from lussac.core.pipeline import LussacPipeline
+from lussac.core import LussacData, LussacPipeline, MonoSortingData, MultiSortingsData
 import lussac.main
 
 

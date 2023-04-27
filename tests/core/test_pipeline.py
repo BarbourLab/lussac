@@ -3,9 +3,7 @@ import os
 import pytest
 from typing import Any
 import numpy as np
-from lussac.core.lussac_data import LussacData
-from lussac.core.module import MonoSortingModule, MultiSortingsModule
-from lussac.core.pipeline import LussacPipeline
+from lussac.core import LussacData, LussacPipeline, MonoSortingModule, MultiSortingsModule
 import spikeinterface.core as si
 from spikeinterface.core.testing import check_sortings_equal
 from spikeinterface.curation import CurationSorting

@@ -1,7 +1,7 @@
 import os
 import pytest
 import numpy as np
-from lussac.core.lussac_data import LussacData
+from lussac.core import LussacData
 import spikeinterface.core as si
 
 

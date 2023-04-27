@@ -1,6 +1,6 @@
 from typing import Any
 from overrides import override
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingModule
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 

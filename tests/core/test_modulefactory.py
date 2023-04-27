@@ -1,7 +1,6 @@
 import pytest
 from typing import Any
-from lussac.core.module import MonoSortingModule
-from lussac.core.module_factory import ModuleFactory
+from lussac.core import ModuleFactory, MonoSortingModule
 from lussac.modules.export_to_phy import ExportToPhy
 
 

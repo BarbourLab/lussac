@@ -1,9 +1,9 @@
 import os
 import numpy as np
 import plotly.graph_objects as go
-import spikeinterface.core as si
-from lussac.core.lussac_data import LussacData
+from lussac.core import LussacData
 import lussac.utils as utils
+import spikeinterface.core as si
 
 
 folder = "tests/tmp/plotting"

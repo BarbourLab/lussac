@@ -1,6 +1,6 @@
 import numpy as np
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.units_categorization import UnitsCategorization
+from lussac.core import MonoSortingData
+from lussac.modules import UnitsCategorization
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:

@@ -1,7 +1,7 @@
+import copy
 import os
-from lussac.core.lussac_data import MonoSortingData
-from lussac.core.pipeline import LussacPipeline
-from lussac.modules.export_to_phy import ExportToPhy
+from lussac.core import LussacPipeline, MonoSortingData
+from lussac.modules import ExportToPhy
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:
@@ -41,4 +41,11 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	assert os.path.exists(f"{folder}/ms3_cs/spike_times.npy")
 	assert not os.path.exists(f"{folder}/ks2_cs/spike_times.npy")
 
-# TODO: Add test for _format_output_path() for 1 and multiple sortings.
+
+def test_format_output_path(mono_sorting_data: MonoSortingData) -> None:
+	module = ExportToPhy("test_etp_format_path", mono_sorting_data, "all")
+	assert module._format_output_path("test") == "test/ms3_best"
+
+	module = copy.deepcopy(module)
+	module.data.data.sortings = {'ms3_best': module.sorting}
+	assert module._format_output_path("test") == "test"

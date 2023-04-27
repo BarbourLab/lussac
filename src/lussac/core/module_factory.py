@@ -2,7 +2,7 @@ import os
 import importlib
 import inspect
 from typing import Any, Type
-from lussac.core.module import LussacModule
+from lussac.core import LussacModule
 
 
 class ModuleFactory:

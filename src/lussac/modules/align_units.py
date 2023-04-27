@@ -3,7 +3,7 @@ from overrides import override
 import numpy as np
 import plotly.graph_objects as go
 import scipy.signal
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.postprocessing as spost

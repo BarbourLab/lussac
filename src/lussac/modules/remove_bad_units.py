@@ -1,7 +1,7 @@
 from typing import Any
 from overrides import override
 import numpy as np
-from lussac.core.module import MonoSortingModule
+from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
 

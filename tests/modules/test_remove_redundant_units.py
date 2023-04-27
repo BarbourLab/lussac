@@ -1,6 +1,6 @@
 import os
-from lussac.core.lussac_data import MonoSortingData
-from lussac.modules.remove_redundant_units import RemoveRedundantUnits
+from lussac.core import MonoSortingData
+from lussac.modules import RemoveRedundantUnits
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:
