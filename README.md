@@ -36,3 +36,8 @@ You will also need the latest development version of [SpikeInterface](https://gi
 ## Documentation
 
 You can find the documentation [here](https://lussac.readthedocs.io/).
+
+
+## Migration from Lussac1
+
+Lussac2 is not backwards-compatible with Lussac1.  We advise you to make a new conda environment, and to remake your `params.json` file (which is also not backwards-compatible).

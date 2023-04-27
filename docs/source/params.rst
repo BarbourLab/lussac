@@ -187,8 +187,8 @@ Typical structure for the :code:`lussac` section
 			"verbose": false
 		},
 		"pipeline": {
-			/** "first_module_name": {module_1_params},
-				"second_module_name: {module_2_params},
+			/** "first_module_name": {"category_name": {module_1_params}},
+				"second_module_name: {"category_name": {module_2_params}},
 			   ...
 			*/
 		}
@@ -198,4 +198,36 @@ Typical structure for the :code:`lussac` section
 Lussac module system
 --------------------
 
-Work in progress...
+Lussac offers several modules to automate the post-processing with high configurability. The user can choose which modules to run in which order, and can configure the parameters to fine-tune how the module runs.
+
+Lussac also offers a way to automatically categorize units in each analysis, which can be used to run a module on a subset of units. A good example is in the cerebellar cortex, where complex spikes are very different from regular spikes and it's useful to categorize them.
+
+The structure for running a module is always the same:
+
+.. code-block:: json
+
+	"module_name": {
+		"category1": {
+			// Parameters.
+		},
+		"category2": {
+			// Parameters.
+		}
+	}
+
+The explanation about each module and their parameters are explained <TODO>.
+
+Because a :code:`dict` cannot have the same key multiple times, to run the same module multiple times the keys need to be different. For this reason, you can add at the end of each module name an underscore followed by any number (e.g. :code:`"module_name_2"`).
+
+
+Lussac category system
+^^^^^^^^^^^^^^^^^^^^^^
+
+Units can be categorized using the :code:`units_categorization` module. Once the category has been created, it can be used to run modules on a subset of units.
+
+Two categories exist by default:
+
+- :code:`"all"`: runs the module on all units, regardless of the category.
+- :code:`"rest"`: runs the module on all units that don't have a category.
+
+You can also run a module on multiple categories at once by using '+'. For example, :code:`"CS+SS"` will run the module on all units that are categorized either in :code:`CS` or :code:`SS`.
