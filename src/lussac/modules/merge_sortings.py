@@ -25,6 +25,7 @@ class MergeSortings(MultiSortingsModule):
 		return {
 			'refractory_period': [0.2, 1.0],
 			'max_shift': 1.33,
+			'require_multiple_sortings_match': True,
 			'similarity': {
 				'min_similarity': 0.3,
 				'window': 0.2
@@ -67,7 +68,7 @@ class MergeSortings(MultiSortingsModule):
 		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
-		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
+		merged_sorting = self.merge_sortings(graph, params['refractory_period'], params['require_multiple_sortings_match'])
 		merged_sorting.annotate(name="merged_sorting")
 
 		return {'merged_sorting': merged_sorting}
@@ -320,7 +321,7 @@ class MergeSortings(MultiSortingsModule):
 			if data['corr_diff'] > 0.22:
 				graph.remove_edge(node1, node2)
 
-	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
+	def merge_sortings(self, graph: nx.Graph, refractory_period, require_multi_sortings: bool) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
@@ -328,6 +329,8 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing all the units and connected by their similarity.
 		@param refractory_period: float
 			The (censored_period, refractory_period) in ms.
+		@param require_multi_sortings: bool
+			If True, only export a unit if it is connected to another unit from another sorting.
 		@return merged_sorting: si.NpzSortingExtractor
 			The merged sorting.
 		"""
@@ -340,7 +343,7 @@ class MergeSortings(MultiSortingsModule):
 
 		for nodes in nx.connected_components(graph):  # For each putative neuron.
 			nodes = list(nodes)
-			if len(nodes) == 1 and not graph.nodes[nodes[0]]['connected']:
+			if len(nodes) == 1 and not graph.nodes[nodes[0]]['connected'] and require_multi_sortings:
 				continue
 
 			new_unit_id = len(new_spike_trains)
