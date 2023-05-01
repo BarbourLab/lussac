@@ -3,13 +3,17 @@ Lussac modules
 
 Here, we describe each of Lussac modules, what they do, how they do it, and what parameters are available.
 
+TODO: mini section to explain :code:`wvf_extraction`.
+
 
 The :code:`units_categorization` module
 ---------------------------------------
 
-This category will label units as belonging to a certain category if they meet some criteria. If a unit already belongs to a category, it will not be re-categorized. So the order matters!
-tion
+This module will label units as belonging to a certain category if they meet some criteria. If a unit already belongs to a category, it will not be re-categorized. So the order matters!
+
 This module takes as a key the name of the category, and as a value a dictionary containing the criteria. Each criterion return a value for each unit, and a minimum and/or maximum can be set.
+
+TODO: Explain filter.
 
 - :code:`firing_rate`: returns the mean firing rate of the unit (in Hz).
 - :code:`contamination`: returns the estimated contamination of the unit (between 0 and 1; 0 being pure). The :code:`refractory_period = [censored_period, refractory_period]` has to be set (in ms).
@@ -64,4 +68,41 @@ It is possible to remove the category label on units, by setting the category na
 
 	"units_categorization": {
 		"all": {"clear": {}}  // Clear category label from all units.
+	}
+
+
+The :code:`align_units` module
+------------------------------
+
+This module will align units by using their template waveform. The algorithm is not that straightforward:
+
+| First, a threshold is set and we look at the first peak that is higher than this threshold (both in positive and negative values). Next, the algorithm checks a few more samples in time for a higher peak (if one is detected, it takes this one).
+| The rational behind it is that the "center" of the spike should be when the neuron starts its action potential. For multi-phasic spikes, this is usually the first one. The :code:`threshold` and :code:`check_next` parameters are here to make sure we're not detecting noise.
+
+TODO: Insert image with example of sub-threshold peak and check_next.
+
+This module's parameters are:
+
+- :code:`wvf_extraction`: to construct the templates. The :code:`ms_before` and :code:`ms_after` parameters determine the max shift for alignment.
+- :code:`filter`: the band for the bandpass Gaussian filtering of the templates :code:`[min_f, max_f]`. Can be set to :code:`null` for no filtering.
+- :code:`threshold`: Threshold multiplicator (between 0 and 1). The real threshold is :code:`max(template) * threshold`.
+- :code:`check_next`: Number of samples to check after the first peak (put 0 to not check after the first peak).
+
+
+Example of units alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"align_units": {
+		"all": {  // Align all units.
+			"wvf_extraction": {
+				"ms_before": 1.0,
+				"ms_after": 2.0,
+				"max_spikes_per_unit": 2000  // Use 2,000 random spikes to construct templates.
+			},
+			"filter": [300.0, 6000.0],  // Gaussian-filter between 300 and 6000 Hz.
+			"threshold": 0.5,  // Threshold at 50% of the maximum.
+			"check_next": 5  // Check the next 5 samples.
+		}
 	}

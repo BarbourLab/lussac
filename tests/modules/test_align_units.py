@@ -11,7 +11,8 @@ params = {
 		'max_spikes_per_unit': 20
 	},
 	'filter': [150, 6000],
-	'threshold': 0.5
+	'threshold': 0.5,
+	'check_next': 10
 }
 
 

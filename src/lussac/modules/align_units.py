@@ -24,7 +24,8 @@ class AlignUnits(MonoSortingModule):
 				'max_spikes_per_unit': 2000
 			},
 			'filter': [200, 5000],
-			'threshold': 0.5
+			'threshold': 0.5,
+			'check_next': 10
 		}
 
 	@override
@@ -33,13 +34,13 @@ class AlignUnits(MonoSortingModule):
 		best_channels = np.argmax(np.max(np.abs(templates), axis=1), axis=1)
 		templates = templates[np.arange(templates.shape[0]), :, best_channels]  # Only take the best channel for each unit.
 
-		shifts = self.get_units_shift(templates, wvf_extractor.nbefore - margin, params['threshold'])
+		shifts = self.get_units_shift(templates, wvf_extractor.nbefore - margin, params['threshold'], params['check_next'])
 		self._plot_alignment(templates, wvf_extractor.nbefore - margin, shifts, params['threshold'])
 
 		return spost.align_sorting(self.sorting, {self.sorting.unit_ids[i]: -shifts[i] for i in range(len(shifts))})
 
 	@staticmethod
-	def get_units_shift(templates: np.ndarray, nbefore: int, threshold: float, check_next: int = 10) -> np.ndarray:
+	def get_units_shift(templates: np.ndarray, nbefore: int, threshold: float, check_next: int) -> np.ndarray:
 		"""
 		Computes the shift between nbefore and the peak of the template.
 

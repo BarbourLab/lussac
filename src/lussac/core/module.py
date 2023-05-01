@@ -181,7 +181,7 @@ class MonoSortingModule(LussacModule):
 		@param params: dict
 			The parameters for the waveform extraction.
 		@param filter_band: Iterable[float, float] | None
-			If not none, the highpass and lowpass cutoff frequencies (in Hz).
+			If not none, the highpass and lowpass cutoff frequencies for Gaussian filtering (in Hz).
 		@param margin: float
 			The margin (in ms) to extract (useful for filtering).
 		@param sub_folder: str
