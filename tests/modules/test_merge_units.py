@@ -4,7 +4,7 @@ from spikeinterface.core.testing import check_extractor_annotations_equal
 
 
 def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
-	# Take a subset of units to accelerate the test.
+	# TODO: Take a subset of units to accelerate the test.
 
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
 	params = module.update_params({})

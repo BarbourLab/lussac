@@ -214,7 +214,6 @@ class MergeSortings(MultiSortingsModule):
 				if sorting1_name != sorting2_name:
 					continue
 
-				# TODO: Add checks for spiketrain 1&2 contamination, order? ...
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
 				C1 = utils.estimate_contamination(spike_train1, refractory_period)
