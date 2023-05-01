@@ -146,7 +146,24 @@ def test_split_sorting(data: LussacData) -> None:
 	assert sorting2.unit_ids.size == len(sorting.unit_ids) - 8
 
 
-# TODO: test_merge_sortings
+def test_merge_sortings() -> None:
+	sorting1 = si.NumpySorting(30000, [0, 1, 3])
+	sorting2 = si.NumpySorting(30000, [5, 2, 9])
+	sorting3 = si.NumpySorting(30000, [1, 0, 6])
+
+	sorting1.annotate(name="test")
+	sorting2.annotate(name="test")
+	sorting1.set_property("test2", [0, 1, 2])
+	sorting3.set_property("test2", [3, 4, 5])
+
+	sorting1_2 = LussacPipeline.merge_sortings(sorting1, sorting2)
+	assert np.all(sorting1_2.unit_ids == (0, 1, 3, 5, 2, 9))
+	assert sorting1_2.get_annotation("name") == "test"
+
+	sorting1_3 = LussacPipeline.merge_sortings(sorting1, sorting3)
+	assert np.all(sorting1_3.unit_ids == (0, 1, 3, 7, 8, 6))
+	assert np.all(sorting1_3.get_property("test2") == (0, 1, 2, 3, 4, 5))
+
 
 def test_save_load_sortings(pipeline: LussacPipeline) -> None:
 	pipeline._save_sortings("test_save_sortings")
