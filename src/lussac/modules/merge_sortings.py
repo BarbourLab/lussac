@@ -218,7 +218,7 @@ class MergeSortings(MultiSortingsModule):
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
 				C1 = utils.estimate_contamination(spike_train1, refractory_period)
-				C2 = utils.estimate_contamination(spike_train1, refractory_period)
+				C2 = utils.estimate_contamination(spike_train2, refractory_period)
 				if C2 < C1:
 					spike_train1, spike_train2 = spike_train2, spike_train1
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
