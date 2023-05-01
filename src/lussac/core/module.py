@@ -238,7 +238,7 @@ class MonoSortingModule(LussacModule):
 			'contamination': {},
 			'amplitude': {'peak_sign': "both", 'mode': "extremum"},
 			'SNR': {'peak_sign': "both", 'mode': "extremum"},
-			'amplitude_std': {'peak_sign': "both", 'return_scaled': True, 'chunk_duration': '1s', 'n_jobs': 6},
+			'amplitude_std': {'peak_sign': "both", 'return_scaled': True},
 			'ISI_portion': {}
 		}
 
@@ -267,7 +267,7 @@ class MonoSortingModule(LussacModule):
 
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
 				params = utils.filter_kwargs(params, si.template_tools.get_template_extremum_amplitude)
-				amplitudes = si.template_tools.get_template_extremum_amplitude(wvf_extractor, **params)
+				amplitudes = si.get_template_extremum_amplitude(wvf_extractor, **params)
 				return amplitudes
 
 			case "SNR":  # Returns the signal-to-noise ratio of each unit on its best channel.

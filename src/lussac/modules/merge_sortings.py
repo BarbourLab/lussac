@@ -47,7 +47,7 @@ class MergeSortings(MultiSortingsModule):
 
 		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
-		if isinstance(params['correlogram_validation'], dict) and 'max_time' in params['correlogram_validation']:
+		if isinstance(params['correlogram_validation'], dict) and isinstance(params['correlogram_validation'], dict):
 			params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 			params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
 			params['correlogram_validation']['censored_period'] = params['similarity']['window']
@@ -69,7 +69,6 @@ class MergeSortings(MultiSortingsModule):
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, params['refractory_period'], params['require_multiple_sortings_match'])
-		merged_sorting.annotate(name="merged_sorting")
 
 		return {'merged_sorting': merged_sorting}
 
@@ -376,4 +375,7 @@ class MergeSortings(MultiSortingsModule):
 		filename = f"{self.logs_folder}/merged_sorting.npz"
 		si.NpzSortingExtractor.write_sorting(sorting, filename)
 
-		return si.NpzSortingExtractor(filename)
+		merged_sorting = si.NpzSortingExtractor(filename)
+		merged_sorting.annotate(name="merged_sorting")
+
+		return merged_sorting
