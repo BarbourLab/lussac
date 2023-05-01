@@ -24,6 +24,7 @@ conda activate lussac
 
 # Install Lussac.
 pip install -e .
+# Or for developers: pip install -e .[dev]
 
 # If you want to check whether the installation was successful (optional)
 # (this may take a while as it will download some testing datasets).
