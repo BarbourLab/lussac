@@ -255,8 +255,9 @@ class MergeSortings(MultiSortingsModule):
 			for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
 				attr = graph.nodes[node]
 				attr['connected'] = False  # Since we're removing all connections.
+				attr['merged'] = True
 				graph.remove_node(node)
-				graph.add_node(node, merged=True, **attr)
+				graph.add_node(node, **attr)
 				logs.write(f"\t- {node}\n")
 
 		logs.close()
