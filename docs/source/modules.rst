@@ -85,8 +85,8 @@ This module's parameters are:
 
 - :code:`wvf_extraction`: to construct the templates. The :code:`ms_before` and :code:`ms_after` parameters determine the max shift for alignment.
 - :code:`filter`: the band for the bandpass Gaussian filtering of the templates :code:`[min_f, max_f]`. Can be set to :code:`null` for no filtering.
-- :code:`threshold`: Threshold multiplicator (between 0 and 1). The real threshold is :code:`max(template) * threshold`.
-- :code:`check_next`: Number of samples to check after the first peak (put 0 to not check after the first peak).
+- :code:`threshold` (optional): Threshold multiplicator (between 0 and 1). The real threshold is :code:`max(template) * threshold`. By default: 0.5
+- :code:`check_next` (optional): Number of samples to check after the first peak (put 0 to not check after the first peak). By default: 10
 
 
 Example of units alignment
@@ -106,3 +106,88 @@ Example of units alignment
 			"check_next": 5  // Check the next 5 samples.
 		}
 	}
+
+
+The :code:`remove_bad_units` module
+-----------------------------------
+
+This module will remove the units that meet at least one of the criteria. The criteria are the same as those described in :code:`units_categorization`.
+
+
+Example of units removal
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"remove_bad_units": {
+		"CS": {  // Remove complex-spike units with contamination > 35%
+			"contamination": {
+				"refractory_period": [1.5, 25.0],
+				"max": 0.35
+			}
+		},
+		"spikes": {  // Remove units with firing rate < 1.0 Hz or amplitude std > 80 µV
+			"firing_rate": {
+				"min": 1.0
+			},
+			"amplitude_std": {
+				"max": 80.0
+			}
+		}
+
+
+The :code:`remove_duplicated_spikes` module
+-------------------------------------------
+
+This module will remove spikes that are considered duplicates (i.e. too close to one another).
+
+| This is done by setting a :code:`censored_period` window under which there cannot be 2 spikes.
+| Be careful! This is different from the :code:`refractory_period`! It's very useful to keep spikes in the refractory period to estimate the contamination. The censored period is designed to remove duplicated spikes.
+| Typical values of :code:`censored_period` usually lie between 0.2 and 0.4 ms, whereas the refractory period is almost always greater than 0.9ms.
+
+This module's parameters are:
+
+- :code:`censored_period`: in ms (by default, 0.3).
+- :code:`method` (optional): method used to remove duplicates (used by :code:`spikeinterface.curation.find_duplicated_spikes`). By default: :code:`"keep_first_iterative"`
+
+
+Example of duplicated spikes removal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"remove_duplicated_spikes": {
+		"all": {
+			"censored_period": 0.3
+		}
+	}
+
+
+The :code:`remove_redundant_units` module
+-----------------------------------------
+
+WIP
+
+
+The :code:`merge_units` module
+------------------------------
+
+WIP
+
+
+The :code:`merge_sortings` module
+---------------------------------
+
+WIP
+
+
+The :code:`export_to_phy` module
+--------------------------------
+
+WIP
+
+
+The :code:`export_to_sigui` module
+----------------------------------
+
+WIP
