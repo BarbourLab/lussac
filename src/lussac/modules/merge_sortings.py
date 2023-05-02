@@ -150,7 +150,7 @@ class MergeSortings(MultiSortingsModule):
 		graph = nx.Graph()
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
-				attr = {'connected': False}
+				attr = {'connected': False, 'merged': False}
 				if 'gt_label' in sorting.get_property_keys():
 					attr['gt_label'] = sorting.get_unit_property(unit_id, 'gt_label')
 
@@ -221,6 +221,7 @@ class MergeSortings(MultiSortingsModule):
 				if C2 < C1:
 					spike_train1, spike_train2 = spike_train2, spike_train1
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
+				# TODO: Debug p_value (lots of nan values for CS).
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
@@ -342,6 +343,12 @@ class MergeSortings(MultiSortingsModule):
 		for nodes in nx.connected_components(graph):  # For each putative neuron.
 			nodes = list(nodes)
 			if len(nodes) == 1 and not graph.nodes[nodes[0]]['connected'] and require_multi_sortings:
+				continue
+
+			for node in nodes:
+				if graph.nodes[node]['merged']:
+					nodes.remove(node)
+			if len(nodes) == 0:
 				continue
 
 			new_unit_id = len(new_spike_trains)
