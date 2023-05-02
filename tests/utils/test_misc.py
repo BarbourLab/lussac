@@ -58,6 +58,9 @@ def test_merge_dict() -> None:
 	assert np.all(d4_keys == ('a', 'b', 'c', 2, 1))
 
 
+# TODO: Add test for binom_cdf.
+
+
 def test_gaussian_histogram() -> None:
 	dt = 2e-4
 	histogram1 = utils.gaussian_histogram(np.array([3.0, 10.0, 20.0]), np.arange(0, 20 + dt, dt), 0.5)

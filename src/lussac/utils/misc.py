@@ -1,6 +1,7 @@
 import inspect
 import math
 from typing import Any, Callable
+import scipy.interpolate
 import scipy.stats
 import numba
 import numpy as np
@@ -112,6 +113,16 @@ def merge_dict(d1: dict, d2: dict) -> dict:
 			res[key] = d1[key]
 
 	return res
+
+
+def binom_cdf(x: int, n: float, p: float) -> float:
+	n_array = np.arange(math.floor(n-2), math.ceil(n+3), 1)
+	n_array = n_array[n_array >= 1]
+
+	res = [scipy.stats.binom.cdf(x, n_, p) for n_ in n_array]
+	f = scipy.interpolate.interp1d(n_array, res, kind="quadratic")
+
+	return f(n)
 
 
 def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, truncate: float = 5., margin_reflect: bool = False) -> np.ndarray:
@@ -245,9 +256,7 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	# n and p for the binomial law for the number of coincidence (under the hypothesis of cross-contamination = limit).
 	n = N1 * N2 * ((1 - C1) * limit + C1)
 	p = 2 * t_r / Utils.t_max
-	p_value = 1 - scipy.stats.binom.cdf(n_violations - 1, n, p)
-	if np.isnan(p_value):  # binom.cdf can fail for very high 'n' -> approximate with a Gaussian.
-		p_value = 1 - scipy.stats.norm.cdf(n_violations, n*p, math.sqrt(n*p*(1-p)))
+	p_value = 1 - binom_cdf(n_violations - 1, n, p)
 	if np.isnan(p_value):  # pragma: no cover (should be unreachable).
 		raise ValueError(f"Could not compute p-value for cross-contamination:\n\tn_violations = {n_violations}\n\tn = {n}\n\tp = {p}")
 
