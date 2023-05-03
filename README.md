@@ -23,11 +23,9 @@ conda create -n lussac python=3.11  # Must be >= 3.10
 conda activate lussac
 
 # Install Lussac.
-pip install -e .
-# Or for developers: pip install -e .[dev]
+pip install -e .  # For developers: pip install -e .[dev]
 
 # If you want to check whether the installation was successful (optional)
-# (this may take a while as it will download some testing datasets).
 pytest
 ```
 

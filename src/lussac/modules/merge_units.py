@@ -134,6 +134,7 @@ class MergeUnits(MonoSortingModule):
 			unit_id_2 = self.sorting.unit_ids[j]
 			color = "black" if (unit_id_1, unit_id_2) in potential_merges or (unit_id_2, unit_id_1) in potential_merges else "red"
 
+			annotation_gt = {}
 			if 'gt_label' in wvf_extractor.sorting.get_property_keys():
 				gt_label_1 = wvf_extractor.sorting.get_unit_property(unit_id_1, 'gt_label')
 				gt_label_2 = wvf_extractor.sorting.get_unit_property(unit_id_2, 'gt_label')
@@ -150,8 +151,6 @@ class MergeUnits(MonoSortingModule):
 					},
 					'showarrow': False
 				}
-			else:
-				annotation_gt = {}
 
 			labels.append(f"Units {unit_id_1} & {unit_id_2}")
 			args.append({'title.text': f"Units {unit_id_1} & {unit_id_2}: corr_diff = {correlogram_diff[i, j]:.1%} ; temp_diff = {templates_diff[i, j]:.1%}",
