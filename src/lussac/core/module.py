@@ -251,8 +251,9 @@ class MonoSortingModule(LussacModule):
 		if 'filter' in params:
 			recording = spre.filter(recording, **params['filter'])
 
+		rec_attributes = si.recording_tools.get_rec_attributes(recording)
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
-						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
+						else si.WaveformExtractor(recording, sorting, rec_attributes=rec_attributes, allow_unfiltered=True)
 
 		match attribute:
 			case "firing_rate":  # Returns the firing rate of each unit (in Hz).

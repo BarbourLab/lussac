@@ -19,7 +19,7 @@ cd lussac
 git checkout v2.0
 
 # OPTIONAL: Use a conda environment.
-conda create -n lussac python=3.10
+conda create -n lussac python=3.11  # Must be >= 3.10
 conda activate lussac
 
 # Install Lussac.
