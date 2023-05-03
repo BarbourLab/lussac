@@ -33,6 +33,8 @@ lussac = "lussac.main:main"
 [project.optional-dependencies]
 
 dev = [
+	"matplotlib",
+	"hdbscan",
 	"pytest-cov>=4.0.0",
 	"sphinx>=6.0",
 	"sphinxemoji>=0.2.0",

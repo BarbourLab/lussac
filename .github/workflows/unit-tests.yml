@@ -31,7 +31,6 @@ jobs:
         cd spikeinterface
         pip uninstall -y spikeinterface
         pip install -e .
-        pip install hdbscan  # For testing spike sorting with spyking circus 2
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
