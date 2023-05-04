@@ -36,7 +36,6 @@ class ExportToPhy(MonoSortingModule):
 		output_folder = self._format_output_path(params['path'])
 
 		if 'sparsity' in params['export_params'] and params['export_params']['sparsity'] is not None:
-			print(params['export_params']['sparsity'])
 			params['export_params']['sparsity'] = si.compute_sparsity(wvf_extractor, **params['export_params']['sparsity'])
 
 		export_to_phy(wvf_extractor, output_folder, **params['export_params'])

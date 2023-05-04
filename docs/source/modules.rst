@@ -166,7 +166,35 @@ Example of duplicated spikes removal
 The :code:`remove_redundant_units` module
 -----------------------------------------
 
-WIP
+| This module will look for redundant units in analyses (by looking at the rate of coincident spikes between units in individual analyses).
+| If redundant units are detected, all but one will be removed (the chosen one depends on the :code:`remove_strategy` used).
+
+This module's parameters are:
+
+- :code:`wvf_extraction`: to construct the templates (required depending on the remove strategy). If not required, just set it to :code:`null`.
+- :code:`arguments`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.curation.remove_redundant_units`.
+
+
+Example of redundant units removal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"remove_redundant_units": {
+		"all": {
+			"wvf_extraction": {
+				"ms_before": 1.0,
+				"ms_after": 1.5,
+				"max_spikes_per_unit": 500
+			},
+			"arguments": {
+				"align": true,  // Can be set to 'false' if you already used the 'align_units' module.
+				"delta_time": 0.3,  // Window (in ms) to consider coincident spikes.
+				"duplicate_threshold": 0.7,  // If coincidence >= 70%, consider the units redundant.
+				"remove_strategy": "highest_amplitude",  // Keep the unit with the highest amplitude.
+			}
+		}
+	}
 
 
 The :code:`merge_units` module
@@ -184,10 +212,65 @@ WIP
 The :code:`export_to_phy` module
 --------------------------------
 
-WIP
+This module will export all sortings in their current state to the :code:`phy` format (if :code:`merge_sortings` was called before, will only export the merged sorting).
+
+This module's parameters are:
+
+- :code:`path`: path to the folder where to export the sorting(s). If multiple sortings exists, a subfolder will be created for each of them.
+- :code:`wvf_extraction`: to construct the templates.
+- :code:`export_params`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.exporters.export_to_phy`.
+
+
+Example of export to phy
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"export_to_phy": {
+		"all": {
+			"path": "$PARAMS_FOLDER/lussac/final_output",
+			"wvf_extraction": {
+				"ms_before": 1.0,
+				"ms_after": 3.0,
+				"max_spikes_per_unit": 1000
+			},
+			"export_params": {
+				"compute_amplitudes": true,
+				"compute_pc_features": false,
+				"copy_binary": false,
+				"template_mode": "average",
+				"verbose": False
+			}
+		}
+	}
 
 
 The :code:`export_to_sigui` module
 ----------------------------------
 
-WIP
+| This module will export all sortings in their current state to the SpikeInterface GUI format (if :code:`merge_sortings` was called before, will only export the merged sorting).
+| This is equivalent to just a :code:`WaveformExtractor` with some extra arguments.
+
+This module's parameters are:
+
+- :code:`path`: path to the folder where to export the sorting(s). If multiple sortings exists, a subfolder will be created for each of them.
+- :code:`wvf_extraction`: to construct the templates.
+- :code:`spike_amplitudes` (optional): either a :code:`dict` or :code:`False`. If a :code:`dict`, will compute and export the spike amplitudes, the content of the dictionary being the parameters for :code:`spikeinterface.postprocessing.compute_spike_amplitudes`. By default :code:`dict()`.
+- :code:`principal_components` (optional): either a :code:`dict` or :code:`False`. If a :code:`dict`, will compute and export the PCA, the content of the dictionary being the parameters for :code:`spikeinterface.postprocessing.compute_principal_components`. By default :code:`False`.
+
+
+Example of export to SI GUI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"export_to_sigui": {
+		"all": {
+			"path": "$PARAMS_FOLDER/lussac/final_output",
+			"wvf_extraction": {
+				"ms_before": 1.0,
+				"ms_after": 3.0,
+				"max_spikes_per_unit": 1000
+			}
+		}
+	}
