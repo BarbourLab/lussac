@@ -1,4 +1,3 @@
-import pathlib
 from typing import Any
 from overrides import override
 from lussac.core import MonoSortingModule
@@ -32,7 +31,7 @@ class ExportToSIGUI(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		path = str(pathlib.Path(self._format_output_path(params['path'])).absolute())
+		path = self._format_output_path(params['path'])
 		wvf_extractor = si.extract_waveforms(self.recording, self.sorting, path, **params['wvf_extraction'])
 
 		if params['spike_amplitudes']:

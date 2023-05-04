@@ -1,5 +1,6 @@
 import os
 import pathlib
+import platform
 import shutil
 import sys
 import pytest
@@ -11,9 +12,23 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent.absolute()))  # Otherwi
 params_path = pathlib.Path(__file__).parent / "datasets" / "cerebellar_cortex" / "params.json"
 
 
+def convert_params_to_windows(params: dict) -> dict:
+	for key, value in params:
+		if isinstance(value, dict):
+			params[key] = convert_params_to_windows(value)
+		elif isinstance(value, str):
+			params[key] = params[key].replace('/', '\\')
+
+	return params
+
+
 @pytest.fixture(scope="session")
 def params() -> dict:
-	return lussac.main.load_json(str(params_path.resolve()))
+	params = lussac.main.load_json(str(params_path.resolve()))
+	if platform.system() == "Windows":
+		convert_params_to_windows(params)
+
+	return params
 
 
 @pytest.fixture(scope="session")
