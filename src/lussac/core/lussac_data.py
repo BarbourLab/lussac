@@ -78,7 +78,7 @@ class LussacData:
 			Path to the folder that store the logs.
 		"""
 
-		return self.params['lussac']['logs_folder']
+		return str(pathlib.Path(self.params['lussac']['logs_folder']).absolute())
 
 	@property
 	def sampling_f(self) -> float:
@@ -187,7 +187,7 @@ class LussacData:
 			if not isinstance(module, str):
 				raise Exception(f"Error: Module {module} in params['lussac']['pipeline'] must be a string.")
 			if not isinstance(value, dict):
-				raise Exception(f"Error: params['lussac']['pipeline][{module}] must map to a dict.")
+				raise Exception(f"Error: params['lussac']['pipeline'][{module}] must map to a dict.")
 
 			formatted_params[module] = {}
 
@@ -254,7 +254,7 @@ class LussacData:
 
 		recording = LussacData._load_recording(params['recording'])
 		if 'probe_file' in params['recording']:
-			recording = LussacData._setup_probe(recording, params['recording']['probe_file'])
+			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['recording']['probe_file']).absolute()))
 		sortings = LussacData._load_sortings(params['analyses'])
 
 		return LussacData(recording, sortings, params)

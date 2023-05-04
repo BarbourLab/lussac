@@ -1,3 +1,4 @@
+import pathlib
 from typing import Any
 from overrides import override
 from lussac.core import MonoSortingModule
@@ -33,7 +34,7 @@ class ExportToPhy(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
-		output_folder = self._format_output_path(params['path'])
+		output_folder = str(pathlib.Path(self._format_output_path(params['path'])).absolute())
 
 		if 'sparsity' in params['export_params'] and params['export_params']['sparsity'] is not None:
 			params['export_params']['sparsity'] = si.compute_sparsity(wvf_extractor, **params['export_params']['sparsity'])
