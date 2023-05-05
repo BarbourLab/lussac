@@ -237,7 +237,7 @@ class LussacData:
 		# To not export it for each plot, store it in the logs and point to it in each html file.
 		Utils.plotly_js_file = pathlib.Path(f"{folder_path}/plotly.min.js")
 		if not os.path.exists(Utils.plotly_js_file):
-			file = open(Utils.plotly_js_file, 'w')
+			file = open(Utils.plotly_js_file, 'w+', encoding="utf-8")
 			file.write(get_plotlyjs())
 			file.close()
 
