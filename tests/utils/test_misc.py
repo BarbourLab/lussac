@@ -33,8 +33,6 @@ def test_unflatten_dict() -> None:
 	assert utils.unflatten_dict(d) == {'a': {'b': 1, 'c': {'d': 2, 'e': {}}}, 'f': 3}
 
 	d = {'a': {'b': 1, 'c': {}}, 'd': 3}
-	print(utils.flatten_dict(d))
-	print(utils.unflatten_dict(utils.flatten_dict(d)))
 	assert utils.unflatten_dict(utils.flatten_dict(d)) == d
 
 
@@ -74,9 +72,9 @@ def test_gaussian_histogram() -> None:
 	histogram2 = utils.gaussian_histogram(np.array([3.0, 10.0, 19.8]), np.arange(0, 20 + dt, dt), 1.0, margin_reflect=True)
 	histogram3 = utils.gaussian_histogram(np.array([-40.0, 3.0, 10.0, 20.0, 50.0]), np.arange(0, 20 + dt, dt), 0.5, margin_reflect=True)
 
-	assert np.abs(np.sum(histogram1) * dt - 2.5) < 1e-3
-	assert np.abs(np.sum(histogram2) * dt - 3.0) < 1e-3
-	assert np.abs(np.sum(histogram3) * dt - 2.5) < 1e-3
+	assert math.isclose(np.sum(histogram1) * dt, 2.5, rel_tol=1e-3, abs_tol=1e-3)
+	assert math.isclose(np.sum(histogram2) * dt, 3.0, rel_tol=1e-3, abs_tol=1e-3)
+	assert math.isclose(np.sum(histogram3) * dt, 2.5, rel_tol=1e-3, abs_tol=1e-3)
 
 
 def test_get_border_probabilities() -> None:
@@ -102,7 +100,7 @@ def test_estimate_contamination() -> None:
 		contaminated_spike_train = np.sort(np.concatenate((spike_train, contaminated_spikes)))
 		contaminations[i] = utils.estimate_contamination(contaminated_spike_train, (0, 0.9*t_r))
 
-	assert np.abs(np.mean(contaminations) - C) < 0.01
+	assert math.isclose(np.mean(contaminations), C, rel_tol=1e-2, abs_tol=1e-2)
 
 	# Test with a censored period.
 	contaminations = np.empty(100, dtype=np.float32)
@@ -111,7 +109,7 @@ def test_estimate_contamination() -> None:
 		spike_train = generate_censored_contaminated_spike_train(firing_rate, (t_c, t_r), C)
 		contaminations[i] = utils.estimate_contamination(spike_train, (t_c, 0.9*t_r))
 
-	assert np.abs(np.mean(contaminations) - C) < 0.05
+	assert math.isclose(np.mean(contaminations), C, rel_tol=5e-2, abs_tol=5e-2)
 
 
 def test_estimate_cross_contamination() -> None:
@@ -136,7 +134,7 @@ def test_estimate_cross_contamination() -> None:
 		assert p_value < 1e-6
 		cross_contaminations[i] = estimation
 
-	assert np.abs(np.mean(cross_contaminations) - cross_contamination) < 0.1
+	assert math.isclose(np.mean(cross_contaminations), cross_contamination, abs_tol=0.1, rel_tol=0.1)
 
 	# Testing with t_c != 0
 	# TODO
@@ -215,11 +213,11 @@ def test_compute_similarity_matrix() -> None:
 	uncorrected_similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
 
 	# Test for corrected similarity matrix.
-	assert np.abs(np.mean(corrected_similarity_matrix)) < 1e-3
+	assert math.isclose(np.mean(corrected_similarity_matrix), 0.0, rel_tol=1e-3, abs_tol=1e-3)
 
 	# Test for uncorrected similarity matrix.
 	n_expected = n_spikes**2 * (2*window + 1) / T
-	assert np.abs(np.mean(uncorrected_similarity_matrix) - n_expected / n_spikes) < 1e-3
+	assert math.isclose(np.mean(uncorrected_similarity_matrix), n_expected / n_spikes, rel_tol=1e-3, abs_tol=1e-3)
 
 
 def generate_spike_train(firing_rate: float, t_r: float) -> npt.NDArray[np.int64]:

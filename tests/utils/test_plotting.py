@@ -1,4 +1,5 @@
 import os
+import pathlib
 import numpy as np
 import plotly.graph_objects as go
 from lussac.core import LussacData
@@ -13,8 +14,8 @@ def test_get_path_to_plotlyJS() -> None:
 	plotly_js = utils.Utils.plotly_js_file
 
 	path = plotly_js.parent / "aze" / "dfg"
-	assert utils.get_path_to_plotlyJS(path) == "../../plotly.min.js"
-	assert utils.get_path_to_plotlyJS(str(path)) == "../../plotly.min.js"
+	assert utils.get_path_to_plotlyJS(path) == pathlib.Path("../../plotly.min.js")
+	assert utils.get_path_to_plotlyJS(str(path)) == pathlib.Path("../../plotly.min.js")
 
 
 def test_plot_sliders() -> None:

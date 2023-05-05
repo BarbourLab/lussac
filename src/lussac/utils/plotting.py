@@ -1,6 +1,7 @@
 import os
 from typing import Any
 import copy
+import networkx as nx
 from pathlib import Path
 import numpy as np
 import numpy.typing as npt
@@ -10,7 +11,7 @@ import spikeinterface.core as si
 import spikeinterface.postprocessing as spost
 
 
-def get_path_to_plotlyJS(path: str | Path) -> str:
+def get_path_to_plotlyJS(path: str | Path) -> Path:
 	"""
 	Returns the path to the plotly.js file relative to the given path.
 
@@ -22,7 +23,7 @@ def get_path_to_plotlyJS(path: str | Path) -> str:
 	if isinstance(path, str):
 		path = Path(path)
 
-	return os.path.relpath(utils.Utils.plotly_js_file, start=path)
+	return Path(os.path.relpath(utils.Utils.plotly_js_file, start=path))
 
 
 def export_figure(fig: go.Figure, filepath: str) -> None:
@@ -263,3 +264,30 @@ def create_gt_annotations(sorting: si.BaseSorting) -> list[dict[str, Any]]:
 			})
 
 	return annotations_gt
+
+
+def create_graph_plot(graph: nx.Graph) -> go.Figure:  # pragma: no cover (test function)
+	nodes_pos = nx.spring_layout(graph)
+
+	fig = go.Figure()
+
+	for node1, node2, data in graph.edges(data=True):
+		fig.add_trace(go.Scatter(
+			x=[nodes_pos[node1][0], nodes_pos[node2][0]],
+			y=[nodes_pos[node1][1], nodes_pos[node2][1]],
+			mode="lines",
+			line=dict(width=1, color="rgba(0, 0, 0, 0.8)"),
+			showlegend=False,
+			text="<br />".join([f"{key}: {value}" for key, value in data.items()]),
+			hoverinfo="text"
+		))
+
+	fig.add_trace(go.Scatter(
+		x=np.array(list(nodes_pos.values()))[:, 0],
+		y=np.array(list(nodes_pos.values()))[:, 1],
+		mode="markers",
+		marker_color="CornflowerBlue",
+		text=list(nodes_pos.keys())
+	))
+
+	return fig
