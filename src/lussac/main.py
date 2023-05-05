@@ -38,7 +38,7 @@ def load_json(filename: str) -> dict:
 	with open(filename) as json_file:
 		minified = jsmin.jsmin(json_file.read())  # Parses out comments.
 		minified = minified.replace("$PARAMS_FOLDER", str(folder.absolute()))
-		if platform.system() == "Windows":
+		if platform.system() == "Windows":  # pragma: no cover (OS specific).
 			minified = minified.replace("\\", "\\\\")
 
 		return json.loads(minified)

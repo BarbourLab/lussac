@@ -460,7 +460,7 @@ def compute_similarity_matrix(coincidence_matrix: np.ndarray, n_spikes1: np.ndar
 
 	minimum_n_spikes = np.minimum(n_spikes1[:, None], n_spikes2)
 	similarity_matrix = coincidence_matrix / minimum_n_spikes
-	expected_matrix = (n_spikes1[:, None] * n_spikes2[None, :] * (2*window+1) / Utils.t_max) / minimum_n_spikes
+	expected_matrix = (n_spikes1[:, None].astype(np.int64) * n_spikes2[None, :].astype(np.int64) * (2*window+1) / Utils.t_max) / minimum_n_spikes
 
 	return (similarity_matrix - expected_matrix) / (1 - expected_matrix)
 

@@ -82,8 +82,6 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	contaminations = module.get_units_attribute_arr("contamination", params['contamination'])
 	assert isinstance(contaminations, np.ndarray)
 	assert contaminations.shape == (num_units, )
-	print(contaminations)  # Debugging for Windows workflow.
-	assert contaminations.shape == (5, )
 	assert contaminations[0] >= 1.0
 
 	amplitude = module.get_units_attribute_arr("amplitude", params['amplitude'])
