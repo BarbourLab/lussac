@@ -1,4 +1,5 @@
 import pathlib
+import platform
 import sys
 import argparse
 import json
@@ -33,10 +34,13 @@ def load_json(filename: str) -> dict:
 		Lussac's parameters.
 	"""
 
-	folder = pathlib.Path(filename[:filename.rindex('/')] if '/' in filename else "./")
+	folder = pathlib.Path(filename).parent
 	with open(filename) as json_file:
 		minified = jsmin.jsmin(json_file.read())  # Parses out comments.
 		minified = minified.replace("$PARAMS_FOLDER", str(folder.absolute()))
+		if platform.system() == "Windows":
+			minified = minified.replace("\\", "\\\\")
+
 		return json.loads(minified)
 
 
