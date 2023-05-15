@@ -1,5 +1,7 @@
 import copy
+import glob
 import os
+import pathlib
 import time
 from typing import Type
 from dataclasses import dataclass
@@ -32,7 +34,7 @@ class LussacPipeline:
 			print(f"{' ' + module_key + ' ':*^34}")
 			print('*' * 34)
 
-			if os.path.exists(f"{self.data.logs_folder}/{module_key}/output"):
+			if os.path.exists(f"{self.data.logs_folder}/{module_key}/sorting"):
 				self.data.sortings = self._load_sortings(module_key)
 				continue
 
@@ -142,7 +144,7 @@ class LussacPipeline:
 		"""
 
 		for name, sorting in self.data.sortings.items():
-			sorting.save_to_folder(folder=f"{self.data.logs_folder}/{module_name}/output/{name}", verbose=False)
+			sorting.dump_to_pickle(file_path=f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl", include_properties=True)
 
 	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
 		"""
@@ -156,8 +158,8 @@ class LussacPipeline:
 
 		print("Loading sortings from previous run...")
 		t1 = time.perf_counter()
-		sortings_name = os.listdir(f"{self.data.logs_folder}/{module_name}/output")
-		sortings = {name: si.load_extractor(f"{self.data.logs_folder}/{module_name}/output/{name}") for name in sortings_name}
+		sortings_path = glob.glob(f"{self.data.logs_folder}/{module_name}/sorting/*.pkl")
+		sortings = {pathlib.Path(path).stem: si.load_extractor(path) for path in sortings_path}
 		t2 = time.perf_counter()
 		print(f"Done in {t2-t1:.2f} s")
 
@@ -202,7 +204,7 @@ class LussacPipeline:
 			if cat == "all":
 				unit_ids.extend(sorting.unit_ids)
 			elif cat == "rest":
-				indices = np.where(units_category == '')[0]
+				indices = np.where((units_category == '') | (units_category == None))[0]
 				unit_ids.extend(sorting.unit_ids[indices])
 			else:
 				indices = np.where(units_category == cat)[0]
@@ -222,11 +224,6 @@ class LussacPipeline:
 		@return split_sortings: tuple[si.BaseSorting, si.BaseSorting]
 			The split sortings.
 		"""
-
-		if len(unit_ids) == sorting.get_num_units():
-			return sorting, si.NumpySorting.from_dict({}, sampling_frequency=sorting.get_sampling_frequency())
-		if len(unit_ids) == 0:
-			return si.NumpySorting.from_dict({}, sampling_frequency=sorting.get_sampling_frequency()), sorting
 
 		other_unit_ids = [unit_id for unit_id in sorting.get_unit_ids() if unit_id not in unit_ids]
 		sorting1 = sorting.select_units(unit_ids)

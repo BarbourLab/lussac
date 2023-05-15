@@ -1,4 +1,5 @@
 import copy
+import glob
 import os
 import pytest
 from typing import Any
@@ -67,12 +68,11 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	assert computed_sorting.get_num_units() > 0
 
 	# Check that the sortings have been exported.
-	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/remove_bad_units/output/ks2_best")
-	assert os.path.isdir(f"{light_pipeline.data.logs_folder}/merge_sortings/output/merged_sorting")
+	assert os.path.isfile(f"{light_pipeline.data.logs_folder}/remove_bad_units/sorting/ks2_best.pkl")
+	assert os.path.isfile(f"{light_pipeline.data.logs_folder}/merge_sortings/sorting/merged_sorting.pkl")
 
 	light_pipeline.launch()
 	loaded_sorting = light_pipeline.data.sortings['merged_sorting']
-	assert isinstance(loaded_sorting, si.NpzSortingExtractor)  # The pipeline loaded the result.
 
 	print(computed_sorting)
 	print(loaded_sorting)
@@ -169,7 +169,9 @@ def test_save_load_sortings(pipeline: LussacPipeline) -> None:
 	pipeline._save_sortings("test_save_sortings")
 	loaded_sortings = pipeline._load_sortings("test_save_sortings")
 
+	assert len(glob.glob(f"{pipeline.data.logs_folder}/test_save_sortings/sorting/*.pkl")) > 0
 	assert len(loaded_sortings) == len(pipeline.data.sortings)
+
 	for sorting_name in pipeline.data.sortings.keys():
 		assert sorting_name in loaded_sortings
 		check_sortings_equal(pipeline.data.sortings[sorting_name], loaded_sortings[sorting_name], check_annotations=True, check_properties=True)

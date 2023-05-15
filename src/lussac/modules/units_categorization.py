@@ -34,7 +34,7 @@ class UnitsCategorization(MonoSortingModule):
 
 			unit_ids = self.sorting.unit_ids[units_to_categorize]
 			values = np.array([category]*len(unit_ids), dtype=object)  # dtype cannot be str, otherwise string length is restricted.
-			self.sorting.set_property("lussac_category", values, ids=unit_ids)
+			self.sorting.set_property("lussac_category", values, ids=unit_ids, missing_value=None)
 
 		return self.sorting
 
