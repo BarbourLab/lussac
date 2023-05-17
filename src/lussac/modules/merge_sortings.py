@@ -221,7 +221,6 @@ class MergeSortings(MultiSortingsModule):
 				if C2 < C1:
 					spike_train1, spike_train2 = spike_train2, spike_train1
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
-				# TODO: Debug p_value (lots of nan values for CS).
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.3f})\n")
@@ -309,7 +308,7 @@ class MergeSortings(MultiSortingsModule):
 				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, len(spike_train1), len(spike_train2))
 				graph[node1][node2]['corr_diff'] = corr_diff
 
-	def clean_graph(self, graph: nx.Graph) -> None:
+	def clean_graph(self, graph: nx.Graph) -> None:  # pragma: no cover (not implemented yet)
 		"""
 		TODO
 

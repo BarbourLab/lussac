@@ -7,6 +7,7 @@ from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
+import spikeinterface.qualitymetrics as sqm
 from spikeinterface.curation.auto_merge import normalize_correlogram
 
 
@@ -52,26 +53,62 @@ class MergeUnits(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
-		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])
+		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])  # TODO: cross-corr are not censored in the middle.
 
-		sorting = self._merge(potential_merges)
+		sorting = self._remove_splits(self.sorting, extra_outputs, params)
+		sorting = self._merge(sorting, potential_merges)
 		self.plot_merging(potential_merges, wvf_extractor, extra_outputs, params['auto_merge_params'])
 
 		return sorting
 
-	def _merge(self, potential_merges: list[tuple]) -> si.BaseSorting:
+	def _remove_splits(self, sorting: si.BaseSorting, extra_outputs: dict, params: dict[str, Any]) -> si.BaseSorting:
+		"""
+		Remove units that are split but decrease the score if merged.
+		When such a pair is detected, remove the unit with the lowest score.
+		This unit usually is a contaminated unit.
+
+		@param sorting: si.BaseSorting
+			The sorting object.
+		@param extra_outputs: dict
+			Extra outputs given by the merging process.
+		@param params: dict
+			Parameters of the merging process.
+			i.e. params['auto_merge_params']
+		@return: si.BaseSorting
+			Sorting with the units removed.
+		"""
+		t_c, t_r = params['refractory_period']
+		k = params['auto_merge_params']['firing_contamination_balance']
+
+		units_to_remove = []
+		wvf_extractor = si.WaveformExtractor(self.recording, sorting, allow_unfiltered=True)
+		contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)
+
+		for pair in extra_outputs['pairs_decreased_score']:
+			unit1, unit2 = pair
+			score_unit1 = len(sorting.get_unit_spike_train(unit1)) * (1 - (k+1) * contamination[unit1])
+			score_unit2 = len(sorting.get_unit_spike_train(unit2)) * (1 - (k+1) * contamination[unit2])
+			worse_unit = unit1 if score_unit1 < score_unit2 else unit2
+			units_to_remove.append(worse_unit)  # TODO: Only remove if unconnected in 'potential_merges' graph?
+
+		return sorting.select_units([unit_id for unit_id in sorting.unit_ids if unit_id not in units_to_remove])
+
+	def _merge(self, sorting: si.BaseSorting, potential_merges: list[tuple]) -> si.BaseSorting:
+		"""
+		WIP
 		"""
 
-		"""
+		sorting = scur.CurationSorting(sorting, properties_policy="keep")
 
-		sorting = scur.CurationSorting(self.sorting, properties_policy="keep")
 		graph = nx.Graph()
 		for potential_merge in potential_merges:
 			graph.add_edge(*potential_merge)
 
-		for units in nx.connected_components(graph):  # For each putative neuron.
+		# For each putative neuron, merge the units.
+		for units in nx.connected_components(graph):
 			if len(units) > 2:
 				continue  # TODO
+				# nx.contracted_nodes(unit1, unit2, self_loops=False)  <-- Merge units in the graph. Final node will be unit1.
 
 			sorting.merge(list(units))
 

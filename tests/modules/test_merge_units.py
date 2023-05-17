@@ -17,3 +17,20 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	check_extractor_annotations_equal(prev_sorting, sorting)
 	assert sorting.get_num_units() < prev_n_units
 	assert 29 not in sorting.unit_ids and 31 not in sorting.unit_ids
+
+
+def test_remove_splits(mono_sorting_data: MonoSortingData) -> None:
+	module = MergeUnits("test", mono_sorting_data, "all")
+	sorting = mono_sorting_data.sorting
+	params = module.update_params({})
+
+	extra_outputs = {'pairs_decreased_score': [(71, 81), (52, 62)]}
+	assert all(x in sorting.unit_ids for x in [52, 62, 71, 81])
+
+	sorting = module._remove_splits(sorting, extra_outputs, params)
+	assert 71 in sorting.unit_ids and 81 not in sorting.unit_ids
+	assert 52 in sorting.unit_ids and 62 not in sorting.unit_ids
+
+
+def test_inner_merge(mono_sorting_data: MonoSortingData) -> None:
+	pass  # TODO
