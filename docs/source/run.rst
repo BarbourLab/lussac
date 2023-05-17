@@ -17,3 +17,21 @@ Note that some parameters file are provided for a quickstart, but you will need 
 ---------------------------
 
 Work in progress ...
+
+
+|:scroll:| Running from a Python script
+---------------------------------------
+
+You can also run Lussac from a Python script, by giving your :code:`recording` object, a dict of :code:`sortings` objects, and the :code:`params` as a dictionary:
+
+.. code-block:: python
+
+	from lussac.core import LussacData, LussacPipeline
+
+	# recording = ...
+	# sortings = {"sorting_name": sorting_object, ...}
+	# params = {...}
+
+	lussac_data = LussacData(recording, sortings, params)
+	lussac_pipeline = LussacPipeline(lussac_data)
+	lussac_pipeline.launch()
