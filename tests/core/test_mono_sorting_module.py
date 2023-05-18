@@ -1,4 +1,3 @@
-from pathlib import Path
 import pytest
 from typing import Any
 import numpy as np
@@ -37,8 +36,7 @@ def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
 
 
 def test_logs_folder(mono_sorting_module: MonoSortingModule) -> None:
-	print(mono_sorting_module.data.name)
-	assert mono_sorting_module.logs_folder == f"{mono_sorting_module.data.logs_folder}/test_mono_sorting_module/all/ms3_best"
+	assert mono_sorting_module.logs_folder == mono_sorting_module.data.logs_folder / "test_mono_sorting_module" / "all" / "ms3_best"
 
 
 def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
@@ -48,8 +46,8 @@ def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 
 	assert wvf_extractor_1 is not None
 	assert wvf_extractor_2 is not None
-	assert Path(f"{tmp_folder}/test_mono_sorting_module/all/ms3_best/wvf_extractor/waveforms").is_dir()
-	assert Path(f"{tmp_folder}/test_mono_sorting_module/all/ms3_best/aze/waveforms").is_dir()
+	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "wvf_extractor" / "waveforms").is_dir()
+	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "aze" / "waveforms").is_dir()
 
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:

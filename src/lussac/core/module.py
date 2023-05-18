@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import os
+import pathlib
 import shutil
 from typing import Any
 import numpy as np
@@ -111,8 +111,8 @@ class MonoSortingModule(LussacModule):
 		When the module is garbage collected, remove the temporary folder.
 		"""
 
-		if os.path.exists(f"{self.data.tmp_folder}/{self.name}"):
-			shutil.rmtree(f"{self.data.tmp_folder}/{self.name}")
+		if (self.data.tmp_folder / self.name).exists():
+			shutil.rmtree(self.data.tmp_folder / self.name)
 
 	@property
 	def sorting(self) -> si.BaseSorting:
@@ -126,17 +126,16 @@ class MonoSortingModule(LussacModule):
 		return self.data.sorting
 
 	@property
-	def logs_folder(self) -> str:
+	def logs_folder(self) -> pathlib.Path:
 		"""
 		Returns the logs directory for this module.
 
-		@return logs_folder: str
+		@return logs_folder: Path
 			Path to the logs directory.
 		"""
 
-		logs_folder = f"{self.data.logs_folder}/{self.name}/{self.category}/{self.data.name}"
-		if not os.path.exists(logs_folder):
-			os.makedirs(logs_folder)
+		logs_folder = self.data.logs_folder / self.name / self.category / self.data.name
+		logs_folder.mkdir(parents=True, exist_ok=True)
 
 		return logs_folder
 
@@ -326,17 +325,16 @@ class MultiSortingsModule(LussacModule):
 		return self.data.sortings
 
 	@property
-	def logs_folder(self) -> str:
+	def logs_folder(self) -> pathlib.Path:
 		"""
 		Returns the logs directory for this module.
 
-		@return logs_folder: str
+		@return logs_folder: Path
 			Path to the logs directory.
 		"""
 
-		logs_folder = f"{self.data.logs_folder}/{self.name}/{self.category}"
-		if not os.path.exists(logs_folder):
-			os.makedirs(logs_folder)
+		logs_folder = self.data.logs_folder / self.name / self.category
+		logs_folder.mkdir(parents=True, exist_ok=True)
 
 		return logs_folder
 

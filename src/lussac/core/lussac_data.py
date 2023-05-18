@@ -17,7 +17,7 @@ class LussacData:
 	The main data object for Lussac.
 
 	Attributes:
-		recording 		A SpikeInterface recording object.
+		recording		A SpikeInterface recording object.
 		sortings		A list of SpikeInterface sorting objects.
 		params			A dictionary containing all of Lussac's parameters.
 		_tmp_directory	The TemporaryDirectory object for Lussac.
@@ -36,8 +36,9 @@ class LussacData:
 
 		@param recording: BaseRecording
 			The recording object.
-		@param sortings: list[BaseSorting]
-			A list containing all the sorting objects (i.e. all the analyses).
+		@param sortings: dict[str, BaseSorting]
+			A dict containing all the sorting objects (i.e. all the analyses).
+			The keys are the analyses' names.
 		@param params: dict
 			The params.json file containing everything we need to know.
 		"""
@@ -58,27 +59,27 @@ class LussacData:
 		Utils.t_max = recording.get_num_frames()
 
 	@property
-	def tmp_folder(self) -> str:
+	def tmp_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the temporary folder.
 		This folder is deleted when Lussac exists (normally or because of a crash).
 
-		@return tmp_folder: str
+		@return tmp_folder: Path
 			Path to the folder that store temporary files.
 		"""
 
-		return self._tmp_directory.name
+		return pathlib.Path(self._tmp_directory.name)
 
 	@property
-	def logs_folder(self) -> str:
+	def logs_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the logs folder.
 
-		@return: logs_folder: str
-			Path to the folder that store the logs.
+		@return: logs_folder: Path
+			Path to the folder that stores the logs.
 		"""
 
-		return str(pathlib.Path(self.params['lussac']['logs_folder']).absolute())
+		return pathlib.Path(self.params['lussac']['logs_folder'])
 
 	@property
 	def sampling_f(self) -> float:
@@ -307,23 +308,24 @@ class MonoSortingData:
 		return self.data.sampling_f
 
 	@property
-	def tmp_folder(self) -> str:
+	def tmp_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the temporary folder.
 		This folder is deleted when Lussac exists (normally or because of a crash).
 
-		@return tmp_folder: str
+		@return tmp_folder: Path
 			Path to the folder that store temporary files.
 		"""
 
 		return self.data.tmp_folder
 
 	@property
-	def logs_folder(self) -> str:
+	def logs_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the logs folder.
 
-		@return logs_folder: str
+		@return logs_folder: Path
+			Path to the folder that stores Lussac's logs.
 		"""
 
 		return self.data.logs_folder
@@ -377,23 +379,24 @@ class MultiSortingsData:
 		return len(self.sortings)
 
 	@property
-	def tmp_folder(self) -> str:
+	def tmp_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the temporary folder.
 		This folder is deleted when Lussac exists (normally or because of a crash).
 
-		@return tmp_folder: str
+		@return tmp_folder: Path
 			Path to the folder that store temporary files.
 		"""
 
 		return self.data.tmp_folder
 
 	@property
-	def logs_folder(self) -> str:
+	def logs_folder(self) -> pathlib.Path:
 		"""
 		Returns the path to the logs folder.
 
-		@return logs_folder: str
+		@return logs_folder: Path
+			Path to the folder that stores Lussac's logs.
 		"""
 
 		return self.data.logs_folder
