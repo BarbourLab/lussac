@@ -1,6 +1,6 @@
 import math
 import pathlib
-from typing import Any
+from typing import Any, Sequence
 import numpy as np
 import numpy.typing as npt
 import spikeinterface.core as si
@@ -51,11 +51,7 @@ class TemplateExtractor:
 		self.folder = folder
 		if params is None:
 			params = {}
-		self.set_params(**params)
-
-		folder.mkdir(parents=True, exist_ok=True)
-		self._templates = np.memmap(str(folder / "templates.npy"), dtype=templates_dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
-		self._templates[:] = np.nan
+		self.set_params(**params, templates_dtype=templates_dtype)
 
 	@property
 	def sampling_frequency(self) -> float:
@@ -156,7 +152,34 @@ class TemplateExtractor:
 
 		return self.nbefore + 1 + self.nafter
 
-	def set_params(self, ms_before: float = 1.0, ms_after: float = 2.0, max_spikes_per_unit: int | None = 1_000, max_spikes_sparsity: int = 100) -> None:
+	def _setup_templates(self, dtype: npt.DTypeLike = np.float32) -> None:
+		"""
+		Sets up the templates memory map (creates directory, creates memmap with dtype and shape, sets values to nan).
+
+		@param dtype: DTypeLike
+			The dtype of the templates (by default: np.float32).
+		"""
+
+		self.folder.mkdir(parents=True, exist_ok=True)
+		self._templates = np.memmap(str(self.folder / "templates.npy"), dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
+		self._templates[:] = np.nan
+
+	def set_params(self, ms_before: float = 1.0, ms_after: float = 2.0, max_spikes_per_unit: int | None = 1_000, max_spikes_sparsity: int = 100,
+				   templates_dtype: npt.DTypeLike | None = None) -> None:
+		"""
+		Sets the parameters for the waveforms extraction.
+		Will reset the already-computed templates.
+
+		@param ms_before: float
+			Number of ms to retrieve before the spike events.
+		@param ms_after: float
+			Number of ms to retrieve after the spike events.
+		@param max_spikes_per_unit: int
+			Maximum number of spikes to retrieve per unit.
+		@param max_spikes_sparsity: int
+			Maximum number of spikes to retrieve to compute maximum amplitude per channel.
+		"""
+
 		self.params = {
 			'ms_before': ms_before,
 			'ms_after': ms_after,
@@ -164,7 +187,11 @@ class TemplateExtractor:
 			'max_spikes_sparsity': max_spikes_sparsity
 		}
 
-	def get_template(self, unit_id, channel_ids, return_scaled: bool = False) -> np.ndarray:
+		if templates_dtype is None:
+			templates_dtype = self._templates.dtype if hasattr(self, '_templates') else np.float32
+		self._setup_templates(templates_dtype)  # Reset the templates with new params.
+
+	def get_template(self, unit_id, channel_ids: Sequence | None = None, return_scaled: bool = False) -> np.ndarray:
 		"""
 		Returns the template for a given unit and channels.
 		If not computed, will compute it on the fly.
@@ -174,22 +201,26 @@ class TemplateExtractor:
 			The unit id for which to return the template.
 		@param channel_ids:
 			The channel ids for which to return the template.
+			If None, will return the template for all channels (default: None).
 		@param return_scaled: bool
 			If True, will return the templates scaled to µV (default: False).
 		@return template: array (n_samples_time, n_channels)
 			The template for the given unit and channels (as a copy).
 		"""
 
-		if channel_ids is None:
+		return self.get_templates([unit_id], channel_ids, return_scaled)[0]
+
+		"""if channel_ids is None:
 			channel_ids = self.channel_ids
 
+		unit_index = self.sorting.id_to_index(unit_id)
 		channel_indices = self.recording.ids_to_indices(channel_ids)
-		template = self._templates[unit_id][:, channel_indices]
+		template = self._templates[unit_index][:, channel_indices]
 
 		if np.isnan(template).any():
 			mask = np.isnan(template).any(axis=0)  # Channels that need to be run.
 			self.compute_templates([unit_id], channel_ids[mask])
-			template = self._templates[unit_id][:, channel_indices]
+			template = self._templates[unit_index][:, channel_indices]
 
 		template = template.copy()
 		if return_scaled:
@@ -197,9 +228,51 @@ class TemplateExtractor:
 			offsets = self.recording.get_channel_offsets(channel_ids)
 			template = template * gains[None, :] + offsets[None, :]
 
-		return template
+		return template"""
 
-	def compute_templates(self, unit_ids=None, channel_ids=None) -> None:
+	def get_templates(self, unit_ids: Sequence | None = None, channel_ids: Sequence | None = None, return_scaled: bool = False) -> np.ndarray:
+		"""
+		Returns the templates for the given units and channels.
+		If not computed, will compute them on the fly.
+		Returns a copy array.
+
+		@param unit_ids:
+			The unit ids for which to return the templates.
+		@param channel_ids:
+			The channel ids for which to return the templates.
+			If None, will return the templates for all channels (default: None).
+		@param return_scaled: bool
+			If True, will return the templates scaled to µV (default: False).
+		@return templates: array (n_units, n_samples_time, n_channels)
+			The templates for the given units and channels (as a copy).
+		"""
+
+		if unit_ids is None:
+			unit_ids = self.unit_ids
+		if channel_ids is None:
+			channel_ids = self.channel_ids
+		unit_ids = np.array(unit_ids)
+		channel_ids = np.array(channel_ids)
+
+		unit_indices = self.sorting.ids_to_indices(unit_ids)
+		channel_indices = self.recording.ids_to_indices(channel_ids)
+		templates = self._templates[unit_indices][:, :, channel_indices]
+
+		if np.isnan(templates).any():
+			mask_units = np.isnan(templates).any(axis=(1, 2))
+			mask_channels = np.isnan(templates).any(axis=(0, 1))
+			self.compute_templates(unit_ids[mask_units], channel_ids[mask_channels])
+			templates = self._templates[unit_indices][:, :, channel_indices]
+
+		templates = templates.copy()
+		if return_scaled:
+			gains = self.recording.get_channel_gains(channel_ids)
+			offsets = self.recording.get_channel_offsets(channel_ids)
+			templates = templates * gains[None, None, :] + offsets[None, None, :]
+
+		return templates
+
+	def compute_templates(self, unit_ids: Sequence | None = None, channel_ids: Sequence | None = None) -> None:
 		"""
 		Computes the templates for the given units and channels.
 		Doesn't return anything: updates TemplateExtractor._templates.

@@ -17,7 +17,10 @@ def template_extractor(mono_sorting_data: MonoSortingData) -> TemplateExtractor:
 	sorting = mono_sorting_data.sorting
 	folder = mono_sorting_data.tmp_folder / "test_template_extractor"
 
-	return TemplateExtractor(recording, sorting, folder, params)
+	template_extractor = TemplateExtractor(recording, sorting, folder, None)
+	template_extractor.set_params(**params)
+
+	return template_extractor
 
 
 def test_sampling_frequency(template_extractor: TemplateExtractor) -> None:
@@ -90,3 +93,18 @@ def test_get_template(template_extractor) -> None:
 
 	template_extractor.get_template(unit_id=71, channel_ids=None)
 	assert not np.isnan(template_extractor._templates[71]).any()
+
+
+def test_get_templates(template_extractor) -> None:
+	assert np.isnan(template_extractor._templates[50:55]).all()
+	templates = template_extractor.get_templates(unit_ids=np.arange(50, 53), channel_ids=np.arange(3, 7))
+	assert templates.shape == (3, template_extractor.nsamples, 4)
+	assert np.all(templates == template_extractor._templates[50:53, :, 3:7])
+	assert not np.isnan(template_extractor._templates[50:53, :, 3:7]).any()
+	assert np.isnan(template_extractor._templates[50:53, :, :3]).all()
+	assert np.isnan(template_extractor._templates[50:53, :, 7:]).all()
+	assert np.isnan(template_extractor._templates[53:55]).all()
+
+	templates = template_extractor.get_templates(channel_ids=[1])
+	assert templates.shape == (template_extractor.num_units, template_extractor.nsamples, 1)
+	assert not np.isnan(template_extractor._templates[:, :, 1]).any()
