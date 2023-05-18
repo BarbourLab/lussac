@@ -74,9 +74,6 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	light_pipeline.launch()
 	loaded_sorting = light_pipeline.data.sortings['merged_sorting']
 
-	print(computed_sorting)
-	print(loaded_sorting)
-
 	check_sortings_equal(computed_sorting, loaded_sorting, check_annotations=True, check_properties=True)
 
 
