@@ -164,7 +164,7 @@ class TemplateExtractor:
 		"""
 
 		self.folder.mkdir(parents=True, exist_ok=True)
-		self._templates = np.lib.format.open_memmap(str(self.folder / "templates.npy"), dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
+		self._templates = np.memmap(self.folder / "templates.npy", dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
 		self._templates[:] = np.nan
 		self._best_channels = np.zeros((self.num_units, self.num_channels), dtype=np.int32)
 		self._best_channels[:] = -1
@@ -286,9 +286,17 @@ class TemplateExtractor:
 			return
 
 		# TODO: max_spikes_per_unit
-		# selected_spikes = si.waveform_extractor.select_random_spikes_uniformly(recording, sorting, self.params['max_spikes_per_unit'], self.nbefore, self.nafter)
+		if self.params['max_spikes_per_unit'] is None:
+			spike_vector = sorting.to_spike_vector()
+		else:
+			selected_spikes = {}
+			for unit_id in sorting.unit_ids:
+				spike_train = sorting.get_unit_spike_train(unit_id)
+				n_spikes = min(len(spike_train), self.params['max_spikes_per_unit'])
+				selected_spikes[unit_id] = np.sort(np.random.choice(spike_train, n_spikes, replace=False))
+			spike_vector = si.NumpySorting.from_dict(selected_spikes, self.sampling_frequency).to_spike_vector()
 
-		wvfs = si.extract_waveforms_to_buffers(recording, sorting.to_spike_vector(), sorting.unit_ids, self.nbefore, 1 + self.nafter, mode="memmap",
+		wvfs = si.extract_waveforms_to_buffers(recording, spike_vector, sorting.unit_ids, self.nbefore, 1 + self.nafter, mode="memmap",
 											   return_scaled=False, folder=self.folder, dtype=recording.dtype)
 
 		for unit_idx, unit_id in zip(unit_indices, sorting.unit_ids):
