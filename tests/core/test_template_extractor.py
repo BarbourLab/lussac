@@ -80,7 +80,7 @@ def test_compute_templates(template_extractor: TemplateExtractor) -> None:
 	assert np.isnan(template_extractor._templates[5, :, 15]).any()
 
 
-def test_get_template(template_extractor) -> None:
+def test_get_template(template_extractor: TemplateExtractor) -> None:
 	assert np.isnan(template_extractor._templates[71]).all()
 	template_unscaled = template_extractor.get_template(unit_id=71, channel_ids=np.arange(19, 26))
 	assert template_unscaled.shape == (template_extractor.nsamples, 7)
@@ -95,7 +95,7 @@ def test_get_template(template_extractor) -> None:
 	assert not np.isnan(template_extractor._templates[71]).any()
 
 
-def test_get_templates(template_extractor) -> None:
+def test_get_templates(template_extractor: TemplateExtractor) -> None:
 	assert np.isnan(template_extractor._templates[50:55]).all()
 	templates = template_extractor.get_templates(unit_ids=np.arange(50, 53), channel_ids=np.arange(3, 7))
 	assert templates.shape == (3, template_extractor.nsamples, 4)
@@ -108,3 +108,45 @@ def test_get_templates(template_extractor) -> None:
 	templates = template_extractor.get_templates(channel_ids=[1])
 	assert templates.shape == (template_extractor.num_units, template_extractor.nsamples, 1)
 	assert not np.isnan(template_extractor._templates[:, :, 1]).any()
+
+	template_extractor.get_templates(unit_ids=[27], channel_ids=[1, 2])
+	template_extractor.get_templates(unit_ids=[27], channel_ids=[1, 2])  # Test everything already computed
+	assert np.isnan(template_extractor._templates[26, :, 2:]).all()
+
+
+def test_compute_best_channels(template_extractor: TemplateExtractor) -> None:
+	assert np.all(template_extractor._best_channels == -1)
+	template_extractor.compute_best_channels(unit_ids=[2, 71])
+	assert not np.any(template_extractor._best_channels[[2, 71]] == -1)
+	assert np.all(template_extractor._best_channels[71, :3] == (23, 21, 25))
+
+	template_extractor.compute_best_channels(unit_ids=[71])  # Already computed
+	assert np.all(template_extractor._best_channels[60] == -1)
+
+	template_extractor.compute_best_channels(unit_ids=None)
+	assert not np.any(template_extractor._best_channels == -1)
+	template_extractor._best_channels[:] = -1  # Reset for test_get_units_best_channels
+
+
+def test_get_unit_best_channels(template_extractor: TemplateExtractor) -> None:
+	assert np.all(template_extractor._best_channels[71] == -1)
+	best_channels = template_extractor.get_unit_best_channels(unit_id=71)
+	assert best_channels.shape == (template_extractor.num_channels,)
+	assert np.all(best_channels == template_extractor._best_channels[71])
+	assert np.all(template_extractor._best_channels[:71] == -1)
+	assert np.all(template_extractor._best_channels[72:] == -1)
+	assert np.all(best_channels[:3] == (23, 21, 25))
+
+
+def test_get_units_best_channels(template_extractor: TemplateExtractor) -> None:
+	assert np.all(template_extractor._best_channels[10:20] == -1)
+	best_channels = template_extractor.get_units_best_channels(unit_ids=np.arange(12, 15))
+	assert best_channels.shape == (3, template_extractor.num_channels)
+	assert np.all(best_channels == template_extractor._best_channels[12:15])
+	assert not np.any(template_extractor._best_channels[12:15] == -1)
+	assert np.all(template_extractor._best_channels[10:12] == -1)
+	assert np.all(template_extractor._best_channels[15:20] == -1)
+	assert best_channels[2, 0] == 5
+
+	best_channels = template_extractor.get_units_best_channels(unit_ids=None)
+	assert not np.any(best_channels == -1)

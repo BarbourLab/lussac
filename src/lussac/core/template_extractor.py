@@ -3,6 +3,7 @@ import pathlib
 from typing import Any, Sequence
 import numpy as np
 import numpy.typing as npt
+from scipy.ndimage import gaussian_filter1d
 import spikeinterface.core as si
 
 
@@ -12,18 +13,20 @@ class TemplateExtractor:
 	Only works for average
 
 	Attributes
-		recording	The recording extractor containing the voltage traces.
-		sorting		The sorting extractor containing the spike times.
-		params		The waveforms parameters for extraction.
-		_templates	The templates memory map.
+		recording		The recording extractor containing the voltage traces.
+		sorting			The sorting extractor containing the spike times.
+		params			The waveforms parameters for extraction.
+		_templates		The templates memory map.
+		_best_channels	The best channels for each unit.
 	"""
 
-	__slots__ = "recording", "sorting", "folder", "params", "_templates"
+	__slots__ = "recording", "sorting", "folder", "params", "_templates", "_best_channels"
 	recording: si.BaseRecording
 	sorting: si.BaseSorting
 	folder: pathlib.Path
 	params: dict[str, Any]
 	_templates: np.memmap
+	_best_channels: np.ndarray
 
 	def __init__(self, recording: si.BaseRecording, sorting: si.BaseSorting, folder: pathlib.Path, params: dict[str, Any] | None = None,
 				 templates_dtype: npt.DTypeLike = np.float32) -> None:
@@ -161,8 +164,10 @@ class TemplateExtractor:
 		"""
 
 		self.folder.mkdir(parents=True, exist_ok=True)
-		self._templates = np.memmap(str(self.folder / "templates.npy"), dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
+		self._templates = np.lib.format.open_memmap(str(self.folder / "templates.npy"), dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
 		self._templates[:] = np.nan
+		self._best_channels = np.zeros((self.num_units, self.num_channels), dtype=np.int32)
+		self._best_channels[:] = -1
 
 	def set_params(self, ms_before: float = 1.0, ms_after: float = 2.0, max_spikes_per_unit: int | None = 1_000, max_spikes_sparsity: int = 100,
 				   templates_dtype: npt.DTypeLike | None = None) -> None:
@@ -187,9 +192,10 @@ class TemplateExtractor:
 			'max_spikes_sparsity': max_spikes_sparsity
 		}
 
+		# Reset the templates with new params.
 		if templates_dtype is None:
 			templates_dtype = self._templates.dtype if hasattr(self, '_templates') else np.float32
-		self._setup_templates(templates_dtype)  # Reset the templates with new params.
+		self._setup_templates(templates_dtype)
 
 	def get_template(self, unit_id, channel_ids: Sequence | None = None, return_scaled: bool = False) -> np.ndarray:
 		"""
@@ -210,34 +216,15 @@ class TemplateExtractor:
 
 		return self.get_templates([unit_id], channel_ids, return_scaled)[0]
 
-		"""if channel_ids is None:
-			channel_ids = self.channel_ids
-
-		unit_index = self.sorting.id_to_index(unit_id)
-		channel_indices = self.recording.ids_to_indices(channel_ids)
-		template = self._templates[unit_index][:, channel_indices]
-
-		if np.isnan(template).any():
-			mask = np.isnan(template).any(axis=0)  # Channels that need to be run.
-			self.compute_templates([unit_id], channel_ids[mask])
-			template = self._templates[unit_index][:, channel_indices]
-
-		template = template.copy()
-		if return_scaled:
-			gains = self.recording.get_channel_gains(channel_ids)
-			offsets = self.recording.get_channel_offsets(channel_ids)
-			template = template * gains[None, :] + offsets[None, :]
-
-		return template"""
-
 	def get_templates(self, unit_ids: Sequence | None = None, channel_ids: Sequence | None = None, return_scaled: bool = False) -> np.ndarray:
 		"""
 		Returns the templates for the given units and channels.
 		If not computed, will compute them on the fly.
 		Returns a copy array.
 
-		@param unit_ids:
+		@param unit_ids: Sequence | None
 			The unit ids for which to return the templates.
+			If None, will return the templates for all units (default: None).
 		@param channel_ids:
 			The channel ids for which to return the templates.
 			If None, will return the templates for all channels (default: None).
@@ -259,9 +246,7 @@ class TemplateExtractor:
 		templates = self._templates[unit_indices][:, :, channel_indices]
 
 		if np.isnan(templates).any():
-			mask_units = np.isnan(templates).any(axis=(1, 2))
-			mask_channels = np.isnan(templates).any(axis=(0, 1))
-			self.compute_templates(unit_ids[mask_units], channel_ids[mask_channels])
+			self.compute_templates(unit_ids, channel_ids)
 			templates = self._templates[unit_indices][:, :, channel_indices]
 
 		templates = templates.copy()
@@ -277,14 +262,28 @@ class TemplateExtractor:
 		Computes the templates for the given units and channels.
 		Doesn't return anything: updates TemplateExtractor._templates.
 
-		@param unit_ids:
+		@param unit_ids: Sequence | None
 			The unit ids for which to compute the templates.
+			If None, will compute the templates for all units (default: None).
 		@param channel_ids:
 			The channel ids for which to compute the templates.
+			If None, will compute the templates for all channels (default: None).
 		"""
 
 		recording = self.recording if channel_ids is None else self.recording.channel_slice(channel_ids)
 		sorting = self.sorting if unit_ids is None else self.sorting.select_units(unit_ids)
+		channel_indices = self.recording.ids_to_indices(recording.channel_ids)
+		unit_indices = self.sorting.ids_to_indices(sorting.unit_ids)
+
+		if (~np.isnan(self._templates[unit_indices])).all(axis=(1, 2)).any():  # Some units have already been computed
+			mask_units = np.isnan(self._templates[unit_indices]).any(axis=(1, 2))
+			self.compute_templates(sorting.unit_ids[mask_units], channel_ids)
+			return
+
+		if (~np.isnan(self._templates[:, :, channel_indices])).all(axis=(0, 1)).any():  # Some channels have already been computed
+			mask_channels = np.isnan(self._templates[:, :, channel_indices]).any(axis=(0, 1))
+			self.compute_templates(unit_ids, recording.channel_ids[mask_channels])
+			return
 
 		# TODO: max_spikes_per_unit
 		# selected_spikes = si.waveform_extractor.select_random_spikes_uniformly(recording, sorting, self.params['max_spikes_per_unit'], self.nbefore, self.nafter)
@@ -292,8 +291,92 @@ class TemplateExtractor:
 		wvfs = si.extract_waveforms_to_buffers(recording, sorting.to_spike_vector(), sorting.unit_ids, self.nbefore, 1 + self.nafter, mode="memmap",
 											   return_scaled=False, folder=self.folder, dtype=recording.dtype)
 
-		for unit_id in sorting.unit_ids:
-			unit_idx = self.sorting.id_to_index(unit_id)
+		for unit_idx, unit_id in zip(unit_indices, sorting.unit_ids):
 			template = np.mean(wvfs[unit_id], axis=0)
-			channel_indices = self.recording.ids_to_indices(recording.channel_ids)
 			self._templates[unit_idx][:, channel_indices] = template
+
+	def get_unit_best_channels(self, unit_id) -> np.ndarray:
+		"""
+		Returns the best channel for the given unit.
+		If not computed, will compute it on the fly.
+		Returns a copy array.
+
+		@param unit_id: int
+			The unit id for which to return the best channels.
+		@return best_channel: array (n_channels,)
+			The best channel for the given unit (as a copy).
+		"""
+
+		return self.get_units_best_channels([unit_id])[0]
+
+	def get_units_best_channels(self, unit_ids: Sequence | None = None) -> np.ndarray:
+		"""
+		Returns the best channels for the given units.
+		If not computed, will compute them on the fly.
+		Returns a copy array.
+
+		@param unit_ids: Sequence | None
+			The unit ids for which to return the best channels.
+			If None, will return the best channels for all units (default: None).
+		@return best_channels: array (n_units, n_channels)
+			The best channels for the given units (as a copy).
+		"""
+
+		if unit_ids is None:
+			unit_ids = self.unit_ids
+		unit_ids = np.array(unit_ids)
+
+		unit_indices = self.sorting.ids_to_indices(unit_ids)
+		best_channels = self._best_channels[unit_indices]
+
+		if np.all(best_channels == -1, axis=1).any():
+			self.compute_best_channels(unit_ids)
+			best_channels = self._best_channels[unit_indices]
+
+		return best_channels.copy()
+
+	def compute_best_channels(self, unit_ids: Sequence | None = None, highpass_filter: float = 150., margin_ms: float = 5.) -> None:
+		"""
+		Computes the best channels (by looking at the peak amplitude after a high-pass filter) for the given units.
+		Extracts a very small number of waveforms, average them to make templates, then compute the peak amplitude on each channel.
+		Channels are ordered by decreasing peak amplitude.
+		Doesn't return anything: updates TemplateExtractor._best_channels.
+
+		@param unit_ids: Sequence | None
+			The unit ids for which to compute the best channels.
+			If None, will compute the best channels for all units (default: None).
+		@param highpass_filter: float
+			Cutoff frequency for the high-pass filter (in Hz).
+		@param margin_ms: float
+			Margin to take when filtering (in ms).
+		"""
+
+		if unit_ids is None:
+			unit_ids = self.unit_ids
+		unit_ids = np.array(unit_ids)
+
+		unit_indices = self.sorting.ids_to_indices(unit_ids)
+		if np.any(self._best_channels[unit_indices] != -1):  # Some units have already been computed
+			mask = np.all(self._best_channels[unit_indices] == -1, axis=1)
+			self.compute_best_channels(unit_ids[mask], highpass_filter)
+			return
+
+		sorting = self.sorting.select_units(unit_ids)
+
+		params = {
+			'ms_before': self.params['ms_before'] + margin_ms,
+			'ms_after': self.params['ms_after'] + margin_ms,
+			'max_spikes_per_unit': self.params['max_spikes_sparsity'],
+			'precompute_template': ("average", ),
+			'return_scaled': False,
+			'allow_unfiltered': True
+		}
+		margin = round(margin_ms * self.recording.sampling_frequency * 1e-3)
+		wvf_extractor = si.extract_waveforms(self.recording, sorting, mode="memory", **params)
+
+		templates = wvf_extractor.get_all_templates(mode="average")
+		templates = (templates - gaussian_filter1d(templates, sigma=self.sampling_frequency / (2 * np.pi * highpass_filter), axis=1))[:, margin:-margin]
+		best_channels_indices = np.argsort(np.max(np.abs(templates), axis=1), axis=1)[:, ::-1]
+		best_channels = self.recording.channel_ids[best_channels_indices]
+
+		self._best_channels[unit_indices] = best_channels
