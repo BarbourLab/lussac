@@ -53,10 +53,10 @@ class MergeUnits(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
-		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])  # TODO: cross-corr are not censored in the middle.
+		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
-		sorting = self._merge(sorting, potential_merges)
+		sorting = self._merge(sorting, potential_merges, params)
 		self.plot_merging(potential_merges, wvf_extractor, extra_outputs, params['auto_merge_params'])
 
 		return sorting
@@ -66,6 +66,7 @@ class MergeUnits(MonoSortingModule):
 		Remove units that are split but decrease the score if merged.
 		When such a pair is detected, remove the unit with the lowest score.
 		This unit usually is a contaminated unit.
+		TODO: Create a plot of removed units (logs).
 
 		@param sorting: si.BaseSorting
 			The sorting object.
@@ -93,24 +94,70 @@ class MergeUnits(MonoSortingModule):
 
 		return sorting.select_units([unit_id for unit_id in sorting.unit_ids if unit_id not in units_to_remove])
 
-	def _merge(self, sorting: si.BaseSorting, potential_merges: list[tuple]) -> si.BaseSorting:
+	def _merge(self, sorting: si.BaseSorting, potential_merges: list[tuple], params: dict[str, Any]) -> si.BaseSorting:
 		"""
-		WIP
-		"""
+		Merges units based on a list of potential merges.
+		Creates a graph with all the units, where potential merges are the edges.
+		For each connected component (i.e. each putative neuron), go through all the edges and compute the
+		score of the merge. If the score increases (over lone unit scores), merges the best edge.
+		This is done iteratively until either one unit remains or no increase is detected.
+		The unit not merged (because of decrease in score) are deleted.
 
+		@param sorting: si.BaseSorting
+			The sorting object.
+		@param potential_merges: list[tuple]
+			List of potential merges.
+		@param params: dict
+			Parameters of the merging process.
+			i.e. params['auto_merge_params']
+		@return: si.BaseSorting
+			Sorting with the splits merged and removed.
+		"""
+		t_c, t_r = params['refractory_period']
+		k = params['auto_merge_params']['firing_contamination_balance']
+
+		wvf_extractor = si.WaveformExtractor(self.recording, sorting, allow_unfiltered=True)
+		contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)
 		sorting = scur.CurationSorting(sorting, properties_policy="keep")
 
 		graph = nx.Graph()
 		for potential_merge in potential_merges:
+			unit1, unit2 = potential_merge
+			for unit in [unit1, unit2]:
+				if unit not in graph:
+					score = len(sorting.sorting.get_unit_spike_train(unit)) * (1 - (k+1) * contamination[unit])
+					graph.add_node(unit, score=score)
+
 			graph.add_edge(*potential_merge)
 
 		# For each putative neuron, merge the units.
 		for units in nx.connected_components(graph):
-			if len(units) > 2:
-				continue  # TODO
-				# nx.contracted_nodes(unit1, unit2, self_loops=False)  <-- Merge units in the graph. Final node will be unit1.
+			subgraph = graph.subgraph(units).copy()
 
-			sorting.merge(list(units))
+			while len(subgraph) > 1:
+				highest_score = max(dict(subgraph.nodes(data="score")).values())
+				merge = None
+
+				for unit1, unit2 in subgraph.edges:
+					sorting_merged = scur.MergeUnitsSorting(sorting.sorting, [[unit1, unit2]], new_unit_ids=[unit1], delta_time_ms=t_c).select_units([unit1])
+					wvf_extractor = si.WaveformExtractor(self.recording, sorting_merged, allow_unfiltered=True)
+					C = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)[0][unit1]
+					score = len(sorting_merged.get_unit_spike_train(unit1)) * (1 - (k+1) * C)
+
+					if score > highest_score:
+						highest_score = score
+						merge = (unit1, unit2)
+
+				if merge is None:
+					scores = dict(subgraph.nodes(data="score"))
+					best_unit = max(scores, key=scores.get)
+					sorting.remove_unit([x for x in subgraph.nodes if x != best_unit])
+					break
+
+				unit1, unit2 = merge
+				sorting.merge(merge, new_unit_id=unit1)
+				subgraph = nx.contracted_nodes(subgraph, unit1, unit2, self_loops=False)
+				subgraph.nodes[unit1]['score'] = highest_score
 
 		return sorting.sorting
 

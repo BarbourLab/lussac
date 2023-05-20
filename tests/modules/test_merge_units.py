@@ -9,14 +9,18 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
 	params = module.update_params({})
 
+	big_split = [53, 68, 69, 71, 78]  # Lots of units that are the same Purkinje cell.   TODO: Add 81
+
 	prev_sorting = mono_sorting_data.sorting
 	prev_n_units = prev_sorting.get_num_units()
 	assert 29 in prev_sorting.unit_ids and 31 in prev_sorting.unit_ids  # 29 & 31 should be merged
+	assert all([x in prev_sorting.unit_ids for x in big_split])
 
 	sorting = module.run(params)
 	check_extractor_annotations_equal(prev_sorting, sorting)
 	assert sorting.get_num_units() < prev_n_units
-	assert 29 not in sorting.unit_ids and 31 not in sorting.unit_ids
+	assert sum([x in sorting.unit_ids for x in [29, 31]]) == 1  # 29 and 31 have been merged
+	assert sum([x in sorting.unit_ids for x in big_split]) == 1  # Only one unit from the big split should remain.
 
 
 def test_remove_splits(mono_sorting_data: MonoSortingData) -> None:
