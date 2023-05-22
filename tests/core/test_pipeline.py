@@ -50,13 +50,17 @@ def test_launch(pipeline: LussacPipeline) -> None:
 				'refractory_period': [0.7, 25.0],
 				'similarity': {
 					'min_similarity': 0.4
-				}
+				},
+				'correlogram_validation': False,
+				'waveform_validation': False
 			},
 			'rest': {
 				'refractory_period': [0.17, 0.99],
 				'similarity': {
 					'min_similarity': 0.4
-				}
+				},
+				'correlogram_validation': False,
+				'waveform_validation': False
 			}
 		}
 	}

@@ -6,7 +6,7 @@ from overrides import override
 import networkx as nx
 import numpy as np
 import scipy.stats
-from lussac.core import MultiSortingsModule
+from lussac.core import MultiSortingsModule, TemplateExtractor
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
@@ -35,6 +35,17 @@ class MergeSortings(MultiSortingsModule):
 				'max_difference': 0.25,
 				'gaussian_std': 0.6,
 				'gaussian_truncate': 5.0
+			},
+			'waveform_validation': {
+				'max_difference': 0.20,
+				'wvf_extraction': {
+					'ms_before': 1.0,
+					'ms_after': 2.0,
+					'max_spikes_per_unit': 1_000
+				},
+				'filter': [200.0, 6_000.0],
+				'margin_ms': 5.0,
+				'num_channels': 5
 			},
 			'merge_check': {
 				'cross_cont_limit': 0.22
@@ -65,6 +76,8 @@ class MergeSortings(MultiSortingsModule):
 			self.remove_merged_units(graph, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+		if params['waveform_validation']:
+			self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
 		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
@@ -261,7 +274,7 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	def compute_correlogram_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> None:
+	def compute_correlogram_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> None:
 		"""
 		Computes the correlogram difference for each edge of the graph, and adds it as an attribute to the edge.
 
@@ -307,6 +320,40 @@ class MergeSortings(MultiSortingsModule):
 
 				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, len(spike_train1), len(spike_train2))
 				graph[node1][node2]['corr_diff'] = corr_diff
+
+	def compute_waveform_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> None:
+		"""
+		Computes the waveform difference for each edge of the graph, and adds it as an attribute to the edge.
+
+		@param graph: nx.Graph
+			The graph containing all the units and connected by their similarity.
+		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+			The cross-shifts between units.
+		@param params: dict
+			The parameters for the waveform difference.
+		"""
+
+		n_channels = params['num_channels']
+		wvf_extraction_params = params['wvf_extraction']
+		wvf_extraction_params['ms_before'] += params['margin_ms']
+		wvf_extraction_params['ms_after'] += params['margin_ms']
+		params_channels = {
+			'ms_before': min(params['wvf_extraction']['ms_before'], 2.0),
+			'ms_after': min(params['wvf_extraction']['ms_after'], 2.0)
+		}
+
+		template_extractors = {name: TemplateExtractor(self.recording, sorting, self.tmp_folder, params['wvf_extraction']) for name, sorting in self.sortings.items()}
+
+		for node1, node2 in graph.edges:
+			sorting1_name, unit_id1 = node1
+			sorting2_name, unit_id2 = node2
+
+			best_channels1 = template_extractors[sorting1_name].get_unit_best_channels(unit_id1, **params_channels)
+			best_channels2 = template_extractors[sorting2_name].get_unit_best_channels(unit_id2, **params_channels)
+			channel_ids = np.unique(np.concatenate((best_channels1[:n_channels], best_channels2[:n_channels])))
+
+			# template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
+			# template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
 
 	def clean_graph(self, graph: nx.Graph) -> None:  # pragma: no cover (not implemented yet)
 		"""

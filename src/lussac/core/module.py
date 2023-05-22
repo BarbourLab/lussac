@@ -139,6 +139,20 @@ class MonoSortingModule(LussacModule):
 
 		return logs_folder
 
+	@property
+	def tmp_folder(self) -> pathlib.Path:
+		"""
+		Returns the temporary directory for this module.
+
+		@return: tmp_folder: Path
+			Path to the temporary directory.
+		"""
+
+		tmp_folder = self.data.tmp_folder / self.name / self.category / self.data.name
+		tmp_folder.mkdir(parents=True, exist_ok=True)
+
+		return tmp_folder
+
 	@abstractmethod
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		...
@@ -337,6 +351,20 @@ class MultiSortingsModule(LussacModule):
 		logs_folder.mkdir(parents=True, exist_ok=True)
 
 		return logs_folder
+
+	@property
+	def tmp_folder(self) -> pathlib.Path:
+		"""
+		Returns the temporary directory for this module.
+
+		@return tmp_folder: Path
+			Path to the temporary directory.
+		"""
+
+		tmp_folder = self.data.tmp_folder / self.name / self.category
+		tmp_folder.mkdir(parents=True, exist_ok=True)
+
+		return tmp_folder
 
 	@abstractmethod
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:

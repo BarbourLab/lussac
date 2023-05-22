@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from lussac.core import MonoSortingData, TemplateExtractor
+import spikeinterface.core as si
 
 
 params = {
@@ -123,6 +124,10 @@ def test_compute_best_channels(template_extractor: TemplateExtractor) -> None:
 	template_extractor.compute_best_channels(unit_ids=[71])  # Already computed
 	assert np.all(template_extractor._best_channels[60] == -1)
 
+	template_extractor.params['max_spikes_sparsity'] = None
+	template_extractor.compute_best_channels(unit_ids=[28])
+	template_extractor.params['max_spikes_sparsity'] = params['max_spikes_sparsity']
+
 	template_extractor.compute_best_channels(unit_ids=None)
 	assert not np.any(template_extractor._best_channels == -1)
 	template_extractor._best_channels[:] = -1  # Reset for test_get_units_best_channels
@@ -150,3 +155,10 @@ def test_get_units_best_channels(template_extractor: TemplateExtractor) -> None:
 
 	best_channels = template_extractor.get_units_best_channels(unit_ids=None)
 	assert not np.any(best_channels == -1)
+
+
+def test_empty_units(template_extractor: TemplateExtractor) -> None:
+	sorting = si.NumpySorting.from_dict({}, 30_000)  # Make sure it doesn't crash with no units
+	te = TemplateExtractor(template_extractor.recording, sorting, template_extractor.folder, template_extractor.params)
+	templates = te.get_templates(return_scaled=True)
+	assert templates.shape == (0, te.nsamples, te.num_channels)

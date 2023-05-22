@@ -37,6 +37,12 @@ def test_sorting(mono_sorting_module: MonoSortingModule) -> None:
 
 def test_logs_folder(mono_sorting_module: MonoSortingModule) -> None:
 	assert mono_sorting_module.logs_folder == mono_sorting_module.data.logs_folder / "test_mono_sorting_module" / "all" / "ms3_best"
+	assert mono_sorting_module.logs_folder.exists() and mono_sorting_module.logs_folder.is_dir()
+
+
+def test_tmp_folder(mono_sorting_module: MonoSortingModule) -> None:
+	assert mono_sorting_module.tmp_folder == mono_sorting_module.data.tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best"
+	assert mono_sorting_module.tmp_folder.exists() and mono_sorting_module.tmp_folder.is_dir()
 
 
 def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
