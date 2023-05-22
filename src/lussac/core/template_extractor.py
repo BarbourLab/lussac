@@ -332,6 +332,8 @@ class TemplateExtractor:
 
 		@param unit_id: int
 			The unit id for which to return the best channels.
+		@param kwargs:
+			Keyword arguments to be passed to compute_best_channels.
 		@return best_channel: array (n_channels,)
 			The best channel for the given unit (as a copy).
 		"""
@@ -347,6 +349,8 @@ class TemplateExtractor:
 		@param unit_ids: Sequence | None
 			The unit ids for which to return the best channels.
 			If None, will return the best channels for all units (default: None).
+		@param kwargs:
+			Keyword arguments to be passed to compute_best_channels.
 		@return best_channels: array (n_units, n_channels)
 			The best channels for the given units (as a copy).
 		"""
@@ -377,7 +381,12 @@ class TemplateExtractor:
 			If None, will compute the best channels for all units (default: None).
 		@param highpass_filter: float
 			Cutoff frequency for the high-pass filter (in Hz).
-		TODO
+		@param ms_before: float | None
+			Number of ms to include before the spike events (default: None).
+			If None, will use the values from the parameters.
+		@param ms_after: float | None
+			Number of ms to include after the spike events (default: None).
+			If None, will use the values from the parameters.
 		"""
 
 		if unit_ids is None:

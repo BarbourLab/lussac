@@ -89,6 +89,10 @@ def test_get_template(template_extractor: TemplateExtractor) -> None:
 	assert not np.isnan(template_extractor._templates[71, :, 19:26]).any()
 	assert np.isnan(template_extractor._templates[71, :, :19]).all()
 
+	template_extractor.params['max_spikes_per_unit'] = None
+	template_extractor.get_template(38)
+	template_extractor.params['max_spikes_per_unit'] = params['max_spikes_per_unit']
+
 	template_scaled = template_extractor.get_template(unit_id=71, channel_ids=np.arange(19, 26), return_scaled=True)
 	assert 200 < np.max(np.abs(template_scaled)) < 800  # Signal of this Purkinje cell should be around 380 µV.
 
@@ -116,6 +120,7 @@ def test_get_templates(template_extractor: TemplateExtractor) -> None:
 
 
 def test_compute_best_channels(template_extractor: TemplateExtractor) -> None:
+	print(np.where(template_extractor._best_channels != -1))
 	assert np.all(template_extractor._best_channels == -1)
 	template_extractor.compute_best_channels(unit_ids=[2, 71])
 	assert not np.any(template_extractor._best_channels[[2, 71]] == -1)
@@ -123,10 +128,6 @@ def test_compute_best_channels(template_extractor: TemplateExtractor) -> None:
 
 	template_extractor.compute_best_channels(unit_ids=[71])  # Already computed
 	assert np.all(template_extractor._best_channels[60] == -1)
-
-	template_extractor.params['max_spikes_sparsity'] = None
-	template_extractor.compute_best_channels(unit_ids=[28])
-	template_extractor.params['max_spikes_sparsity'] = params['max_spikes_sparsity']
 
 	template_extractor.compute_best_channels(unit_ids=None)
 	assert not np.any(template_extractor._best_channels == -1)

@@ -112,7 +112,7 @@ def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
 	# TODO: Check that the units have been removed with correct attributes.
 
 
-# TODO: test compute_correlogram_difference
+# TODO: test compute_correlogram_difference & compute_waveform_difference
 
 
 def test_merge_sortings_func() -> None:

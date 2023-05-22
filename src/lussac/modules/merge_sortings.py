@@ -334,6 +334,7 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		n_channels = params['num_channels']
+		margin = round(params['margin_ms'] * self.sampling_f * 1e-3)
 		wvf_extraction_params = params['wvf_extraction']
 		wvf_extraction_params['ms_before'] += params['margin_ms']
 		wvf_extraction_params['ms_after'] += params['margin_ms']
@@ -352,8 +353,16 @@ class MergeSortings(MultiSortingsModule):
 			best_channels2 = template_extractors[sorting2_name].get_unit_best_channels(unit_id2, **params_channels)
 			channel_ids = np.unique(np.concatenate((best_channels1[:n_channels], best_channels2[:n_channels])))
 
-			# template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
-			# template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
+			template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
+			template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
+			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
+			print(channel_indices)
+			print(margin)
+			template1 = template1[margin:-margin, channel_indices]
+			template2 = template2[margin:-margin, channel_indices]  # TODO: cross_shift
+
+			template_diff = np.sum(np.abs(template1 - template2)) / np.sum(np.abs(template1) + np.abs(template2))
+			graph[node1][node2]['temp_diff'] = template_diff
 
 	def clean_graph(self, graph: nx.Graph) -> None:  # pragma: no cover (not implemented yet)
 		"""
