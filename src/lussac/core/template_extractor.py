@@ -175,6 +175,8 @@ class TemplateExtractor:
 		@param dtype: DTypeLike
 			The dtype of the templates (by default: np.float32).
 		"""
+		if hasattr(self, "_templates"):
+			del self._templates  # Prevents crash in Windows where cannot open "mode='w+'" if file already opened.
 
 		self.folder.mkdir(parents=True, exist_ok=True)
 
