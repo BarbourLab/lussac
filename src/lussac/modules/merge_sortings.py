@@ -58,10 +58,12 @@ class MergeSortings(MultiSortingsModule):
 
 		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
-		if isinstance(params['correlogram_validation'], dict) and isinstance(params['correlogram_validation'], dict):
+		if 'correlogram_validation' in params and isinstance(params['correlogram_validation'], dict):
 			params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 			params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
 			params['correlogram_validation']['censored_period'] = params['similarity']['window']
+		if 'waveform_validation' in params and isinstance(params['waveform_validation'], dict):
+			params['waveform_validation']['margin_ms'] = max(1.0, params['waveform_validation']['margin_ms'])
 
 		return params
 
@@ -348,6 +350,8 @@ class MergeSortings(MultiSortingsModule):
 		for node1, node2 in graph.edges:
 			sorting1_name, unit_id1 = node1
 			sorting2_name, unit_id2 = node2
+			unit_idx1 = self.sortings[sorting1_name].id_to_index(unit_id1)
+			unit_idx2 = self.sortings[sorting2_name].id_to_index(unit_id2)
 
 			best_channels1 = template_extractors[sorting1_name].get_unit_best_channels(unit_id1, **params_channels)
 			best_channels2 = template_extractors[sorting2_name].get_unit_best_channels(unit_id2, **params_channels)
@@ -356,10 +360,10 @@ class MergeSortings(MultiSortingsModule):
 			template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
 			template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
 			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
-			print(channel_indices)
-			print(margin)
+
+			shift = cross_shifts[sorting1_name][sorting2_name][unit_idx1, unit_idx2]
 			template1 = template1[margin:-margin, channel_indices]
-			template2 = template2[margin:-margin, channel_indices]  # TODO: cross_shift
+			template2 = template2[margin+shift:shift-margin, channel_indices]
 
 			template_diff = np.sum(np.abs(template1 - template2)) / np.sum(np.abs(template1) + np.abs(template2))
 			graph[node1][node2]['temp_diff'] = template_diff
