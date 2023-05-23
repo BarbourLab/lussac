@@ -112,7 +112,34 @@ def test_remove_merged_units(merge_sortings_module: MergeSortings) -> None:
 	# TODO: Check that the units have been removed with correct attributes.
 
 
-# TODO: test compute_correlogram_difference & compute_waveform_difference
+def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
+	sortings = merge_sortings_module.sortings
+	graph = nx.Graph()
+	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
+					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
+	params = merge_sortings_module.update_params({})
+
+	# Test with empty graph
+	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+
+	graph.add_edge(('ks2_low_thresh', 70), ('ms3_best', 71))  # Same unit
+	graph.add_edge(('ks2_low_thresh', 64), ('ms3_best', 80))  # Different units
+	ss1 = sortings['ks2_low_thresh'].id_to_index(70)
+	ss2 = sortings['ms3_best'].id_to_index(71)
+	cross_shifts['ks2_low_thresh']['ms3_best'][ss1, ss2] = -1
+	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+
+	assert 'corr_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
+	assert 'corr_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
+	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['corr_diff'] < 0.05
+	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['corr_diff'] > 0.5
+
+	assert 'temp_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
+	assert 'temp_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
+	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.10
+	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.8
 
 
 def test_merge_sortings_func() -> None:

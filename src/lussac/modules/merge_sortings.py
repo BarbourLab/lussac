@@ -1,3 +1,4 @@
+import copy
 import itertools
 import math
 import pickle
@@ -78,8 +79,8 @@ class MergeSortings(MultiSortingsModule):
 			self.remove_merged_units(graph, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		if params['waveform_validation']:
-			self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+		#if params['waveform_validation']:
+		#	self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
 		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
@@ -335,6 +336,7 @@ class MergeSortings(MultiSortingsModule):
 			The parameters for the waveform difference.
 		"""
 
+		params = copy.deepcopy(params)
 		n_channels = params['num_channels']
 		margin = round(params['margin_ms'] * self.sampling_f * 1e-3)
 		wvf_extraction_params = params['wvf_extraction']
@@ -359,6 +361,8 @@ class MergeSortings(MultiSortingsModule):
 
 			template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
 			template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
+			template1 = utils.filter(template1, params['filter'], axis=0)
+			template2 = utils.filter(template2, params['filter'], axis=0)
 			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
 
 			shift = cross_shifts[sorting1_name][sorting2_name][unit_idx1, unit_idx2]

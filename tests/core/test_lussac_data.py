@@ -1,6 +1,7 @@
 import os
 import pytest
 import numpy as np
+import probeinterface as pi
 from lussac.core import LussacData
 import spikeinterface.core as si
 
@@ -33,6 +34,9 @@ def test_format_params() -> None:
 
 def test_sanity_check() -> None:
 	recording = si.NumpyRecording(np.zeros((30000, 4), dtype=np.int16), sampling_frequency=30000)
+	probe = pi.generator.generate_tetrode()
+	probe.set_device_channel_indices([0, 1, 2, 3])
+	recording = recording.set_probe(probe)
 
 	sortings = {
 		'correct': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),

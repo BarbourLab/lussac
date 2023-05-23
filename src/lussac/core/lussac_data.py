@@ -107,6 +107,10 @@ class LussacData:
 		Checks that everything seems correct in the recording and sortings.
 		"""
 
+		assert self.recording.get_num_frames() > 0
+		assert self.recording.get_num_channels() > 0
+		assert self.recording.get_probegroup() is not None
+
 		for name, sorting in self.sortings.items():
 			assert sorting.get_sampling_frequency() == self.sampling_f
 			assert sorting.get_num_segments() == self.recording.get_num_segments()

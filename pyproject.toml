@@ -31,7 +31,6 @@ dependencies = [
 lussac = "lussac.main:main"
 
 [project.optional-dependencies]
-
 dev = [
 	"matplotlib",
 	"hdbscan",
