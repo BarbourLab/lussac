@@ -58,6 +58,14 @@ class TemplateExtractor:
 			params = {}
 		self.set_params(**params, templates_dtype=templates_dtype)
 
+	def __del__(self) -> None:
+		"""
+		Deletes the temporary folder.
+		"""
+
+		del self._templates
+		self._folder.cleanup()
+
 	@property
 	def folder(self) -> pathlib.Path:
 		"""

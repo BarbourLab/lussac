@@ -25,7 +25,7 @@ class MergeUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 1.0,
 				'ms_after': 1.5,
-				'max_spikes_per_unit': 2000,
+				'max_spikes_per_unit': 2_000,
 				'filter': {
 					'band': [100, 9000],
 					'filter_order': 2,
@@ -123,6 +123,9 @@ class MergeUnits(MonoSortingModule):
 		graph = nx.Graph()
 		for potential_merge in potential_merges:
 			unit1, unit2 = potential_merge
+			if unit1 not in sorting.sorting.unit_ids or unit2 not in sorting.sorting.unit_ids:
+				continue  # Can happen if a unit is removed in '_remove_splits'.
+
 			for unit in [unit1, unit2]:
 				if unit not in graph:
 					score = len(sorting.sorting.get_unit_spike_train(unit)) * (1 - (k+1) * contamination[unit])

@@ -21,7 +21,7 @@ class AlignUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 2.0,
 				'ms_after': 2.0,
-				'max_spikes_per_unit': 2000
+				'max_spikes_per_unit': 1_000
 			},
 			'filter': [200, 5000],
 			'threshold': 0.5,
