@@ -24,8 +24,8 @@ You can install :code:`lussac` from source by cloning the GitHub repository. Thi
 .. code-block:: bash
 
 	# Download Lussac in any directory you want.
-	git clone https://github.com/BarbourLab/lussac.git
+	git clone https://github.com/BarbourLab/lussac.git --branch v2.0
 	cd lussac
 
 	# Install Lussac in your environment.
-	pip install -e .
+	pip install -e .  # For developers: pip install -e .[dev]

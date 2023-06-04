@@ -1,5 +1,7 @@
+import logging
 import os
 import pathlib
+import sys
 import copy
 import tempfile
 from dataclasses import dataclass
@@ -52,6 +54,12 @@ class LussacData:
 
 		if 'si_global_job_kwargs' in params['lussac']:
 			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
+
+		targets = logging.StreamHandler(sys.stdout), logging.FileHandler(self.logs_folder / "lussac.logs")
+		targets[0].terminator = ''
+		targets[1].terminator = ''
+		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets)
+		logging.info("\nRunning Lussac!\n\n")  # TODO: Add date and hour.
 
 		self._sanity_check()
 

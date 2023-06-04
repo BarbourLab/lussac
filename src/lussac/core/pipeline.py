@@ -1,5 +1,6 @@
 import copy
 import glob
+import logging
 import os
 import pathlib
 import time
@@ -30,9 +31,9 @@ class LussacPipeline:
 		"""
 
 		for module_key, module_params in self.data.params['lussac']['pipeline'].items():
-			print('\n\n' + '*'*34)
-			print(f"{' ' + module_key + ' ':*^34}")
-			print('*' * 34)
+			logging.info('\n\n' + ('*'*34) + '\n')
+			logging.info(f"{' ' + module_key + ' ':*^34}\n")
+			logging.info(('*'*34) + '\n')
 
 			if os.path.exists(f"{self.data.logs_folder}/{module_key}/sorting"):
 				self.data.sortings = self._load_sortings(module_key)
@@ -43,7 +44,7 @@ class LussacPipeline:
 
 			if issubclass(module, MonoSortingModule):
 				for category, params in module_params.items():
-					print(f"Running category '{category}':")
+					logging.info(f"Running category '{category}':")
 					self._run_mono_sorting_module(module, module_key, category, params)
 			elif issubclass(module, MultiSortingsModule):
 				self._run_multi_sortings_module(module, module_key, module_params)
@@ -72,7 +73,7 @@ class LussacPipeline:
 			if 'sortings' in params and name not in params['sortings']:
 				continue
 
-			print(f"\t- Sorting  {name:<18}", end=' ')
+			logging.info(f"\t- Sorting  {name:<18}")
 			t1 = time.perf_counter()
 
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
@@ -90,7 +91,7 @@ class LussacPipeline:
 			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
 			t2 = time.perf_counter()
-			print(f"(Done in {t2-t1:.1f} s)")
+			logging.info(f" (Done in {t2-t1:.1f} s)\n")
 
 	def _run_multi_sortings_module(self, module: Type[MultiSortingsModule], module_name: str, module_params: dict) -> None:
 		"""
@@ -106,7 +107,7 @@ class LussacPipeline:
 
 		new_sortings = {}
 		for category, params in module_params.items():
-			print(f"Running category '{category}':")
+			logging.info(f"Running category '{category}':\n")
 			t1 = time.perf_counter()
 
 			sub_sortings = {}
@@ -131,7 +132,7 @@ class LussacPipeline:
 					new_sortings[name] = si.UnitsAggregationSorting([new_sortings[name], sub_sorting])
 
 			t2 = time.perf_counter()
-			print(f"\tDone in {t2-t1:.1f} s")
+			logging.info(f"\tDone in {t2-t1:.1f} s\n")
 
 		self.data.sortings = new_sortings
 
@@ -156,12 +157,12 @@ class LussacPipeline:
 			The loaded sortings.
 		"""
 
-		print("Loading sortings from previous run...")
+		logging.info("Loading sortings from previous run...\n")
 		t1 = time.perf_counter()
 		sortings_path = glob.glob(f"{self.data.logs_folder}/{module_name}/sorting/*.pkl")
 		sortings = {pathlib.Path(path).stem: si.load_extractor(path) for path in sortings_path}
 		t2 = time.perf_counter()
-		print(f"Done in {t2-t1:.2f} s")
+		logging.info(f"Done in {t2-t1:.2f} s\n")
 
 		return sortings
 

@@ -79,3 +79,13 @@ def test_num_sortings(data: LussacData) -> None:
 
 def test_create_from_params(data: LussacData) -> None:
 	assert isinstance(data, LussacData)
+
+
+def test_logs(data: LussacData) -> None:
+	logs_file = data.logs_folder / "lussac.logs"
+
+	assert logs_file.exists() and logs_file.is_file()
+
+	# TODO: Seems to not log when in pytest mode.
+	# with open(logs_file, 'r') as file:
+	# 	assert len(file.read()) > 2

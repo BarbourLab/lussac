@@ -14,9 +14,8 @@ Lussac is an **automated** and **configurable** analysis pipeline for post-proce
 
 ```bash
 # Download Lussac in any directory you want.
-git clone https://github.com/BarbourLab/lussac.git
+git clone https://github.com/BarbourLab/lussac.git --branch v2.0
 cd lussac
-git checkout v2.0
 
 # OPTIONAL: Use a conda environment.
 conda create -n lussac python=3.11  # Must be >= 3.10
