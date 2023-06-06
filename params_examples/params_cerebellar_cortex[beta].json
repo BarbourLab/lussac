@@ -53,6 +53,9 @@
 			}
 		}
 	},
+	"analyses": {
+
+	},
 	"lussac": {
 		"tmp_folder": "$PARAMS_FOLDER/lussac2/tmp",
 		"logs_folder": "$PARAMS_FOLDER/lussac2/logs",

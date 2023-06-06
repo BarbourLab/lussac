@@ -1,13 +1,14 @@
 import copy
+from dataclasses import dataclass
 import glob
 import logging
 import os
 import pathlib
 import time
 from typing import Type
-from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
+from tqdm import tqdm
 from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
 import spikeinterface.core as si
 
@@ -160,9 +161,9 @@ class LussacPipeline:
 		logging.info("Loading sortings from previous run...\n")
 		t1 = time.perf_counter()
 		sortings_path = glob.glob(f"{self.data.logs_folder}/{module_name}/sorting/*.pkl")
-		sortings = {pathlib.Path(path).stem: si.load_extractor(path) for path in sortings_path}
+		sortings = {pathlib.Path(path).stem: si.load_extractor(path) for path in tqdm(sortings_path)}
 		t2 = time.perf_counter()
-		logging.info(f"Done in {t2-t1:.2f} s\n")
+		# logging.info(f"Done in {t2-t1:.2f} s\n")
 
 		return sortings
 

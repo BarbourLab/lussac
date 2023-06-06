@@ -120,42 +120,41 @@ def test_get_templates(template_extractor: TemplateExtractor) -> None:
 
 
 def test_compute_best_channels(template_extractor: TemplateExtractor) -> None:
-	print(np.where(template_extractor._best_channels != -1))
-	assert np.all(template_extractor._best_channels == -1)
+	assert np.all(template_extractor._best_channels == 0)
 	template_extractor.compute_best_channels(unit_ids=[2, 71])
-	assert not np.any(template_extractor._best_channels[[2, 71]] == -1)
+	assert np.sum(template_extractor._best_channels[[2, 71]] == 0) <= 2
 	assert np.all(template_extractor._best_channels[71, :3] == (23, 21, 25))
 
 	template_extractor.compute_best_channels(unit_ids=[71])  # Already computed
-	assert np.all(template_extractor._best_channels[60] == -1)
+	assert np.all(template_extractor._best_channels[60] == 0)
 
 	template_extractor.compute_best_channels(unit_ids=None)
-	assert not np.any(template_extractor._best_channels == -1)
-	template_extractor._best_channels[:] = -1  # Reset for test_get_units_best_channels
+	assert np.sum(template_extractor._best_channels == 0) <= template_extractor.num_units
+	template_extractor._best_channels[:] = 0  # Reset for test_get_units_best_channels
 
 
 def test_get_unit_best_channels(template_extractor: TemplateExtractor) -> None:
-	assert np.all(template_extractor._best_channels[71] == -1)
+	assert np.all(template_extractor._best_channels[71] == 0)
 	best_channels = template_extractor.get_unit_best_channels(unit_id=71)
 	assert best_channels.shape == (template_extractor.num_channels,)
 	assert np.all(best_channels == template_extractor._best_channels[71])
-	assert np.all(template_extractor._best_channels[:71] == -1)
-	assert np.all(template_extractor._best_channels[72:] == -1)
+	assert np.all(template_extractor._best_channels[:71] == 0)
+	assert np.all(template_extractor._best_channels[72:] == 0)
 	assert np.all(best_channels[:3] == (23, 21, 25))
 
 
 def test_get_units_best_channels(template_extractor: TemplateExtractor) -> None:
-	assert np.all(template_extractor._best_channels[10:20] == -1)
+	assert np.all(template_extractor._best_channels[10:20] == 0)
 	best_channels = template_extractor.get_units_best_channels(unit_ids=np.arange(12, 15))
 	assert best_channels.shape == (3, template_extractor.num_channels)
 	assert np.all(best_channels == template_extractor._best_channels[12:15])
-	assert not np.any(template_extractor._best_channels[12:15] == -1)
-	assert np.all(template_extractor._best_channels[10:12] == -1)
-	assert np.all(template_extractor._best_channels[15:20] == -1)
+	assert np.sum(template_extractor._best_channels[12:15] == 0) <= 3
+	assert np.all(template_extractor._best_channels[10:12] == 0)
+	assert np.all(template_extractor._best_channels[15:20] == 0)
 	assert best_channels[2, 0] == 5
 
 	best_channels = template_extractor.get_units_best_channels(unit_ids=None)
-	assert not np.any(best_channels == -1)
+	assert np.sum(best_channels == 0) <= template_extractor.num_units
 
 
 def test_empty_units(template_extractor: TemplateExtractor) -> None:

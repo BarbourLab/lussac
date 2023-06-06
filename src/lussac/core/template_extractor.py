@@ -194,8 +194,7 @@ class TemplateExtractor:
 			self._templates = np.memmap(str(self.folder / "templates.npy"), dtype=dtype, mode='w+', shape=(self.num_units, self.nsamples, self.num_channels))
 
 		self._templates[:] = np.nan
-		self._best_channels = np.zeros((self.num_units, self.num_channels), dtype=np.int32)
-		self._best_channels[:] = -1
+		self._best_channels = np.zeros((self.num_units, self.num_channels), dtype=self.recording.channel_ids.dtype)
 
 	def set_params(self, ms_before: float = 1.0, ms_after: float = 2.0, max_spikes_per_unit: int | None = 1_000, max_spikes_sparsity: int = 100,
 				   templates_dtype: npt.DTypeLike | None = None) -> None:
@@ -308,7 +307,6 @@ class TemplateExtractor:
 			self.compute_templates(sorting.unit_ids[mask_units], channel_ids)
 			return
 
-		# print(self._templates)
 		if (~np.isnan(self._templates[:, :, channel_indices])).all(axis=(0, 1)).any():  # Some channels have already been computed
 			mask_channels = np.isnan(self._templates[:, :, channel_indices]).any(axis=(0, 1))
 			self.compute_templates(unit_ids, recording.channel_ids[mask_channels])
@@ -370,7 +368,7 @@ class TemplateExtractor:
 		unit_indices = self.sorting.ids_to_indices(unit_ids)
 		best_channels = self._best_channels[unit_indices]
 
-		if np.all(best_channels == -1, axis=1).any():
+		if np.all(best_channels == best_channels[:, 0, None], axis=1).any():
 			self.compute_best_channels(unit_ids, **kwargs)
 			best_channels = self._best_channels[unit_indices]
 
@@ -401,9 +399,12 @@ class TemplateExtractor:
 			unit_ids = self.unit_ids
 		unit_ids = np.array(unit_ids)
 
+		if len(unit_ids) == 0:
+			return
+
 		unit_indices = self.sorting.ids_to_indices(unit_ids)
-		if np.any(self._best_channels[unit_indices] != -1):  # Some units have already been computed
-			mask = np.all(self._best_channels[unit_indices] == -1, axis=1)
+		if not np.any(mask := np.all(self._best_channels[unit_indices] == self._best_channels[unit_indices, 0, None], axis=1)):
+			# Some units have already been computed
 			self.compute_best_channels(unit_ids[mask], highpass_filter)
 			return
 
