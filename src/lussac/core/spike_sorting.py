@@ -36,7 +36,7 @@ class LussacSpikeSorter:
 			The parameters for the spike sorting algorithm.
 		"""
 
-		sorter_name = params['sorter']
+		sorter_name = params['sorter_name']
 
 		if 'preprocessing' in params:
 			self._preprocess(params['preprocessing'])

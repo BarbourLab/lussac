@@ -19,7 +19,7 @@ def test_spike_sorting(data: LussacData) -> None:
 	recording = data.recording.frame_slice(start_frame, end_frame)
 	recording = recording.channel_slice(np.arange(13, 26))
 	params = {
-		'sorter': "spykingcircus2",
+		'sorter_name': "spykingcircus2",
 		'preprocessing': {
 			'filter': {'band': [150., 6000.], 'filter_order': 2, 'ftype': "bessel"},
 			'common_reference': {'operator': "median"}
