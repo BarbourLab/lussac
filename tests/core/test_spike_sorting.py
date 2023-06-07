@@ -4,9 +4,10 @@ import pytest
 from lussac.core import LussacData, LussacSpikeSorter
 import lussac.utils as utils
 import spikeinterface.core as si
+from spikeinterface.core.testing import check_sortings_equal
 
 
-@pytest.mark.skipif(importlib.util.find_spec("hdbscan") is None, reason="Testing spike sorting requires hdbscan.")
+@pytest.mark.skipif(importlib.util.find_spec("hdbscan") is None, reason="Testing spike sorting requires Python package 'hdbscan'.")
 def test_spike_sorting(data: LussacData) -> None:
 	"""
 	Tests if spike sorting can be run through Lussac without any crash.
@@ -52,5 +53,9 @@ def test_spike_sorting(data: LussacData) -> None:
 		if accuracy > 0.8:
 			found_ss = True
 			break
+
+	# Testing loading a previously-run spike sorting.
+	sorting2 = spike_sorter.launch(params)
+	check_sortings_equal(sorting, sorting2)
 
 	assert found_ss

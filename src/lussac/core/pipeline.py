@@ -54,8 +54,6 @@ class LussacPipeline:
 
 			self._save_sortings(module_key)
 
-			# Maybe convert sorting objects to Numpy to avoid having a big tree?
-
 	def _run_mono_sorting_module(self, module: Type[MonoSortingModule], module_name: str, category: str, params: dict) -> None:
 		"""
 		Launches a mono-sorting module for a category on all sortings.

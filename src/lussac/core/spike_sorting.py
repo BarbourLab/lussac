@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import pathlib
 import spikeinterface.core as si
 import spikeinterface.preprocessing as spre
 import spikeinterface.sorters as ss
@@ -37,8 +38,17 @@ class LussacSpikeSorter:
 		"""
 
 		sorter_name = params['sorter_name']
+		folder = pathlib.Path(params['sorter_params']['output_folder'])
+
+		if (folder / "provenance.pkl").exists():
+			sorting = si.load_extractor(folder / "provenance.pkl")
+			assert isinstance(sorting, si.BaseSorting)
+			return sorting
 
 		if 'preprocessing' in params:
 			self._preprocess(params['preprocessing'])
 
-		return ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
+		sorting = ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
+		sorting.dump_to_pickle(file_path=folder / "provenance.pkl", include_properties=True)
+
+		return sorting
