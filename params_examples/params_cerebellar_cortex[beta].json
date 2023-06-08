@@ -9,7 +9,8 @@
 		"ks2_default": {
 			"sorter_name": "kilosort2",
 			"sorter_params": {
-				"output_folder": "$PARAMS_FOLDER/analyses/ks2_default"
+				"output_folder": "$PARAMS_FOLDER/analyses/ks2_default",
+				"delete_recording_dat": true
 			}
 		},
 		"ks2_5_best": {
@@ -21,13 +22,15 @@
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_5_best",
 				"projection_threshold": [8, 3],
-				"freq_min": 40
+				"freq_min": 40,
+				"delete_recording_dat":  true
 			}
 		},
 		"ks3_default": {
 			"sorter_name": "kilosort3",
 			"sorter_params": {
-				"output_folder": "$PARAMS_FOLDER/analyses/ks3_default"
+				"output_folder": "$PARAMS_FOLDER/analyses/ks3_default",
+				"delete_recording_dat":  true
 			}
 		},
 		"ks2_cs": {
@@ -38,7 +41,8 @@
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_cs",
 				"projection_threshold": [8, 3],
-				"freq_min": 40
+				"freq_min": 40,
+				"delete_recording_dat":  true
 			}
 		},
 		"ks3_cs": {
@@ -49,7 +53,8 @@
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks3_cs",
 				"projection_threshold": [8, 3],
-				"freq_min": 40
+				"freq_min": 40,
+				"delete_recording_dat":  true
 			}
 		}
 	},
