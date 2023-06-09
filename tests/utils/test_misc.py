@@ -76,6 +76,9 @@ def test_gaussian_histogram() -> None:
 	assert math.isclose(np.sum(histogram2) * dt, 3.0, rel_tol=1e-3, abs_tol=1e-3)
 	assert math.isclose(np.sum(histogram3) * dt, 2.5, rel_tol=1e-3, abs_tol=1e-3)
 
+	# Make sure it doesn't crash if empty.
+	assert utils.gaussian_histogram(np.array([], dtype=np.float32), np.arange(0, 20 + dt, dt), 0.5).shape == np.arange(0, 20 + dt, dt).shape
+
 
 def test_get_border_probabilities() -> None:
 	assert np.allclose(_get_border_probabilities(0.02), (0, 1, 0.0396, 0.0002))

@@ -134,7 +134,8 @@ The following code will run kilosort 3 (with singularity) and SpykingCircus (ins
 				"output_folder": "$PARAMS_FOLDER/analyses/ks3_sing",
 				"singularity_image": true,
 				"projection_threshold": [8, 8],  // Lower Kilosort's threshold.
-				"freq_min": 40  // Filter already applied in preprocessing.
+				"freq_min": 40,  // Filter already applied in preprocessing.
+				"delete_recording_dat": true  // Delete unnecessary heavy temp file.
 			}
 		},
 		"sc_default": {  // Spyking Circus analysis using the default parameters.

@@ -16,6 +16,7 @@ def test_spike_sorting(data: LussacData) -> None:
 	because we only want to check that the spike sorting can be run.
 	"""
 	start_frame, end_frame = 9_000_000, 18_000_000
+	name = "test_spike_sorting"
 
 	recording = data.recording.frame_slice(start_frame, end_frame)
 	recording = recording.channel_slice(np.arange(13, 26))
@@ -32,10 +33,11 @@ def test_spike_sorting(data: LussacData) -> None:
 		}
 	}
 
-	spike_sorter = LussacSpikeSorter(recording)
+	spike_sorter = LussacSpikeSorter(recording, name)
 	sorting = spike_sorter.launch(params)
 
 	assert isinstance(sorting, si.BaseSorting)
+	assert sorting.get_annotation("name") == name
 	assert sorting.get_num_units() > 0
 
 	# Creating a "ground truth" for the good simple spike (checking if it was found).
@@ -56,6 +58,6 @@ def test_spike_sorting(data: LussacData) -> None:
 
 	# Testing loading a previously-run spike sorting.
 	sorting2 = spike_sorter.launch(params)
-	check_sortings_equal(sorting, sorting2)
+	check_sortings_equal(sorting, sorting2, check_annotations=True, check_properties=True)
 
 	assert found_ss

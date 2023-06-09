@@ -268,7 +268,7 @@ class LussacData:
 		recording = LussacData._load_recording(params['recording'])
 		if 'probe_file' in params['recording']:
 			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['recording']['probe_file']).absolute()))
-		sortings = LussacData._load_sortings(params['analyses'])
+		sortings = LussacData._load_sortings(params['analyses'] if 'analyses' in params else {})
 
 		return LussacData(recording, sortings, params)
 

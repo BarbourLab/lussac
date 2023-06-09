@@ -45,7 +45,7 @@ class LussacPipeline:
 
 			if issubclass(module, MonoSortingModule):
 				for category, params in module_params.items():
-					logging.info(f"Running category '{category}':")
+					logging.info(f"Running category '{category}':\n")
 					self._run_mono_sorting_module(module, module_key, category, params)
 			elif issubclass(module, MultiSortingsModule):
 				self._run_multi_sortings_module(module, module_key, module_params)

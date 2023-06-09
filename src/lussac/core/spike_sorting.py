@@ -13,9 +13,11 @@ class LussacSpikeSorter:
 
 	Attributes:
 		recording		A SpikeInterface recording object.
+		name			The name of the analysis (not the sorting algorithm).
 	"""
 
 	recording: si.BaseRecording
+	name: str
 
 	def _preprocess(self, params: dict) -> None:
 		"""
@@ -49,6 +51,7 @@ class LussacSpikeSorter:
 			self._preprocess(params['preprocessing'])
 
 		sorting = ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
+		sorting.annotate(name=self.name)
 		sorting.dump_to_pickle(file_path=folder / "provenance.pkl", include_properties=True)
 
 		return sorting

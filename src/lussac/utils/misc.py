@@ -132,7 +132,7 @@ def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, tru
 
 	@param events: np.ndarray
 		The events to histogram.
-	@param t_axis: np.ndarray
+	@param t_axis: np.ndarray (n_timepoints)
 		The time axis of the histogram.
 	@param sigma: float
 		The standard deviation of the gaussian kernel (same unit as 't_axis').
@@ -140,9 +140,12 @@ def gaussian_histogram(events: np.ndarray, t_axis: np.ndarray, sigma: float, tru
 		Truncate the gaussian kernel at 'truncate' standard deviation.
 	@param margin_reflect: bool
 		If true, will reflect the events at the margins.
-	@return histogram: np.ndarray
+	@return histogram: np.ndarray[float32] (n_timepoints)
 		The histogram of the events.
 	"""
+
+	if len(events) == 0:
+		return np.zeros(len(t_axis), dtype=np.float32)
 
 	events = np.sort(events).astype(np.float32)
 	t_axis = t_axis.astype(np.float32)

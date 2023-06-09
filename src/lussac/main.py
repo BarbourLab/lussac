@@ -58,9 +58,8 @@ def main() -> None:  # pragma: no cover
 	# STEP 1: Running the spike sorting.
 	if 'spike_sorting' in params:
 		for name, params0 in params['spike_sorting'].items():
-			spike_sorter = LussacSpikeSorter(data.recording)
+			spike_sorter = LussacSpikeSorter(data.recording, name)
 			data.sortings[name] = spike_sorter.launch(params0)
-			data.sortings[name].annotate(name=name)
 
 	# STEP 2: Running the pipeline.
 	pipeline = LussacPipeline(data)
