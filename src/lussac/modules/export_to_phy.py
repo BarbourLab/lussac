@@ -26,6 +26,11 @@ class ExportToPhy(MonoSortingModule):
 				'compute_pc_features': False,
 				'copy_binary': False,
 				'template_mode': "average",
+				'sparsity': {
+					'method': "radius",
+					'num_channels': 16,
+					'radius_um': 75.0
+				},
 				'verbose': False
 			}
 		}
@@ -35,7 +40,7 @@ class ExportToPhy(MonoSortingModule):
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		output_folder = self._format_output_path(params['path'])
 
-		if 'sparsity' in params['export_params'] and params['export_params']['sparsity'] is not None:
+		if params['export_params']['sparsity'] is not None:
 			params['export_params']['sparsity'] = si.compute_sparsity(wvf_extractor, **params['export_params']['sparsity'])
 
 		export_to_phy(wvf_extractor, output_folder, **params['export_params'])

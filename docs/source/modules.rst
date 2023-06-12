@@ -239,6 +239,10 @@ Example of export to phy
 				"compute_pc_features": false,
 				"copy_binary": false,
 				"template_mode": "average",
+				'sparsity': {
+					"method": "radius",
+					"radius_um": 75.0
+				},
 				"verbose": False
 			}
 		}
