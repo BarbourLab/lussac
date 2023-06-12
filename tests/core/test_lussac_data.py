@@ -82,7 +82,7 @@ def test_create_from_params(data: LussacData) -> None:
 	assert isinstance(data, LussacData)
 
 	assert numba.get_num_threads() == si.get_global_job_kwargs()['n_jobs']
-	assert numba.get_num_threads() == 6
+	assert numba.get_num_threads() == 2  # Max number of threads for GitHub Actions.
 
 
 def test_logs(data: LussacData) -> None:
