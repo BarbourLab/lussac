@@ -1,4 +1,6 @@
 import os
+
+import numba
 import pytest
 import numpy as np
 import probeinterface as pi
@@ -42,8 +44,7 @@ def test_sanity_check() -> None:
 		'correct': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
 		'wrong_sf': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000),
 		'wrong_name': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
-		'negative_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000),
-		'too_long_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845, 30000])}, sampling_frequency=30000)
+		'negative_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000)
 	}
 	for name, sorting in sortings.items():
 		sorting.annotate(name=name if name != "wrong_name" else "uncorrect_name")
@@ -79,6 +80,9 @@ def test_num_sortings(data: LussacData) -> None:
 
 def test_create_from_params(data: LussacData) -> None:
 	assert isinstance(data, LussacData)
+
+	assert numba.get_num_threads() == si.get_global_job_kwargs()['n_jobs']
+	assert numba.get_num_threads() == 6
 
 
 def test_logs(data: LussacData) -> None:

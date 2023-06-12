@@ -5,6 +5,7 @@ import sys
 import copy
 import tempfile
 from dataclasses import dataclass
+import numba
 import numpy as np
 import numpy.typing as npt
 from plotly.offline.offline import get_plotlyjs
@@ -55,6 +56,7 @@ class LussacData:
 
 		if 'si_global_job_kwargs' in params['lussac']:
 			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
+			numba.set_num_threads(si.get_global_job_kwargs()['n_jobs'])
 
 		targets = logging.StreamHandler(sys.stdout), logging.FileHandler(self.logs_folder / "lussac.logs")
 		targets[0].terminator = ''
