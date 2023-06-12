@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import pathlib
 import spikeinterface.core as si
+import spikeinterface.curation as scur
 import spikeinterface.preprocessing as spre
 import spikeinterface.sorters as ss
 
@@ -51,6 +52,7 @@ class LussacSpikeSorter:
 			self._preprocess(params['preprocessing'])
 
 		sorting = ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
+		sorting = scur.remove_excess_spikes(sorting.remove_empty_units(), self.recording)
 		sorting.annotate(name=self.name)
 		sorting.dump_to_pickle(file_path=folder / "provenance.pkl", include_properties=True)
 

@@ -150,15 +150,18 @@ The following code will run kilosort 3 (with singularity) and SpykingCircus (ins
 The :code:`analyses` section
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section contains the already spike-sorted analyses you want to feed Lussac. The analyses must be in the `Phy <https://github.com/cortex-lab/phy>`_ format (if they are not, you can use SpikeInterface :code:`export_to_phy`).
+This section contains the already spike-sorted analyses you want to feed Lussac. The analyses must be in either:
+
+- The `Phy <https://github.com/cortex-lab/phy>`_ format: just put the path to the folder containing the analysis.
+- The SpikeInterface format (either json or pickle): just put the path to the file.
 
 This :code:`dict` maps the analysis name to its location. For example:
 
 .. code-block:: json
 
 	"analyses": {
-		"ks2_default": "path/to/ks2_analysis",
-		"tdc_default": "path/to/tridesclous_analysis"
+		"ks2_default": "path/to/ks2_analysis",  // Phy format
+		"tdc_default": "path/to/tridesclous_analysis.json"  // SpikeInterface format
 	}
 
 

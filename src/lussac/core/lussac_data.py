@@ -11,6 +11,7 @@ from plotly.offline.offline import get_plotlyjs
 from lussac.utils import Utils
 import probeinterface.io
 import spikeinterface.core as si
+import spikeinterface.curation as scur
 import spikeinterface.extractors as se
 
 
@@ -46,7 +47,7 @@ class LussacData:
 		"""
 
 		self.recording = recording
-		self.sortings = {name: sorting.remove_empty_units() for name, sorting in sortings.items()}
+		self.sortings = {name: scur.remove_excess_spikes(sorting.remove_empty_units(), recording) for name, sorting in sortings.items()}
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
@@ -162,20 +163,25 @@ class LussacData:
 		return recording_extractor(**params['extractor_params'])
 
 	@staticmethod
-	def _load_sortings(phy_folders: dict[str, str]) -> dict[str, se.PhySortingExtractor]:
+	def _load_sortings(sortings_path: dict[str, str]) -> dict[str, si.BaseSorting]:
 		"""
 		Loads all the sortings (in Phy format) and return
 
-		@param phy_folders: dict[str, str]
+		@param sortings_path: dict[str, str]
 			Dict containing the name as key, and the path to all the
-			phy folder containing the spike sorted data as value.
+			phy folder / SpikeInterface extractor containing the spike sorted data as value.
 		@return sortings: dict[str, PhySortingExtractor]
 			Dictionary containing the Phy sorting objects indexed by their name.
 		"""
 
 		sortings = {}
-		for name, path in phy_folders.items():
-			sorting = se.PhySortingExtractor(path)
+		for name, path in sortings_path.items():
+			if pathlib.Path(path).is_dir():
+				sorting = se.PhySortingExtractor(path)
+			else:
+				sorting = si.load_extractor(path)
+				assert isinstance(sorting, si.BaseSorting)
+
 			sorting.annotate(name=name)
 			sortings[name] = sorting
 
