@@ -57,6 +57,7 @@ def main() -> None:  # pragma: no cover
 
 	# STEP 1: Running the spike sorting.
 	if 'spike_sorting' in params:
+		logging.info("Running spike-sorting algorithms:\n")
 		for name, params0 in params['spike_sorting'].items():
 			spike_sorter = LussacSpikeSorter(data.recording, name)
 			data.sortings[name] = spike_sorter.launch(params0)

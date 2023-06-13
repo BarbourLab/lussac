@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import pathlib
 import spikeinterface.core as si
 import spikeinterface.curation as scur
@@ -45,11 +46,14 @@ class LussacSpikeSorter:
 
 		if (folder / "provenance.pkl").exists():
 			sorting = si.load_extractor(folder / "provenance.pkl")
+			logging.info(f"Loading analysis '{self.name}'\n")
 			assert isinstance(sorting, si.BaseSorting)
 			return sorting
 
 		if 'preprocessing' in params:
 			self._preprocess(params['preprocessing'])
+
+		logging.info(f"Running spike-sorting for analysis '{self.name}'\n")
 
 		sorting = ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
 		sorting = scur.remove_excess_spikes(sorting.remove_empty_units(), self.recording)

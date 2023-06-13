@@ -146,6 +146,8 @@ The following code will run kilosort 3 (with singularity) and SpykingCircus (ins
 		}
 	}
 
+Note that if you re-run lussac, it will automatically detect the successfully run analyses and load them (rather than re-running the spike-sorting algorithm).
+
 
 The :code:`analyses` section
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -178,7 +178,11 @@ class LussacData:
 
 		sortings = {}
 		for name, path in sortings_path.items():
-			if pathlib.Path(path).is_dir():
+			path = pathlib.Path(path)
+
+			if not path.exists():
+				raise FileNotFoundError(f"Could not find the sorting file {path}.")
+			elif path.is_dir():
 				sorting = se.PhySortingExtractor(path)
 			else:
 				sorting = si.load_extractor(path)
