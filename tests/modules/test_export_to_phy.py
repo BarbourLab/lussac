@@ -1,5 +1,7 @@
 import copy
 import os
+import numpy as np
+import pandas as pd
 from lussac.core import LussacPipeline, MonoSortingData
 from lussac.modules import ExportToPhy
 
@@ -49,3 +51,16 @@ def test_format_output_path(mono_sorting_data: MonoSortingData) -> None:
 	module = copy.deepcopy(module)
 	module.data.data.sortings = {'ms3_best': module.sorting}
 	assert module._format_output_path("test") == "test"
+
+
+def test_write_tsv_file(mono_sorting_data: MonoSortingData) -> None:
+	file_path = mono_sorting_data.tmp_folder / "test.tsv"
+	assert not file_path.exists()
+
+	ExportToPhy.write_tsv_file(file_path, "test", [0, 1, 3], ['a', 'b', 'c'])
+	assert file_path.exists()
+
+	df = pd.read_csv(file_path, sep='\t')
+	assert np.all(np.array(df.columns) == ("cluster_id", "test"))
+	assert np.all(np.array(df['cluster_id']) == (0, 1, 3))
+	assert np.all(np.array(df['test']) == ('a', 'b', 'c'))

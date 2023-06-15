@@ -78,6 +78,13 @@ def test_num_sortings(data: LussacData) -> None:
 	assert data.num_sortings == 7
 
 
+def test_load_sortings(data: LussacData) -> None:
+	with pytest.raises(FileNotFoundError):
+		data._load_sortings({'aze': "./qdjsgpfdhsig.json"})
+
+	# TODO: Generate 'provenance.json' file in tmp folder and test loading from it.
+
+
 def test_create_from_params(data: LussacData) -> None:
 	assert isinstance(data, LussacData)
 

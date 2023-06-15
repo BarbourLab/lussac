@@ -11,10 +11,10 @@ description = "Python package for automatic post-processing and merging of multi
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-	"networkx>=2.7",
+	"networkx>=3.0",
 	"numpy>=1.22",
-	"pandas>=1.4.2",
-	"scikit-learn>=1.0",
+	"pandas>=1.4.4",
+	"scikit-learn>=1.1.0",
 	"scipy>=1.9",
 	"plotly>=5.8.2",
 	"kaleido",
@@ -23,7 +23,7 @@ dependencies = [
 	"tqdm>=4.64.0",
 	"requests>=2.28.0",
 	"overrides>=7.3.1",
-	"spikeinterface>=0.97",
+	"spikeinterface>=0.97.1",
 	"pytest>=7.1.3"
 ]
 

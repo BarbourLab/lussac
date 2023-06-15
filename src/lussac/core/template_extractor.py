@@ -324,7 +324,7 @@ class TemplateExtractor:
 
 		(self.folder / "waveforms").mkdir(exist_ok=True, parents=True)
 		wvfs = si.extract_waveforms_to_buffers(recording, spike_vector, sorting.unit_ids, self.nbefore, 1 + self.nafter, mode="memmap",
-											   return_scaled=False, folder=self.folder / "waveforms", dtype=recording.dtype)
+											   return_scaled=False, folder=self.folder / "waveforms", dtype=recording.dtype, n_jobs=1)
 
 		for unit_idx, unit_id in zip(unit_indices, sorting.unit_ids):
 			template = np.mean(wvfs[unit_id], axis=0)
@@ -418,7 +418,7 @@ class TemplateExtractor:
 			'return_scaled': False,
 			'allow_unfiltered': True
 		}
-		wvf_extractor = si.extract_waveforms(self.recording, sorting, mode="memory", **params)
+		wvf_extractor = si.extract_waveforms(self.recording, sorting, mode="memory", n_jobs=1, **params)
 
 		templates = wvf_extractor.get_all_templates(mode="average")
 		templates = (templates - gaussian_filter1d(templates, sigma=self.sampling_frequency / (2 * np.pi * highpass_filter), axis=1))
