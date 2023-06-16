@@ -1,9 +1,11 @@
 import pathlib
 from typing import Any, Sequence
+import numpy as np
 from overrides import override
-from lussac.core import MonoSortingModule
+from lussac.core import LussacPipeline, MonoSortingModule
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
+import spikeinterface.qualitymetrics as sqm
 
 
 class ExportToPhy(MonoSortingModule):
@@ -49,6 +51,10 @@ class ExportToPhy(MonoSortingModule):
 		if 'lussac_category' in self.sorting.get_property_keys():
 			self.write_tsv_file(output_folder / "lussac_category.tsv", "lussac_category", self.sorting.unit_ids, self.sorting.get_property('lussac_category'))
 
+		if 'estimate_contamination' in params:
+			estimated_cont = self._estimate_units_contamination(params['estimate_contamination'])
+			self.write_tsv_file(output_folder / "lussac_contamination.tsv", "lussac_cont (%)", list(estimated_cont.keys()), 100 * np.array(list(estimated_cont.values())))
+
 		return self.sorting
 
 	def _format_output_path(self, path: str) -> str:
@@ -68,6 +74,26 @@ class ExportToPhy(MonoSortingModule):
 
 		return path
 
+	def _estimate_units_contamination(self, refractory_periods: dict[str, tuple[float, float]]) -> dict[Any, float]:
+		"""
+		Returns the estimated contamination for each unit (refractory period can vary with the category).
+
+		@param refractory_periods: dict[str, tuple[float, float]]
+			The refractory periods for each category, given as [censored_period, refractory_period] (in ms).
+		@return estimated_contamination: dict[Any, float]
+			The estimated contamination for each unit.
+		"""
+
+		estimated_contamination = {}
+
+		for category, refractory_period in refractory_periods.items():
+			unit_ids = LussacPipeline.get_unit_ids_for_category(category, self.sorting)
+			wvf_extractor = si.WaveformExtractor(self.recording, self.sorting.select_units(unit_ids), allow_unfiltered=True)
+			cont, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period[1], refractory_period[0])
+			estimated_contamination.update(cont)
+
+		return estimated_contamination
+
 	@staticmethod
 	def write_tsv_file(path: pathlib.Path, name: str, keys: Sequence, values: Sequence) -> None:
 		"""
@@ -84,6 +110,8 @@ class ExportToPhy(MonoSortingModule):
 		"""
 		assert len(keys) == len(values)
 		assert path.suffix == ".tsv"
+
+		path.parent.mkdir(parents=True, exist_ok=True)
 
 		with open(path, 'w+') as tsv_file:
 			tsv_file.write(f"cluster_id\t{name}")

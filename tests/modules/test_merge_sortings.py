@@ -87,7 +87,10 @@ def test_graph(merge_sortings_module: MergeSortings) -> None:
 
 	filepath = f"{merge_sortings_module.logs_folder}/test_save_graph.pkl"
 	assert os.path.exists(filepath)
-	graph = pickle.load(open(filepath, 'rb'))
+
+	with open(filepath, 'rb') as graph_file:
+		graph = pickle.load(graph_file)
+		graph_file.close()
 
 	assert graph.number_of_nodes() == 3
 	assert graph.number_of_edges() == 1

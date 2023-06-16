@@ -19,9 +19,7 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 		'wvf_extraction': {
 			'ms_before': 1.0,
 			'ms_after': 2.0,
-			'max_spikes_per_unit': 10,
-			'chunk_duration': '1s',
-			'n_jobs': 6
+			'max_spikes_per_unit': 10
 		},
 		'export_params': {
 			'compute_pc_features': False,
@@ -31,9 +29,11 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 				'radius_um': 50
 			},
 			'template_mode': "average",
-			'copy_binary': False,
-			'chunk_duration': '1s',
-			'n_jobs': 6
+			'copy_binary': False
+		},
+		'estimate_contamination': {
+			'all': (0.3, 0.9),
+			'CS': (1.0, 25.0)
 		}
 	}
 
@@ -51,6 +51,18 @@ def test_format_output_path(mono_sorting_data: MonoSortingData) -> None:
 	module = copy.deepcopy(module)
 	module.data.data.sortings = {'ms3_best': module.sorting}
 	assert module._format_output_path("test") == "test"
+
+
+def test_estimate_units_contamination(mono_sorting_data: MonoSortingData) -> None:
+	module = ExportToPhy("test_etp_contamination", mono_sorting_data, "all")
+
+	assert 'lussac_category' not in module.sorting.get_property_keys()
+	estimated_contamination = module._estimate_units_contamination({'CS': (1.0, 25.0)})
+	assert len(estimated_contamination) == 0
+	estimated_contamination = module._estimate_units_contamination({'all': (0.3, 0.9)})
+	assert len(estimated_contamination) == mono_sorting_data.sorting.get_num_units()
+
+	# TODO: Test with categories + test output
 
 
 def test_write_tsv_file(mono_sorting_data: MonoSortingData) -> None:

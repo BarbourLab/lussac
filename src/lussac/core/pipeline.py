@@ -24,7 +24,18 @@ class LussacPipeline:
 	"""
 
 	data: LussacData
-	module_factory: ModuleFactory = ModuleFactory()
+	module_factory: ModuleFactory
+
+	def __init__(self, data: LussacData) -> None:
+		"""
+		Creates a new LussacPipeline instance.
+
+		@param data: LussacData
+			The data object.
+		"""
+
+		self.data = data
+		self.module_factory = ModuleFactory()
 
 	def launch(self) -> None:
 		"""
@@ -206,7 +217,7 @@ class LussacPipeline:
 			elif cat == "rest":
 				indices = np.where((units_category == '') | (units_category == None))[0]
 				unit_ids.extend(sorting.unit_ids[indices])
-			else:
+			elif units_category is not None and len(units_category) > 0:
 				indices = np.where(units_category == cat)[0]
 				unit_ids.extend(sorting.unit_ids[indices])
 
