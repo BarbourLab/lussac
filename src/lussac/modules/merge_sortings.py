@@ -79,8 +79,8 @@ class MergeSortings(MultiSortingsModule):
 			self.remove_merged_units(graph, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		#if params['waveform_validation']:
-		#	self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+		# if params['waveform_validation']:
+		# 	self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
 		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
@@ -167,8 +167,9 @@ class MergeSortings(MultiSortingsModule):
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
 				attr = {'connected': False, 'merged': False}
-				if 'gt_label' in sorting.get_property_keys():
-					attr['gt_label'] = sorting.get_unit_property(unit_id, 'gt_label')
+				for annotation_key in sorting.get_property_keys():
+					if annotation_key.startswith('gt_'):
+						attr[annotation_key] = sorting.get_unit_property(unit_id, annotation_key)
 
 				graph.add_node((name, unit_id), **attr)
 
@@ -381,8 +382,16 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		for node1, node2, data in list(graph.edges(data=True)):
-			if data['corr_diff'] > 0.22:
-				graph.remove_edge(node1, node2)
+			if data['corr_diff'] > 0.25 or data['temp_diff'] > 0.20:
+				# graph.remove_edge(node1, node2)
+				sorting1_name, unit_id1 = node1
+				sorting2_name, unit_id2 = node2
+				gt_label1 = self.sortings[sorting1_name].get_unit_property(unit_id1, 'gt_label')
+				gt_label2 = self.sortings[sorting2_name].get_unit_property(unit_id2, 'gt_label')
+				print(f"Edge {sorting1_name}:{unit_id1} - {sorting2_name}:{unit_id2}")
+				print(f"- labels: {gt_label1} - {gt_label2}")
+				print(f"- corr_diff: {data['corr_diff']}")
+				print(f"- temp_diff: {data['temp_diff']}")
 
 	def merge_sortings(self, graph: nx.Graph, refractory_period, require_multi_sortings: bool) -> si.NpzSortingExtractor:
 		"""
