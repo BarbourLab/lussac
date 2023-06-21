@@ -55,6 +55,18 @@ Curly brackets in JSON are translated to a :code:`dict` in Python. Hence, the tw
 - You can type in :code:`$PARAMS_FOLDER` anywhere, and it will be replaced with the path to the folder containing the :code:`params.json` file (useful to copy paste the json config file to another folder).
 - You can add comments in C style (using :code:`//` for inline comment, and :code:`/* */` for multiline comments). This is **not** in the JSON language by default, but has been added here because it can be useful.
 
+JSON does not like extra commas!
+""""""""""""""""""""""""""""""""
+
+Unlike Python, JSON will crash in case of an extra comma, for example:
+
+.. code-block:: json
+
+	{
+		"key1": "value1",
+		"key2": "value2", // This comma will crash JSON!
+	}
+
 
 The :code:`recording` section
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -97,6 +109,15 @@ Example for a SpikeGLX recording:
 		}
 		// Probe is already loaded with the SpikeGLXRecordingExtractor.
 	}
+
+Creating the probe file for geometry:
+"""""""""""""""""""""""""""""""""""""
+
+| Lussac uses `ProbeInterface <https://github.com/SpikeInterface/probeinterface>`_ to understand the probe geometry (if it's not already loaded with the recording extractor).
+| If you do not know this format, here are some tips to generate the file:
+
+- If you have a probe file in a different format, you can use :code:`probeinterface.io` to read your format, then use :code:`probeinterface.io.write_probeinterface` to generate the probe file.
+- You can create the probe in Python and then export it with :code:`probeinterface.io.write_probeinterface`. To create it, refer to the `ProbeInterface documentation <https://probeinterface.readthedocs.io/en/latest/>`_, section "Generate a Probe from scratch".
 
 
 The :code:`spike_sorting` section

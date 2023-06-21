@@ -219,6 +219,7 @@ This module's parameters are:
 - :code:`path`: path to the folder where to export the sorting(s). If multiple sortings exists, a subfolder will be created for each of them.
 - :code:`wvf_extraction`: to construct the templates.
 - :code:`export_params`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.exporters.export_to_phy`.
+- :code:`estimate_contamination` (optional): a :code:`dict` containing the refractory period for each category. If given, will output the estimated contamination of the units.
 
 
 Example of export to phy
@@ -244,6 +245,9 @@ Example of export to phy
 					"radius_um": 75.0
 				},
 				"verbose": False
+			},
+			"estimate_contamination": {
+				"all": [0.3, 1.0]
 			}
 		}
 	}
