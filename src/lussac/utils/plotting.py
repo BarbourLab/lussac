@@ -287,7 +287,7 @@ def create_graph_plot(graph: nx.Graph) -> go.Figure:  # pragma: no cover (test f
 		y=np.array(list(nodes_pos.values()))[:, 1],
 		mode="markers",
 		marker_color="CornflowerBlue",
-		text=list(nodes_pos.keys())
+		text=[(f"{name}<br />" + "<br />".join(f"{key}: {value}" for key, value in data.items())) for name, data in graph.nodes(data=True)]
 	))
 
 	return fig

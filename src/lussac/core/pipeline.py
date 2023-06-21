@@ -155,7 +155,8 @@ class LussacPipeline:
 		"""
 
 		for name, sorting in self.data.sortings.items():
-			sorting.dump_to_pickle(file_path=f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl", include_properties=True, relative_to=self.data.logs_folder)
+			path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
+			sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder, recursive=True)
 
 	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
 		"""
@@ -168,11 +169,8 @@ class LussacPipeline:
 		"""
 
 		logging.info("Loading sortings from previous run...\n")
-		t1 = time.perf_counter()
 		sortings_path = glob.glob(f"{self.data.logs_folder}/{module_name}/sorting/*.pkl")
 		sortings = {pathlib.Path(path).stem: si.load_extractor(path, base_folder=self.data.logs_folder) for path in tqdm(sortings_path)}
-		t2 = time.perf_counter()
-		# logging.info(f"Done in {t2-t1:.2f} s\n")
 
 		return sortings
 

@@ -256,10 +256,12 @@ class MergeSortings(MultiSortingsModule):
 				if p_value1 < 1e-3:  # node2 is the problematic unit.
 					if node2 not in nodes_to_remove:
 						nodes_to_remove.append(node2)
+						logs.write(f"\t-> Unit {node2} is considered a problematic unit.\n")
 					continue
 				elif p_value2 < 1e-3:  # node1 is the problematic unit.
 					if node1 not in nodes_to_remove:
 						nodes_to_remove.append(node1)
+						logs.write(f"\t-> Unit {node1} is considered a problematic unit.\n")
 					continue
 				elif min(C1, C2) < 0.1:  # node is probably a merged unit.
 					if node not in nodes_to_remove:
