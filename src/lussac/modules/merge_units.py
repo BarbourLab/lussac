@@ -154,7 +154,7 @@ class MergeUnits(MonoSortingModule):
 				if merge is None:
 					scores = dict(subgraph.nodes(data="score"))
 					best_unit = max(scores, key=scores.get)
-					sorting.remove_unit([x for x in subgraph.nodes if x != best_unit])
+					sorting.remove_units([x for x in subgraph.nodes if x != best_unit])
 					break
 
 				unit1, unit2 = merge
