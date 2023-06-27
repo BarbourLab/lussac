@@ -157,6 +157,7 @@ class LussacPipeline:
 		for name, sorting in self.data.sortings.items():
 			path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
 			sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder, recursive=True)
+			# TODO: Would be nice to make `relative_to=True` to automatically make it relative to `path.parent`.
 
 	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
 		"""

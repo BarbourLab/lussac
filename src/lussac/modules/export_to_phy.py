@@ -48,8 +48,9 @@ class ExportToPhy(MonoSortingModule):
 
 		export_to_phy(wvf_extractor, output_folder, **params['export_params'])
 
-		if 'lussac_category' in self.sorting.get_property_keys():
-			self.write_tsv_file(output_folder / "lussac_category.tsv", "lussac_category", self.sorting.unit_ids, self.sorting.get_property('lussac_category'))
+		for property_name in self.sorting.get_property_keys():
+			if property_name.startswith('lussac_'):
+				self.write_tsv_file(output_folder / f"{property_name}.tsv", property_name, self.sorting.unit_ids, self.sorting.get_property(property_name))
 
 		if 'estimate_contamination' in params:
 			estimated_cont = self._estimate_units_contamination(params['estimate_contamination'])

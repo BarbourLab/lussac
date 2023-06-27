@@ -1,5 +1,5 @@
 {
-	"recording": {
+	"recording": {  // TODO: Fill out this section!!
 		"recording_extractor": "",
 		"extractor_params": {
 
@@ -307,6 +307,9 @@
 				"rest": {
 					"all": {}
 				}
+			},
+			"find_purkinje_cells": {
+
 			},
 			"export_to_phy": {
 				"all": {

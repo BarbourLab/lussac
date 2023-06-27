@@ -191,7 +191,7 @@ Example of redundant units removal
 				"align": true,  // Can be set to 'false' if you already used the 'align_units' module.
 				"delta_time": 0.3,  // Window (in ms) to consider coincident spikes.
 				"duplicate_threshold": 0.7,  // If coincidence >= 70%, consider the units redundant.
-				"remove_strategy": "highest_amplitude",  // Keep the unit with the highest amplitude.
+				"remove_strategy": "highest_amplitude"  // Keep the unit with the highest amplitude.
 			}
 		}
 	}
@@ -207,6 +207,36 @@ The :code:`merge_sortings` module
 ---------------------------------
 
 WIP
+
+
+The :code:`find_purkinje_cells` module
+---------------------------------
+
+| This module is only meant for cerebellar cortex recordings. It will link simple spikes and complex spikes coming from the same Purkinje cell, and set it as a property :code:`lussac_purkinje` (this property is automatically exported in the :code:`export_to_phy` module).
+| TODO: Explain how it works.
+
+This module's parameters are:
+
+- :code:`cross_corr_pause`: the band over which to look for the pause (in ms). By default: :code:`[0.0, 8.0]`.
+- :code:`threshold`: TODO
+- :code:`ss_min_fr`: Minimum firing rate to consider putative simple spikes (in Hz). By default: :code:`40.0`.
+- :code:`cs_min_fr`: Minimum firing rate to consider putative complex spikes (in Hz). By default: :code:`0.5`.
+- :code:`cs_max_fr`: Maximum firing rate to consider putative complex spikes (in Hz). By default: :code:`3.0`.
+
+
+Example of finding Purkinje cells
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: json
+
+	"find_purkinje_cells": {
+		"all": {
+			"cross_corr_pause": [0.0, 8.0],
+			"threshold": 0.4,
+			"ss_min_fr": 40.0,
+			"cs_max_fr": 3.0
+		}
+	}
 
 
 The :code:`export_to_phy` module
