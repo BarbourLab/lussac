@@ -190,7 +190,8 @@
 						"corr_diff_thresh": 0.35,
 						"template_diff_thresh": 0.13,
 						"num_shift": 15,
-						"firing_contamination_balance": 2.5
+						"firing_contamination_balance": 2.5,
+						"censor_correlograms_ms": 0.8
 					}
 				},
 				"spikes": {
