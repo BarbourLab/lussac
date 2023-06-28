@@ -200,7 +200,17 @@ Example of redundant units removal
 The :code:`merge_units` module
 ------------------------------
 
-WIP
+This module looks for units that correspond to the same neuron (inside each individual analysis separately), and merges them together if the merge is deemed beneficial.
+
+| This is done by first looking over all pairs of units, and estimating if they likely come from the same neuron, on the basis of: proximity, matching correlograms, matching templates.
+| Then, pairs that don't increase the quality score if the merge is performed are discarded. With this discard, the worse of both units is removed (because it usually is a bad split unit).
+| Finally, a graph is constructed from the remaining pairs. For each connected component (i.e. each putative neuron), we iteratively merge the best pair until everything is merged or there are no more merges that increase the quality score metric. If some unmerged units remain, they are discarded.
+
+This modules parameters are:
+
+- :code:`refractory_period = [censored_period, refractory_period]`: in ms. By default: :code:`[0.2, 1.0]`.
+- :code:`wvf_extraction`: to construct the templates.
+- :code:`auto_merge_params`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.curation.auto_merge.get_potential_auto_merge`.
 
 
 The :code:`merge_sortings` module
