@@ -76,7 +76,7 @@ class MergeSortings(MultiSortingsModule):
 		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
 
 		if params['merge_check']:
-			self.remove_merged_units(graph, params['refractory_period'], params['merge_check'])
+			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
 		# if params['waveform_validation']:
@@ -181,7 +181,7 @@ class MergeSortings(MultiSortingsModule):
 				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
 						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= min_similarity:
-							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
+							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity, problem=False)
 							graph.add_node((name1, unit_id1), connected=True)
 							graph.add_node((name2, unit_id2), connected=True)
 
@@ -201,7 +201,7 @@ class MergeSortings(MultiSortingsModule):
 		with open(f"{self.logs_folder}/{name}.pkl", 'wb+') as file:
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-	def remove_merged_units(self, graph: nx.Graph, refractory_period, params: dict[str, Any]) -> None:
+	def remove_merged_units(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], refractory_period, params: dict[str, Any]) -> None:
 		"""
 		Detects and remove merged units from the graph.
 		For each connected components (i.e. connected sub-graph communities), look at each node. If a node is connected
@@ -213,6 +213,8 @@ class MergeSortings(MultiSortingsModule):
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+			The cross-shifts between units.
 		@param refractory_period: float
 			The (censored_period, refractory_period) in ms.
 		@param params: dict[str, Any]
@@ -228,11 +230,15 @@ class MergeSortings(MultiSortingsModule):
 				sorting1_name, unit_id1 = node1
 				sorting2_name, unit_id2 = node2
 
+				unit_ind = self.sortings[sorting_name].id_to_index(unit_id)
+				unit_ind1 = self.sortings[sorting1_name].id_to_index(unit_id1)
+				unit_ind2 = self.sortings[sorting2_name].id_to_index(unit_id2)
+
 				if sorting1_name != sorting2_name:
 					continue
 
-				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
-				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2)
+				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1) + cross_shifts[sorting_name][sorting1_name][unit_ind, unit_ind1]
+				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2) + cross_shifts[sorting_name][sorting2_name][unit_ind, unit_ind2]
 				C1 = utils.estimate_contamination(spike_train1, refractory_period)
 				C2 = utils.estimate_contamination(spike_train2, refractory_period)
 				if C2 < C1:
@@ -276,7 +282,10 @@ class MergeSortings(MultiSortingsModule):
 				attr['merged'] = True
 				graph.remove_node(node)
 				graph.add_node(node, **attr)
-				logs.write(f"\t- {node}\n")
+
+				sorting_name, unit_id = node
+				label = f" -- {self.sortings[sorting_name].get_unit_property(unit_id, 'gt_label')}" if 'gt_label' in self.sortings[sorting_name].get_property_keys() else ''
+				logs.write(f"\t- {node}{label}\n")
 
 		logs.close()
 
@@ -384,16 +393,20 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		for node1, node2, data in list(graph.edges(data=True)):
+			if 'corr_diff' not in data or 'temp_diff' not in data:
+				break
+
 			if data['corr_diff'] > 0.25 or data['temp_diff'] > 0.20:
 				# graph.remove_edge(node1, node2)
-				sorting1_name, unit_id1 = node1
+				data['problem'] = True
+				"""sorting1_name, unit_id1 = node1
 				sorting2_name, unit_id2 = node2
 				gt_label1 = self.sortings[sorting1_name].get_unit_property(unit_id1, 'gt_label')
 				gt_label2 = self.sortings[sorting2_name].get_unit_property(unit_id2, 'gt_label')
 				print(f"Edge {sorting1_name}:{unit_id1} - {sorting2_name}:{unit_id2}")
 				print(f"- labels: {gt_label1} - {gt_label2}")
 				print(f"- corr_diff: {data['corr_diff']}")
-				print(f"- temp_diff: {data['temp_diff']}")
+				print(f"- temp_diff: {data['temp_diff']}")"""
 
 	def merge_sortings(self, graph: nx.Graph, refractory_period, require_multi_sortings: bool) -> si.NpzSortingExtractor:
 		"""
