@@ -14,7 +14,8 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	sortings = pipeline.data.sortings.copy()  # Creates a new dict but not a deepcopy --> same sorting objects.
 	params = copy.deepcopy(pipeline.data.params)
 	params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
-	data = LussacData(pipeline.data.recording, sortings, params)
+	data = pipeline.data.clone()
+	data.params = params
 
 	wrong_pipeline = LussacPipeline(data)
 	with pytest.raises(ValueError):

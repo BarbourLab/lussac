@@ -69,6 +69,21 @@ class LussacData:
 		Utils.sampling_frequency = recording.sampling_frequency
 		Utils.t_max = recording.get_num_frames()
 
+	def clone(self) -> 'LussacData':
+		"""
+		Returns a copy of the LussacData object.
+
+		@return: LussacData
+			A copy of the LussacData object.
+		"""
+
+		data = copy.copy(self)
+		data.recording = data.recording.clone()
+		data.sortings = {name: sorting.clone() for name, sorting in data.sortings.items()}
+		data.params = copy.deepcopy(self.params)
+
+		return data
+
 	@property
 	def tmp_folder(self) -> pathlib.Path:
 		"""

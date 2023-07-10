@@ -153,7 +153,7 @@ def test_merge_sortings_func() -> None:
 @pytest.fixture(scope="function")
 def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# Copy the dataset with fewer sortings and fewer units to go faster.
-	data = copy.deepcopy(data)
+	data = data.clone()
 	del data.sortings['ms3_low_thresh']
 	del data.sortings['ms3_cs']
 	del data.sortings['ks2_best']

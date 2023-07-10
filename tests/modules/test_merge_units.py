@@ -9,7 +9,7 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
 	params = module.update_params({})
 
-	big_split = [53, 68, 69, 71, 78]  # Lots of units that are the same Purkinje cell.   TODO: Add 81
+	big_split = [53, 68, 69, 71, 78, 81]  # Lots of units that are the same Purkinje cell.
 
 	prev_sorting = mono_sorting_data.sorting
 	prev_n_units = prev_sorting.get_num_units()
