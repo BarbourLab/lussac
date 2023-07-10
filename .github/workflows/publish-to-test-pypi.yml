@@ -26,6 +26,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine build
         pip install -e .[dev]
+        cd ..
+        git clone https://github.com/SpikeInterface/spikeinterface.git
+        cd spikeinterface
+        pip uninstall -y spikeinterface
+        pip install -e .
+        cd ../lussac
         python -m build --sdist --wheel --outdir dist/
     - name: Cache datasets
       id: cache-datasets
