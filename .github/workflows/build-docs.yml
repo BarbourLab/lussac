@@ -5,9 +5,13 @@ name: Lussac build docs
 
 on:
   push:
-    branches: [ v2.0 ]
+    branches:
+      - main
+      - v2.0
   pull_request:
-    branches: [ v2.0 ]
+    branches:
+      - main
+      - v2.0
 
 permissions:
   contents: read

@@ -10,10 +10,14 @@ It is recommended to install :code:`lussac` in an environment, such as conda:
 	conda activate lussac
 
 
-|:stop_sign:| Installing from PyPi
+|:spider_web:| Installing from PyPi
 ----------------------------------
 
-|:warning:| This method is not available yet! |:warning:|
+You can install :code:`lussac` directly from PyPi using pip:
+
+.. code-block:: bash
+
+	pip install lussac
 
 
 |:construction_site:| Installing from source
@@ -24,7 +28,7 @@ You can install :code:`lussac` from source by cloning the GitHub repository. Thi
 .. code-block:: bash
 
 	# Download Lussac in any directory you want.
-	git clone https://github.com/BarbourLab/lussac.git --branch v2.0
+	git clone https://github.com/BarbourLab/lussac.git
 	cd lussac
 
 	# Install Lussac in your environment.

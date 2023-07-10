@@ -7,7 +7,7 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	# TODO: Take a subset of units to accelerate the test.
 
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
-	params = module.update_params({})
+	params = module.update_params({'auto_merge_params': {'template_diff_thresh': 0.27}})
 
 	big_split = [53, 68, 69, 71, 78, 81]  # Lots of units that are the same Purkinje cell.
 

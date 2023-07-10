@@ -3,7 +3,7 @@ requires = ["pip>=21.3", "setuptools>=65.6.3"]
 
 [project]
 name = "lussac"
-version = "2.0.0.dev"
+version = "2.0.0b1"
 authors = [
 	{name="Aurélien Wyngaard", email="aurelien.wyngaard@gmail.com"}
 ]
@@ -23,7 +23,7 @@ dependencies = [
 	"tqdm>=4.64.0",
 	"requests>=2.28.0",
 	"overrides>=7.3.1",
-	"spikeinterface>=0.97.1",
+	"spikeinterface>=0.98.0",
 	"pytest>=7.1.3"
 ]
 

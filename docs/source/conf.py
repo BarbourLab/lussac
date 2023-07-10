@@ -11,7 +11,7 @@ import sphinx_rtd_theme
 project = 'Lussac'
 copyright = '2023, Aurélien Wyngaard'
 author = 'Aurélien Wyngaard'
-release = 'v2.0.0.dev0'
+release = 'v2.0.0b1'
 
 
 # -- General configuration ---------------------------------------------------
