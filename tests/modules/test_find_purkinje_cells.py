@@ -12,6 +12,8 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 	with pytest.raises(ValueError):
 		module.update_params({'threshold': -1.0})  # threshold cannot be negative.
 
+	module.update_params({})
+
 
 def test_find_purkinje_cells(mono_sorting_data: MonoSortingData) -> None:
 	assert 'lussac_purkinje' not in mono_sorting_data.sorting.get_property_keys()

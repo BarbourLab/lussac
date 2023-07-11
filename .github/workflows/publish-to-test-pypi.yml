@@ -3,10 +3,6 @@
 name: Release to Test PyPI
 
 on:
-  push:
-    branches:
-      - main
-      - v2.0
   pull_request:
     branches:
       - main

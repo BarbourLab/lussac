@@ -4,7 +4,9 @@ from spikeinterface.core.testing import check_extractor_annotations_equal
 
 
 def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
-	# TODO: Take a subset of units to accelerate the test.
+	data = mono_sorting_data.data.clone()
+	data.sortings = {'ms3_best': data.sortings['ms3_best'].select_units([7, 14, 15, 18, 20, 22, 29, 31, 53, 55, 59, 66, 67, 68, 69, 70, 71, 78, 81])}
+	mono_sorting_data = MonoSortingData(data, data.sortings['ms3_best'])
 
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
 	params = module.update_params({'auto_merge_params': {'template_diff_thresh': 0.27}})
@@ -21,6 +23,8 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	assert sorting.get_num_units() < prev_n_units
 	assert sum([x in sorting.unit_ids for x in [29, 31]]) == 1  # 29 and 31 have been merged
 	assert sum([x in sorting.unit_ids for x in big_split]) == 1  # Only one unit from the big split should remain.
+
+	assert 70 in sorting.unit_ids  # 70 is the complex spike of the big split: should be kept.
 
 
 def test_remove_splits(mono_sorting_data: MonoSortingData) -> None:
