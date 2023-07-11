@@ -53,7 +53,7 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 	# Create a smaller data object for testing (faster).
-	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([2, 7, 11, 14, 21, 23, 24]))
+	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([2, 7, 11, 14, 21, 23, 24]).frame_slice(0, 3_000_000))
 
 	module = RemoveBadUnits("test_rbu", data, "all")
 	assert not os.path.exists(f"{module.logs_folder}/bad_units.html")

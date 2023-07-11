@@ -18,9 +18,7 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 			'ms_before': 1.0,
 			'ms_after': 2.0,
 			'max_spikes_per_unit': 10,
-			'allow_unfiltered': True,
-			'chunk_duration': '1s',
-			'n_jobs': 6
+			'allow_unfiltered': True
 		},
 		'spike_amplitudes': {'chunk_duration': '1s', 'n_jobs': 6},
 		'principal_components': {'n_components': 3, 'chunk_duration': '1s', 'n_jobs': 6}

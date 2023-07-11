@@ -52,7 +52,7 @@ def test_plot_units(data: LussacData) -> None:
 	sorting = data.sortings['ks2_best'].select_units([13, 19, 40, 41])
 	sorting.set_property("gt_label", np.array([f"label{unit_id}" for unit_id in sorting.unit_ids]))
 	wvf_extractor = si.extract_waveforms(data.recording, sorting, folder="tests/tmp/plotting/wvf_extractor", ms_before=1.5, ms_after=2.5,
-										 max_spikes_per_unit=500, allow_unfiltered=True)
+										 max_spikes_per_unit=100, allow_unfiltered=True)
 
 	utils.plot_units(wvf_extractor, filepath=f"{folder}/plot_units", annotations_fix=[{'text': "I am a fixed annotation"}],
 					 annotations_change=[{'text': f"I am unit {unit_id}"} for unit_id in wvf_extractor.unit_ids])

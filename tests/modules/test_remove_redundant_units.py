@@ -9,11 +9,12 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_remove_redundant_units(mono_sorting_data: MonoSortingData) -> None:
-	# Create a smaller data object for testing (faster).
-	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([80, 81, 84, 85]))
 	params = {'wvf_extraction': None, 'arguments': {'align': False, 'agreement_threshold': 0.1, 'duplicate_threshold': 0.7, 'remove_strategy': 'max_spikes'}}
 
+	# Create a smaller data object for testing (faster).
+	data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([80, 81, 84, 85]).frame_slice(0, 3_000_000))
 	module = RemoveRedundantUnits("test_rru", data, "all")
+
 	assert not os.path.exists(f"{module.logs_folder}/redundant_units.html")
 	sorting = module.run(params)
 	assert os.path.exists(f"{module.logs_folder}/redundant_units.html")

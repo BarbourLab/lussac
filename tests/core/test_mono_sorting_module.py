@@ -58,7 +58,8 @@ def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	ms_before, ms_after = (2.0, 2.0)
-	templates, wvf_extractor, margin = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], return_extractor=True)
+	templates, wvf_extractor, margin = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after, 'max_spikes_per_unit': 10},
+																		 filter_band=[300, 6000], return_extractor=True)
 
 	n_units = mono_sorting_module.sorting.get_num_units()
 	n_samples = wvf_extractor.nsamples - 2*margin
@@ -68,13 +69,16 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	assert templates.shape == (n_units, n_samples, n_channels)
 	assert np.all(wvf_extractor.unit_ids == mono_sorting_module.sorting.unit_ids)
 
-	templates = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after}, filter_band=[300, 6000], sub_folder="templates2", return_extractor=False)
+	templates = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after, 'max_spikes_per_unit': 10},
+												  filter_band=[300, 6000], sub_folder="templates2", return_extractor=False)
 
 	assert templates is not None
 	assert templates.shape == (n_units, n_samples, n_channels)
 
 
 def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
+	mono_sorting_data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([0, 1, 2, 3, 4]))
+
 	module = TestMonoSortingModule(mono_sorting_data)
 	num_units = module.data.sorting.get_num_units()
 
