@@ -2,7 +2,49 @@ import pytest
 from typing import Any
 import numpy as np
 from lussac.core import MonoSortingData, MonoSortingModule
-from tests.modules.test_remove_bad_units import params
+
+
+params = {
+	"firing_rate": {
+		"min": 0.5
+	},
+	"contamination": {
+		"refractory_period": [0.5, 1.0],
+		"max": 0.25
+	},
+	"amplitude": {
+		"wvf_extraction": {
+			"ms_before": 1.0,
+			"ms_after": 1.0,
+			"max_spikes_per_unit": 10
+		},
+		"filter": {
+			"band": [200, 5000]
+		},
+		"min": 20
+	},
+	"SNR": {
+		"wvf_extraction": {
+			"ms_before": 1.0,
+			"ms_after": 1.0,
+			"max_spikes_per_unit": 10
+		},
+		"filter": {
+			"band": [300, 6000]
+		},
+		"min": 1.2
+	},
+	"amplitude_std": {
+		"wvf_extraction": {
+			"ms_before": 1.0,
+			"ms_after": 1.0,
+		},
+		"filter": {
+			"band": [200, 5000]
+		},
+		"max": 140
+	}
+}
 
 
 def test_update_params(mono_sorting_data: MonoSortingData) -> None:
