@@ -33,8 +33,9 @@ lussac = "lussac.main:main"
 [project.optional-dependencies]
 dev = [
 	"matplotlib",
-	"hdbscan<0.8.31",  # 0.8.31/32 crashes with spykingcircus2.
-	"Cython<3.0.0",  # 3.0.0 breaks hdbscan on some computers.
+	# hdbscan fails on GitHub workflows right now :'(
+	# "hdbscan<0.8.31",  # 0.8.31/32 crashes with spykingcircus2.
+	# "Cython<3.0.0",  # 3.0.0 breaks hdbscan on some computers.
 	"pytest-cov>=4.0.0",
 	"sphinx>=6.0",
 	"sphinxemoji>=0.2.0",
