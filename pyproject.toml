@@ -34,7 +34,7 @@ lussac = "lussac.main:main"
 dev = [
 	"matplotlib",
 	"Cython<=0.29.36",  # v3.0.0 crashes with 'spykingcircus2'.
-	"hdbscan",
+	"hdbscan<=0.8.30",  # 0.8.31/32 crashes with 'spykingcircus2'.
 	"pytest-cov>=4.0.0",
 	"sphinx>=6.0",
 	"sphinxemoji>=0.2.0",
