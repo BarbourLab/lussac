@@ -187,7 +187,7 @@ class LussacData:
 		@param sortings_path: dict[str, str]
 			Dict containing the name as key, and the path to all the
 			phy folder / SpikeInterface extractor containing the spike sorted data as value.
-		@return sortings: dict[str, PhySortingExtractor]
+		@return sortings: dict[str, BaseSorting]
 			Dictionary containing the Phy sorting objects indexed by their name.
 		"""
 
@@ -200,7 +200,7 @@ class LussacData:
 			elif path.is_dir():
 				sorting = se.PhySortingExtractor(path)
 			else:
-				sorting = si.load_extractor(path)
+				sorting = si.load_extractor(path, base_folder=True)
 				assert isinstance(sorting, si.BaseSorting)
 
 			sorting.annotate(name=name)
