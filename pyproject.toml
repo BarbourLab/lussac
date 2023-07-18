@@ -33,7 +33,7 @@ lussac = "lussac.main:main"
 [project.optional-dependencies]
 dev = [
 	"matplotlib",
-	"hdbscan",
+	"hdbscan<0.8.31",  # 0.8.31/32 crashes with spykingcircus2.
 	"pytest-cov>=4.0.0",
 	"sphinx>=6.0",
 	"sphinxemoji>=0.2.0",
