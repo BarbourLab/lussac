@@ -18,18 +18,27 @@ You can install :code:`lussac` directly from PyPi using pip:
 .. code-block:: bash
 
 	pip install lussac
+	# pip install --upgrade lussac  # To upgrade in case a new version is released.
 
 
 |:construction_site:| Installing from source
 --------------------------------------------
 
-You can install :code:`lussac` from source by cloning the GitHub repository. This will ensure you have the latest updates, but some features might still be experimental!
+You can install :code:`lussac` from source by cloning the GitHub repository (developmental version). This will ensure you have the latest updates, but some features might still be experimental!
 
 .. code-block:: bash
 
 	# Download Lussac in any directory you want.
-	git clone https://github.com/BarbourLab/lussac.git
+	git clone https://github.com/BarbourLab/lussac.git --branch dev
 	cd lussac
 
-	# Install Lussac in your environment.
-	pip install -e .  # For developers: pip install -e .[dev]
+	# Install Lussac.
+	pip install -e .[dev]
+
+	# For the developmental version, you will likely need the latest developmental version of SpikeInterface
+	git clone https://github.com/SpikeInterface/spikeinterface.git
+	cd spikeinterface
+	pip install -e .
+
+	# If you want to check whether the installation was successful (optional)
+	pytest

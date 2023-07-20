@@ -5,7 +5,7 @@
 
 # Lussac 2.0
 
-:warning: Lussac 2.0 is in beta and is not fully done! :warning:
+:warning: Lussac 2.0 is in beta! :warning:
 
 You can use the version 1 with `git checkout v1`
 
@@ -17,6 +17,10 @@ Lussac is an **automated** and **configurable** analysis pipeline for post-proce
 You can install the latest release version of Lussac:
 
 ```bash
+# OPTIONAL: Use a conda environment.
+conda create -n lussac python=3.11  # Must be >= 3.10
+conda activate lussac
+
 pip install lussac
 # pip install --upgrade lussac  # To upgrade in case a new version is released.
 ```
@@ -25,7 +29,7 @@ Or if you prefer downloading the latest developmental version:
 
 ```bash
 # Download Lussac in any directory you want.
-git clone https://github.com/BarbourLab/lussac.git
+git clone https://github.com/BarbourLab/lussac.git --branch dev
 cd lussac
 
 # OPTIONAL: Use a conda environment.
@@ -33,7 +37,7 @@ conda create -n lussac python=3.11  # Must be >= 3.10
 conda activate lussac
 
 # Install Lussac.
-pip install -e .  # For developers: pip install -e .[dev]
+pip install -e .[dev]
 
 # For the developmental version, you will likely need the latest developmental version of SpikeInterface
 git clone https://github.com/SpikeInterface/spikeinterface.git

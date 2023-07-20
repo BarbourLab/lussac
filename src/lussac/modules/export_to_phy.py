@@ -40,6 +40,9 @@ class ExportToPhy(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
+		if self.sorting.get_num_units() == 0:  # Export crashes if the sorting contains no units.
+			return self.sorting
+
 		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
 		output_folder = pathlib.Path(self._format_output_path(params['path']))
 

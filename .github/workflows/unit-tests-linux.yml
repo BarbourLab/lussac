@@ -28,11 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8
         pip install -e .[dev]
-        cd ..
-        git clone https://github.com/SpikeInterface/spikeinterface.git
-        cd spikeinterface
-        pip uninstall -y spikeinterface
-        pip install -e .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
