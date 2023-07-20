@@ -23,7 +23,7 @@ dependencies = [
 	"tqdm>=4.64.0",
 	"requests>=2.28.0",
 	"overrides>=7.3.1",
-	"spikeinterface>=0.98.1",
+	"spikeinterface>=0.98.2",
 	"pytest>=7.1.3"
 ]
 
