@@ -1,0 +1,37 @@
+# This workflow will publish any new version of Lussac on PyPI.
+
+name: Release to PyPI
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine build
+        pip install -e .[dev]
+        python -m build --sdist --wheel --outdir dist/
+    - name: Cache datasets
+      id: cache-datasets
+      uses: actions/cache@v3
+      with:
+        path: tests/datasets
+        key: ${{ runner.os }}-datasets
+    - name: Test with pytest
+      run: |
+        pytest
+    - name: Publish on PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

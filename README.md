@@ -1,19 +1,59 @@
+[![Python version](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
+[![Documentation Status](https://readthedocs.org/projects/lussac/badge/?version=latest)](http://lussac.readthedocs.io/)
+[![Build status](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests-linux.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests.yml)
+[![Coverage report](https://codecov.io/gh/barbourlab/lussac/graphs/badge.svg)](https://app.codecov.io/github/barbourlab/lussac)
 
-[![Build Status](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/testing-dataset.yml/badge.svg) [![Python version](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
+# Lussac 2.0
 
-# Lussac v1.2
+:warning: Lussac 2.0 is in beta! :warning:
 
-Lussac is an **automated** and **configurable** analysis pipeline for post-processing and merging multiple spike-sorting analyses. The goal is to improve the yield and quality of data from multielectrode extracellular recordings by merging the outputs of different spike-sorting algorithms and/or multiple runs with different parameters.
-For more information, check out our [preprint](https://www.biorxiv.org/content/10.1101/2022.02.08.479192v1).
+You can use the version 1 with `git checkout v1`
 
-
-## Installation and usage
-
-Information on how to install and use Lussac can be found on the [wiki page](https://github.com/BarbourLab/lussac/wiki).
+Lussac is an **automated** and **configurable** analysis pipeline for post-processing and/or merging multiple spike-sorting analyses. The goal is to improve the **yield** and **quality** of data from multielectrode extracellular recordings by comparing the outputs of different spike-sorting algorithms and/or multiple runs with different parameters. For more information, check out our [preprint](https://www.biorxiv.org/content/10.1101/2022.02.08.479192v1).
 
 
-## Results
+## Installation
 
-We tested our algorithm using a **synthetic** data set simulating cortical pyramidal cell and interneurone activity ([Jun et al. 2017](https://www.biorxiv.org/content/10.1101/101030v2)) available through [SpikeForest](https://spikeforest.flatironinstitute.org/). Since all spike times of all neurones are known, we could easily compare our algorithm to standard runs of individual spike-sorting algorithms, in terms of recovery and contaminating events.
+You can install the latest release version of Lussac:
 
-![Lussac synthetic results](https://github.com/BarbourLab/lussac/blob/main/img/results_synthetic.png?raw=true)
+```bash
+# OPTIONAL: Use a conda environment.
+conda create -n lussac python=3.11  # Must be >= 3.10
+conda activate lussac
+
+pip install lussac
+# pip install --upgrade lussac  # To upgrade in case a new version is released.
+```
+
+Or if you prefer downloading the latest developmental version:
+
+```bash
+# Download Lussac in any directory you want.
+git clone https://github.com/BarbourLab/lussac.git --branch dev
+cd lussac
+
+# OPTIONAL: Use a conda environment.
+conda create -n lussac python=3.11  # Must be >= 3.10
+conda activate lussac
+
+# Install Lussac.
+pip install -e .[dev]
+
+# For the developmental version, you will likely need the latest developmental version of SpikeInterface
+git clone https://github.com/SpikeInterface/spikeinterface.git
+cd spikeinterface
+pip install -e .
+
+# If you want to check whether the installation was successful (optional)
+pytest
+```
+
+
+## Documentation
+
+You can find the documentation [here](https://lussac.readthedocs.io/).
+
+
+## Migration from Lussac1
+
+Lussac2 is not backwards-compatible with Lussac1.  We advise you to make a new conda environment, and to remake your `params.json` file (which is also not backwards-compatible).

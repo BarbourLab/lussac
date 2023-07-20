@@ -1,0 +1,325 @@
+{
+	"recording": {  // TODO: Fill out this section!!
+		"recording_extractor": "",
+		"extractor_params": {
+
+		}
+	},
+	"spike_sorting": {
+		"ks2_default": {
+			"sorter_name": "kilosort2",
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks2_default",
+				"delete_recording_dat": true
+			}
+		},
+		"ks2_5_best": {
+			"sorter_name": "kilosort2_5",
+			"preprocessing": {
+				"filter": {"band":  [300, 6000], "filter_order": 2, "ftype": "bessel"},
+				"common_reference": {"operator":  "median"}
+			},
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks2_5_best",
+				"projection_threshold": [8, 3],
+				"freq_min": 40,
+				"delete_recording_dat":  true
+			}
+		},
+		"ks3_default": {
+			"sorter_name": "kilosort3",
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks3_default",
+				"delete_recording_dat":  true
+			}
+		},
+		"ks2_cs": {
+			"sorter_name": "kilosort2",
+			"preprocessing": {
+				"filter": {"band":  [150, 2000], "filter_order": 3, "ftype": "bessel"}
+			},
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks2_cs",
+				"projection_threshold": [8, 3],
+				"freq_min": 40,
+				"delete_recording_dat":  true
+			}
+		},
+		"ks3_cs": {
+			"sorter_name": "kilosort3",
+			"preprocessing": {
+				"filter": {"band":  [150, 1000], "filter_order": 2, "ftype": "bessel"}
+			},
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks3_cs",
+				"projection_threshold": [8, 3],
+				"freq_min": 40,
+				"delete_recording_dat":  true
+			}
+		}
+	},
+	"analyses": {
+
+	},
+	"lussac": {
+		"tmp_folder": "$PARAMS_FOLDER/lussac2/tmp",
+		"logs_folder": "$PARAMS_FOLDER/lussac2/logs",
+		"si_global_job_kwargs": {
+			"n_jobs": 12,
+			"chunk_duration": "2s",
+			"progress_bar": false,
+			"verbose": false
+		},
+		"pipeline": {
+			"units_categorization": {
+				"all": {
+					"CS": {
+						"firing_rate": {
+							"min": 0.2,
+							"max": 5.0
+						},
+						"ISI_portion": {
+							"range": [10.0, 35.0],
+							"max": 0.05
+						}
+					},
+					"spikes": {
+						"firing_rate": {
+							"min": 1.0,
+							"max": 250.0
+						},
+						"contamination": {
+							"refractory_period": [0.3, 0.9],
+							"max": 0.35
+						}
+					}
+				}
+			},
+			"remove_bad_units_0": {  // Remove normal spikes from analyses dedicated to CS.
+				"spikes": {
+					"sortings": ["ks2_cs", "ks3_cs"],
+					"firing_rate": {
+						"max": 10.0
+					}
+				}
+			},
+			"remove_bad_units": {
+				"rest": {
+					"all": {}
+				},
+				"spikes": {
+					"amplitude": {
+						"filter": {
+							"band": [450, 9000],
+							"filter_order": 2,
+							"ftype": "bessel"
+						},
+						"min": 20,
+						"wvf_extraction": {
+							"ms_before": 2.0,
+							"ms_after": 2.0,
+							"max_spikes_per_unit": 1000
+						}
+					}
+				}
+			},
+			"align_units": {
+				"CS": {
+					"filter": [600, 6000],
+					"wvf_extraction": {
+						"ms_before": 1.5,
+						"ms_after": 2.5,
+						"max_spikes_per_unit": 1000
+					}
+				},
+				"spikes": {
+					"filter": [300, 8000],
+					"wvf_extraction": {
+						"ms_before": 1.5,
+						"ms_after": 1.5,
+						"max_spikes_per_unit": 1000
+					}
+				}
+			},
+			"remove_duplicated_spikes": {
+				"CS": {
+					"censored_period": 1.5
+				},
+				"spikes": {
+					"censored_period": 0.2
+				}
+			},
+			"remove_bad_units_2": {
+				"CS": {
+					"contamination": {
+						"refractory_period": [1.5, 30.0],
+						"max": 0.6
+					}
+				}
+			},
+			"remove_bad_units_3": {
+				"CS": {
+					"firing_rate": {
+						"min": 0.1,
+						"max": 3.0
+					},
+					"ISI_portion": {
+						"range": [1.0, 30.0],
+						"max": 0.04
+					}
+				}
+			},
+			"merge_units": {
+				"CS": {
+					"refractory_period": [1.5, 30.0],
+					"wvf_extraction": {
+						"ms_before": 1.5,
+						"ms_after": 3.5,
+						"max_spikes_per_unit": 2000,
+						"filter": {
+							"band": [150, 3000],
+							"filter_order": 2,
+							"ftype": "bessel"
+						}
+					},
+					"auto_merge_params": {
+						"minimum_spikes": 300,
+						"bin_ms": 0.05,
+						"window_ms": 400,
+						"sigma_smooth_ms": 10.0,
+						"corr_diff_thresh": 0.35,
+						"template_diff_thresh": 0.13,
+						"num_shift": 15,
+						"firing_contamination_balance": 2.5,
+						"censor_correlograms_ms": 0.8
+					}
+				},
+				"spikes": {
+					"refractory_period": [0.4, 0.9],
+					"wvf_extraction": {
+						"ms_before": 1.2,
+						"ms_after": 1.2,
+						"max_spikes_per_unit": 2000,
+						"filter": {
+							"band": [300, 6000],
+							"filter_order": 2,
+							"ftype": "bessel"
+						}
+					},
+					"auto_merge_params": {
+						"bin_ms": 0.05,
+						"window_ms": 75,
+						"corr_diff_thresh": 0.16,
+						"template_diff_thresh": 0.5
+					}
+				}
+			},
+			"remove_duplicated_spikes_2": {
+				"CS": {
+					"censored_period": 1.5
+				},
+				"spikes": {
+					"censored_period": 0.25
+				}
+			},
+			"export_to_phy_0": {
+				"all": {
+					"path": "$PARAMS_FOLDER/lussac2/post-processed_sortings",
+					"export_params": {
+
+					}
+				}
+			},
+			"merge_sortings": {
+				"CS": {
+					"refractory_period": [1.5, 30.0],
+					"max_shift": 1.0,
+					"require_multiple_sortings_match": false,
+					"similarity": {
+						"window": 0.5,
+						"min_similarity": 0.4
+					},
+					"correlogram_validation": {
+						"max_time": 400,
+						"max_difference": 0.35,
+						"gaussian_std": 10.0,
+						"gaussian_truncate": 5.0
+					}
+				},
+				"spikes": {
+					"refractory_period": [0.4, 0.9],
+					"similarity": {
+						"window": 0.14,
+						"min_similarity": 0.4
+					},
+					"correlogram_validation": {
+						"max_time": 75.0,
+						"max_difference": 0.14
+					}
+				}
+			},
+			"units_categorization_2": {
+				"all": {
+					"CS": {
+						"firing_rate": {
+							"min": 0.3,
+							"max": 3.0
+						},
+						"ISI_portion": {
+							"range": [5.0, 30.0],
+							"max": 0.025
+						}
+					},
+					"SS": {
+						"firing_rate": {
+							"min": 42.0,
+							"max": 250.0
+						},
+						"contamination": {
+							"refractory_period": [0.4, 2.0],
+							"max": 0.08
+						}
+					},
+					"spikes": {
+						"firing_rate": {
+							"min": 5.0,
+							"max": 250.0
+						},
+						"contamination": {
+							"refractory_period": [0.4, 0.9],
+							"max": 0.35
+						}
+					}
+				}
+			},
+			"remove_bad_units_4": {
+				"CS": {
+					"contamination": {
+						"refractory_period": [1.0, 30.0],
+						"max": 0.3
+					}
+				},
+				"spikes": {
+					"contamination": {
+						"refractory_period": [0.4, 0.9],
+						"max": 0.2
+					}
+				},
+				"rest": {
+					"all": {}
+				}
+			},
+			"find_purkinje_cells": {
+
+			},
+			"export_to_phy": {
+				"all": {
+					"path": "$PARAMS_FOLDER/lussac2/final_output",
+					"export_params": {
+
+					}
+				}
+			}
+		}
+	}
+}
