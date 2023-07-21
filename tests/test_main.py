@@ -6,6 +6,7 @@ import shutil
 from tqdm import tqdm
 import lussac.main
 from conftest import params_path
+import spikeinterface.core as si
 
 
 def test_dataset_exists(capsys):
@@ -14,7 +15,7 @@ def test_dataset_exists(capsys):
 			file_path = pathlib.Path(__file__).parent / "datasets" / "cerebellar_cortex.zip"
 			file_path.parent.mkdir(parents=True, exist_ok=True)
 
-			http_response = requests.get("https://zenodo.org/record/8171363/files/lussac2_cerebellar_cortex_dev.zip", stream=True)
+			http_response = requests.get("https://zenodo.org/record/8171929/files/lussac2_cerebellar_cortex_dev.zip", stream=True)
 			n_bytes = int(http_response.headers.get("content-length"))
 
 			with tqdm.wrapattr(open(file_path, 'wb'), "write", miniters=1, desc=f"Downloading {file_path.name}", total=n_bytes) as fout:
@@ -26,6 +27,11 @@ def test_dataset_exists(capsys):
 			shutil.unpack_archive(file_path, file_path.parent)
 			file_path.unlink()
 
+			zarr_folder = file_path.parent / "cerebellar_cortex" / "recording.zarr"
+			recording = si.ZarrRecordingExtractor(zarr_folder)
+			recording.save(format="binary", folder=zarr_folder.parent / "recording.bin", n_jobs=2, chunk_duration='2s')
+
+			print("")
 			print(pathlib.Path(__file__).relative_to(pathlib.Path(os.getcwd())), end=' ')  # To have a nice output in the console.
 
 	assert params_path.exists()
