@@ -39,10 +39,8 @@ conda activate lussac
 # Install Lussac.
 pip install -e .[dev]
 
-# For the developmental version, you will likely need the latest developmental version of SpikeInterface
-git clone https://github.com/SpikeInterface/spikeinterface.git
-cd spikeinterface
-pip install -e .
+# To upgrade Lussac.
+git pull
 
 # If you want to check whether the installation was successful (optional)
 pytest
