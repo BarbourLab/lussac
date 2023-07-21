@@ -73,7 +73,7 @@ class MergeSortings(MultiSortingsModule):
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
-		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'])
+		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'], params['require_multiple_sortings_match'])
 
 		if params['merge_check']:
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
@@ -84,7 +84,7 @@ class MergeSortings(MultiSortingsModule):
 		# self.clean_graph(graph)
 		self._save_graph(graph, "final_graph")
 
-		merged_sorting = self.merge_sortings(graph, params['refractory_period'], params['require_multiple_sortings_match'])
+		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
 
 		return {'merged_sorting': merged_sorting}
 
@@ -150,7 +150,7 @@ class MergeSortings(MultiSortingsModule):
 
 		return similarity_matrices
 
-	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], min_similarity: float) -> nx.Graph:
+	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], min_similarity: float, require_multi_sortings: bool) -> nx.Graph:
 		"""
 		Creates a graph containing all the units from all the sortings,
 		and edges between units that are similar.
@@ -159,6 +159,8 @@ class MergeSortings(MultiSortingsModule):
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
 		@param min_similarity: float
 			The minimal similarity between 2 units to add an edge in the graph.
+		@param require_multi_sortings: bool
+			If True, will remove all nodes that are not connected to anything.
 		@return graph: nx.Graph
 			The graph containing the edged for each pair of similar units.
 		"""
@@ -166,7 +168,7 @@ class MergeSortings(MultiSortingsModule):
 		graph = nx.Graph()
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
-				attr = {'connected': False, 'merged': False}
+				attr = {'merged': False}
 				for annotation_key in sorting.get_property_keys():
 					if annotation_key.startswith('gt_'):
 						attr[annotation_key] = sorting.get_unit_property(unit_id, annotation_key)
@@ -182,10 +184,14 @@ class MergeSortings(MultiSortingsModule):
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
 						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= min_similarity:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity, problem=False)
-							graph.add_node((name1, unit_id1), connected=True)
-							graph.add_node((name2, unit_id2), connected=True)
 
 		self._save_graph(graph, "similarity_graph")
+
+		if require_multi_sortings:
+			for node in dict(graph.nodes):
+				if len(graph.edges(node)) == 0:
+					graph.remove_node(node)
+
 		return graph
 
 	def _save_graph(self, graph: nx.Graph, name: str) -> None:
@@ -278,9 +284,8 @@ class MergeSortings(MultiSortingsModule):
 			logs.write("\nRemoved units:\n")
 			for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
 				attr = graph.nodes[node]
-				attr['connected'] = False  # Since we're removing all connections.
 				attr['merged'] = True
-				graph.remove_node(node)
+				graph.remove_node(node)  # Remove node then add id to remove all edges.
 				graph.add_node(node, **attr)
 
 				sorting_name, unit_id = node
@@ -408,7 +413,7 @@ class MergeSortings(MultiSortingsModule):
 				print(f"- corr_diff: {data['corr_diff']}")
 				print(f"- temp_diff: {data['temp_diff']}")"""
 
-	def merge_sortings(self, graph: nx.Graph, refractory_period, require_multi_sortings: bool) -> si.NpzSortingExtractor:
+	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
@@ -416,8 +421,6 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing all the units and connected by their similarity.
 		@param refractory_period: float
 			The (censored_period, refractory_period) in ms.
-		@param require_multi_sortings: bool
-			If True, only export a unit if it is connected to another unit from another sorting.
 		@return merged_sorting: si.NpzSortingExtractor
 			The merged sorting.
 		"""
@@ -430,10 +433,8 @@ class MergeSortings(MultiSortingsModule):
 
 		for nodes in nx.connected_components(graph):  # For each putative neuron.
 			nodes = list(nodes)
-			if len(nodes) == 1 and not graph.nodes[nodes[0]]['connected'] and require_multi_sortings:
-				continue
 
-			for node in nodes:
+			for node in nodes.copy():
 				if graph.nodes[node]['merged']:
 					nodes.remove(node)
 			if len(nodes) == 0:
