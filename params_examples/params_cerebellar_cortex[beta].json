@@ -70,6 +70,7 @@
 			"progress_bar": false,
 			"verbose": false
 		},
+		"overwrite_logs": false,
 		"pipeline": {
 			"units_categorization": {
 				"all": {

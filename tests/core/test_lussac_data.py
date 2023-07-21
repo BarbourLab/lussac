@@ -49,7 +49,7 @@ def test_sanity_check() -> None:
 	for name, sorting in sortings.items():
 		sorting.annotate(name=name if name != "wrong_name" else "uncorrect_name")
 
-	lussac_default_params = {'lussac': {'pipeline': {}, 'tmp_folder': "tests/tmp", 'logs_folder': "tests/tmp/logs"}}
+	lussac_default_params = {'lussac': {'pipeline': {}, 'tmp_folder': "tests/tmp", 'logs_folder': "tests/tmp/logs", 'overwrite_logs': False}}
 	LussacData(recording, {'correct': sortings['correct']}, lussac_default_params)
 
 	for name, sorting in sortings.items():
@@ -100,3 +100,5 @@ def test_logs(data: LussacData) -> None:
 	# TODO: Seems to not log when in pytest mode.
 	# with open(logs_file, 'r') as file:
 	# 	assert len(file.read()) > 2
+
+# TODO: Test 'overwrite_logs'.
