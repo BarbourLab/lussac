@@ -147,8 +147,9 @@ class LussacData:
 			for unit_id in sorting.unit_ids:
 				spike_train = sorting.get_unit_spike_train(unit_id)
 				assert np.all(np.diff(spike_train) >= 0)
-				assert spike_train[0] >= 0
-				assert spike_train[-1] < self.recording.get_num_frames()
+				if len(spike_train) > 0:
+					assert spike_train[0] >= 0
+					assert spike_train[-1] < self.recording.get_num_frames()
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
