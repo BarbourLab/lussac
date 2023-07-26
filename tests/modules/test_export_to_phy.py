@@ -46,7 +46,7 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 
 
 def test_empty_sorting(data: LussacData) -> None:
-	mono_sorting_data = MonoSortingData(data, si.NumpySorting.from_dict({}, sampling_frequency=30000))
+	mono_sorting_data = MonoSortingData(data, si.NumpySorting.from_unit_dict({}, sampling_frequency=30000))
 	module = ExportToPhy("test_etp_empty", mono_sorting_data, "all")
 	module.run(module.default_params)
 

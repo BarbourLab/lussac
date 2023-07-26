@@ -41,10 +41,10 @@ def test_sanity_check() -> None:
 	recording = recording.set_probe(probe)
 
 	sortings = {
-		'correct': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
-		'wrong_sf': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000),
-		'wrong_name': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
-		'negative_st': si.NumpySorting.from_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000)
+		'correct': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
+		'wrong_sf': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000),
+		'wrong_name': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
+		'negative_st': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000)
 	}
 	for name, sorting in sortings.items():
 		sorting.annotate(name=name if name != "wrong_name" else "uncorrect_name")

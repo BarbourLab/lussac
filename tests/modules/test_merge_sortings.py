@@ -40,9 +40,9 @@ def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> No
 
 def test_compute_graph(data: LussacData) -> None:
 	sortings = {
-		'1': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'2': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'3': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
+		'1': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
+		'2': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
+		'3': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
 	module = MergeSortings("merge_sortings", multi_sortings_data, "all")

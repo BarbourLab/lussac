@@ -35,7 +35,7 @@ def test_align_units(mono_sorting_data: MonoSortingData) -> None:
 
 
 def test_shift_sorting(data: LussacData) -> None:
-	sorting = si.NumpySorting.from_dict({0: np.array([5, data.recording.get_num_frames() - 5])}, sampling_frequency=data.recording.sampling_frequency)
+	sorting = si.NumpySorting.from_unit_dict({0: np.array([5, data.recording.get_num_frames() - 5])}, sampling_frequency=data.recording.sampling_frequency)
 
 	new_sorting = AlignUnits.shift_sorting(data.recording, sorting, {0: 2})
 	assert new_sorting.get_num_units() == 1

@@ -60,7 +60,7 @@ def test_plot_units(data: LussacData) -> None:
 	assert os.path.exists(f"{folder}/plot_units.html")
 	assert os.path.exists(f"{folder}/plot_units_all_channels.html")
 
-	empty_sorting = si.NumpySorting.from_dict({}, sampling_frequency=30000)
+	empty_sorting = si.NumpySorting.from_unit_dict({}, sampling_frequency=30000)
 	empty_wvf_extractor = si.extract_waveforms(data.recording, empty_sorting, mode="memory", allow_unfiltered=True)
 
 	utils.plot_units(empty_wvf_extractor, filepath=f"{folder}/plot_units_empty")
@@ -68,7 +68,7 @@ def test_plot_units(data: LussacData) -> None:
 
 
 def test_create_gt_annotations() -> None:
-	sorting = si.NumpySorting.from_dict({0: np.array([3, 60], dtype=np.int64), 1: np.array([90, 187, 601], dtype=np.int64)}, 30000)
+	sorting = si.NumpySorting.from_unit_dict({0: np.array([3, 60], dtype=np.int64), 1: np.array([90, 187, 601], dtype=np.int64)}, 30000)
 	assert len(utils.create_gt_annotations(sorting)) == 0
 
 	sorting.set_property(key="gt_label", values=['Good', 'Bad'])

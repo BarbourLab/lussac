@@ -158,7 +158,7 @@ def test_get_units_best_channels(template_extractor: TemplateExtractor) -> None:
 
 
 def test_empty_units(template_extractor: TemplateExtractor) -> None:
-	sorting = si.NumpySorting.from_dict({}, 30_000)  # Make sure it doesn't crash with no units
+	sorting = si.NumpySorting.from_unit_dict({}, 30_000)  # Make sure it doesn't crash with no units
 	te = TemplateExtractor(template_extractor.recording, sorting, template_extractor.folder, template_extractor.params)
 	templates = te.get_templates(return_scaled=True)
 	assert templates.shape == (0, te.nsamples, te.num_channels)

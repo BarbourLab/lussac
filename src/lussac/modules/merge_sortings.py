@@ -132,7 +132,7 @@ class MergeSortings(MultiSortingsModule):
 
 		similarity_matrices = {}
 		spike_vectors = {name: scur.remove_duplicated_spikes(sorting, censored_period).to_spike_vector() for name, sorting in self.sortings.items()}
-		n_spikes = {name: np.array(list(sorting.get_total_num_spikes().values())) for name, sorting in self.sortings.items()}
+		n_spikes = {name: np.array(list(sorting.count_num_spikes_per_unit().values())) for name, sorting in self.sortings.items()}
 
 		for name1, sorting1 in self.sortings.items():
 			similarity_matrices[name1] = {}
@@ -466,7 +466,7 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-		sorting = si.NumpySorting.from_dict(new_spike_trains, self.sampling_f)
+		sorting = si.NumpySorting.from_unit_dict(new_spike_trains, self.sampling_f)
 		filename = f"{self.logs_folder}/merged_sorting.npz"
 		si.NpzSortingExtractor.write_sorting(sorting, filename)
 

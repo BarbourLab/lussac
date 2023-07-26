@@ -145,8 +145,8 @@ def test_estimate_cross_contamination() -> None:
 
 def test_compute_coincidence_matrix() -> None:
 	# Test with known result.
-	sorting1 = si.NumpySorting.from_dict({0: np.array([18, 163, 622, 1197]), 1: np.array([161, 300, 894])}, sampling_frequency=30000)
-	sorting2 = si.NumpySorting.from_dict({0: np.array([120, 298, 303, 628]), 1: np.array([84, 532, 1092])}, sampling_frequency=30000)
+	sorting1 = si.NumpySorting.from_unit_dict({0: np.array([18, 163, 622, 1197]), 1: np.array([161, 300, 894])}, sampling_frequency=30000)
+	sorting2 = si.NumpySorting.from_unit_dict({0: np.array([120, 298, 303, 628]), 1: np.array([84, 532, 1092])}, sampling_frequency=30000)
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), 8)
 
 	assert coincidence_matrix[0, 0] == 1
@@ -161,8 +161,8 @@ def test_compute_coincidence_matrix() -> None:
 	n_spikes = int(round(t_max * f))
 	window = 5		# Number of samples.
 
-	sorting1 = si.NumpySorting.from_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
-	sorting2 = si.NumpySorting.from_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
+	sorting1 = si.NumpySorting.from_unit_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
+	sorting2 = si.NumpySorting.from_unit_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), window)
 
 	mean = n_spikes**2 * (2*window + 1) / T
@@ -173,8 +173,8 @@ def test_compute_coincidence_matrix() -> None:
 	assert mean - 2*std < np.mean(coincidence_matrix) < mean + 2*std
 
 	# Test with cross-shift.
-	sorting1 = si.NumpySorting.from_dict({0: np.array([100, 200, 400])}, sampling_frequency=sf)
-	sorting2 = si.NumpySorting.from_dict({0: np.array([106, 206, 406])}, sampling_frequency=sf)
+	sorting1 = si.NumpySorting.from_unit_dict({0: np.array([100, 200, 400])}, sampling_frequency=sf)
+	sorting2 = si.NumpySorting.from_unit_dict({0: np.array([106, 206, 406])}, sampling_frequency=sf)
 	cross_shift = np.array([[-6]])
 
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), 2, None)
@@ -187,10 +187,10 @@ def test_compute_coincidence_matrix() -> None:
 def test_compute_similarity_matrix() -> None:
 	# Test with known result.
 	window = 5
-	sorting1 = si.NumpySorting.from_dict({0: np.array([18, 163, 622, 1197]), 1: np.array([161, 300, 894])}, sampling_frequency=30000)
-	sorting2 = si.NumpySorting.from_dict({0: np.array([155, 304, 628]), 1: np.array([17, 164, 622])}, sampling_frequency=30000)
-	n_spikes1 = np.array(list(sorting1.get_total_num_spikes().values()))
-	n_spikes2 = np.array(list(sorting2.get_total_num_spikes().values()))
+	sorting1 = si.NumpySorting.from_unit_dict({0: np.array([18, 163, 622, 1197]), 1: np.array([161, 300, 894])}, sampling_frequency=30000)
+	sorting2 = si.NumpySorting.from_unit_dict({0: np.array([155, 304, 628]), 1: np.array([17, 164, 622])}, sampling_frequency=30000)
+	n_spikes1 = np.array(list(sorting1.count_num_spikes_per_unit().values()))
+	n_spikes2 = np.array(list(sorting2.count_num_spikes_per_unit().values()))
 
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), window)
 	similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2, window)
@@ -205,10 +205,10 @@ def test_compute_similarity_matrix() -> None:
 	n_spikes = int(round(t_max * f))
 	window = 5		# Number of samples.
 
-	sorting1 = si.NumpySorting.from_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
-	sorting2 = si.NumpySorting.from_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
-	n_spikes1 = np.array(list(sorting1.get_total_num_spikes().values()))
-	n_spikes2 = np.array(list(sorting2.get_total_num_spikes().values()))
+	sorting1 = si.NumpySorting.from_unit_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
+	sorting2 = si.NumpySorting.from_unit_dict({unit_id: np.sort(np.random.randint(low=0, high=T, size=n_spikes)) for unit_id in range(3)}, sf)
+	n_spikes1 = np.array(list(sorting1.count_num_spikes_per_unit().values()))
+	n_spikes2 = np.array(list(sorting2.count_num_spikes_per_unit().values()))
 
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), window)
 	similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
