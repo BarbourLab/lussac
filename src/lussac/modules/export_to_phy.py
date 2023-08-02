@@ -1,5 +1,6 @@
 import pathlib
 from typing import Any, Sequence
+import pandas as pd
 import numpy as np
 from overrides import override
 from lussac.core import LussacPipeline, MonoSortingModule
@@ -50,14 +51,18 @@ class ExportToPhy(MonoSortingModule):
 			params['export_params']['sparsity'] = si.compute_sparsity(wvf_extractor, **params['export_params']['sparsity'])
 
 		export_to_phy(wvf_extractor, output_folder, **params['export_params'])
+		new_unit_ids = pd.read_csv(output_folder / "cluster_si_unit_ids.tsv", delimiter='\t')
 
 		for property_name in self.sorting.get_property_keys():
 			if property_name.startswith('lussac_'):
-				self.write_tsv_file(output_folder / f"{property_name}.tsv", property_name, self.sorting.unit_ids, self.sorting.get_property(property_name))
+				unit_ids = new_unit_ids['si_unit_id'][np.argmax(new_unit_ids['cluster_id'].values == self.sorting.unit_ids[:, None], axis=1)].values
+				self.write_tsv_file(output_folder / f"{property_name}.tsv", property_name, unit_ids, self.sorting.get_property(property_name))
 
 		if 'estimate_contamination' in params:
 			estimated_cont = self._estimate_units_contamination(params['estimate_contamination'])
-			self.write_tsv_file(output_folder / "lussac_contamination.tsv", "lussac_cont (%)", list(estimated_cont.keys()), 100 * np.array(list(estimated_cont.values())))
+			unit_ids = np.array(list(estimated_cont.keys()))
+			unit_ids = new_unit_ids['si_unit_id'][np.argmax(new_unit_ids['cluster_id'].values == unit_ids[:, None], axis=1)].values
+			self.write_tsv_file(output_folder / "lussac_contamination.tsv", "lussac_cont (%)", unit_ids, 100 * np.array(list(estimated_cont.values())))
 
 		return self.sorting
 
