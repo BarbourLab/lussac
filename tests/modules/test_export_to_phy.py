@@ -20,7 +20,8 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 		'wvf_extraction': {
 			'ms_before': 1.0,
 			'ms_after': 2.0,
-			'max_spikes_per_unit': 10
+			'max_spikes_per_unit': 10,
+			'sparse': False
 		},
 		'export_params': {
 			'compute_pc_features': False,

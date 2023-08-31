@@ -1,5 +1,4 @@
 import os
-import copy
 import pickle
 import pytest
 import networkx as nx
@@ -62,7 +61,12 @@ def test_compute_graph(data: LussacData) -> None:
 		}
 	}
 
-	graph = module._compute_graph(similarity_matrices, min_similarity=0.4, require_multi_sortings=False)
+	p = {
+		'similarity': {'min_similarity': 0.4},
+		'require_multiple_sortings_match': False
+	}
+
+	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
 	assert graph.number_of_edges() == 6
 	assert graph.has_edge(('1', 0), ('2', 0))
@@ -74,9 +78,12 @@ def test_compute_graph(data: LussacData) -> None:
 		graph_loaded = pickle.load(file)
 		assert nx.is_isomorphic(graph, graph_loaded)
 
-	graph = module._compute_graph(similarity_matrices, min_similarity=0.4, require_multi_sortings=True)
+	p['require_multiple_sortings_match'] = True
+	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 6  # Nodes not connected are removed.
 	assert graph.number_of_edges() == 6
+
+	# TODO: Test gt attributes.
 
 
 def test_graph(merge_sortings_module: MergeSortings) -> None:

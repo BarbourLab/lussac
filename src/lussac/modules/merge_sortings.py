@@ -27,6 +27,7 @@ class MergeSortings(MultiSortingsModule):
 			'refractory_period': [0.2, 1.0],
 			'max_shift': 1.33,
 			'require_multiple_sortings_match': True,
+			'max_units_merge': 1,
 			'similarity': {
 				'min_similarity': 0.3,
 				'window': 0.2
@@ -73,18 +74,18 @@ class MergeSortings(MultiSortingsModule):
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
-		graph = self._compute_graph(similarity_matrices, params['similarity']['min_similarity'], params['require_multiple_sortings_match'])
+		graph = self._compute_graph(similarity_matrices, params)
 
 		if params['merge_check']:
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
 		if params['correlogram_validation']:
 			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		# if params['waveform_validation']:
-		# 	self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
-		# self.clean_graph(graph)
+		if params['waveform_validation']:
+			self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+		self.clean_graph(graph, params)
 		self._save_graph(graph, "final_graph")
 
-		merged_sorting = self.merge_sortings(graph, params['refractory_period'])
+		merged_sorting = self.merge_sortings(graph, params)
 
 		return {'merged_sorting': merged_sorting}
 
@@ -150,17 +151,15 @@ class MergeSortings(MultiSortingsModule):
 
 		return similarity_matrices
 
-	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], min_similarity: float, require_multi_sortings: bool) -> nx.Graph:
+	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], params: dict) -> nx.Graph:
 		"""
 		Creates a graph containing all the units from all the sortings,
 		and edges between units that are similar.
 
 		@param similarity_matrices: dict[str, dict[str, np.ndarray]]
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
-		@param min_similarity: float
-			The minimal similarity between 2 units to add an edge in the graph.
-		@param require_multi_sortings: bool
-			If True, will remove all nodes that are not connected to anything.
+		@param params: dict
+			The parameters of the merge_sorting module.
 		@return graph: nx.Graph
 			The graph containing the edged for each pair of similar units.
 		"""
@@ -168,11 +167,7 @@ class MergeSortings(MultiSortingsModule):
 		graph = nx.Graph()
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
-				attr = {'merged': False}
-				for annotation_key in sorting.get_property_keys():
-					if annotation_key.startswith('gt_'):
-						attr[annotation_key] = sorting.get_unit_property(unit_id, annotation_key)
-
+				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
 				graph.add_node((name, unit_id), **attr)
 
 		for i, (name1, sorting1) in enumerate(self.sortings.items()):
@@ -182,16 +177,15 @@ class MergeSortings(MultiSortingsModule):
 
 				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
-						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= min_similarity:
+						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= params['similarity']['min_similarity']:
 							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity, problem=False)
 
-		self._save_graph(graph, "similarity_graph")
-
-		if require_multi_sortings:
+		if params['require_multiple_sortings_match']:
 			for node in dict(graph.nodes):
 				if len(graph.edges(node)) == 0:
 					graph.remove_node(node)
 
+		self._save_graph(graph, "similarity_graph")
 		return graph
 
 	def _save_graph(self, graph: nx.Graph, name: str) -> None:
@@ -258,6 +252,7 @@ class MergeSortings(MultiSortingsModule):
 					continue
 
 				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
+				C = utils.estimate_contamination(spike_train, refractory_period)
 				cross_cont1, p_value1 = utils.estimate_cross_contamination(spike_train1, spike_train, refractory_period, limit=0.1)
 				cross_cont2, p_value2 = utils.estimate_cross_contamination(spike_train2, spike_train, refractory_period, limit=0.1)
 				p_value1, p_value2 = 1 - p_value1, 1 - p_value2  # Reverse the p-values because we want to know the probability <= and not >=.
@@ -266,16 +261,16 @@ class MergeSortings(MultiSortingsModule):
 				logs.write(f"\tcheck2 = {cross_cont2:.2%} (p_value={p_value2:.3f})\n")
 
 				if p_value1 < 1e-3:  # node2 is the problematic unit.
-					if node2 not in nodes_to_remove:
+					if node2 not in nodes_to_remove and C2 > C + 0.02:
 						nodes_to_remove.append(node2)
 						logs.write(f"\t-> Unit {node2} is considered a problematic unit.\n")
 					continue
 				elif p_value2 < 1e-3:  # node1 is the problematic unit.
-					if node1 not in nodes_to_remove:
+					if node1 not in nodes_to_remove and C1 > C + 0.02:
 						nodes_to_remove.append(node1)
 						logs.write(f"\t-> Unit {node1} is considered a problematic unit.\n")
 					continue
-				elif min(C1, C2) < 0.1:  # node is probably a merged unit.
+				elif min(C1, C2) < 0.1 and C > min(C1, C2) + 0.02:  # node is probably a merged unit.
 					if node not in nodes_to_remove:
 						nodes_to_remove.append(node)
 						logs.write(f"\t-> Unit {node} is considered a merged unit.\n")
@@ -283,10 +278,7 @@ class MergeSortings(MultiSortingsModule):
 		if len(nodes_to_remove) > 0:
 			logs.write("\nRemoved units:\n")
 			for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
-				attr = graph.nodes[node]
-				attr['merged'] = True
-				graph.remove_node(node)  # Remove node then add id to remove all edges.
-				graph.add_node(node, **attr)
+				graph.remove_node(node)
 
 				sorting_name, unit_id = node
 				label = f" -- {self.sortings[sorting_name].get_unit_property(unit_id, 'gt_label')}" if 'gt_label' in self.sortings[sorting_name].get_property_keys() else ''
@@ -389,63 +381,66 @@ class MergeSortings(MultiSortingsModule):
 			template_diff = np.sum(np.abs(template1 - template2)) / np.sum(np.abs(template1) + np.abs(template2))
 			graph[node1][node2]['temp_diff'] = template_diff
 
-	def clean_graph(self, graph: nx.Graph) -> None:  # pragma: no cover (not implemented yet)
+	def clean_graph(self, graph: nx.Graph, params: dict) -> None:  # pragma: no cover (not implemented yet)
 		"""
 		TODO
 
 		@param graph:
+		@param params:
 		@return:
 		"""
 
+		nodes_to_remove = []
+
 		for node1, node2, data in list(graph.edges(data=True)):
-			if 'corr_diff' not in data or 'temp_diff' not in data:
-				break
+			if node1 in nodes_to_remove or node2 in nodes_to_remove:
+				continue
 
-			if data['corr_diff'] > 0.25 or data['temp_diff'] > 0.20:
-				# graph.remove_edge(node1, node2)
+			if 'corr_diff' not in data and 'temp_diff' not in data:
+				continue
+
+			if ('corr_diff' in data and data['corr_diff'] > 0.25) or ('temp_diff' in data and data['temp_diff'] > 0.20):
 				data['problem'] = True
-				"""sorting1_name, unit_id1 = node1
+				sorting1_name, unit_id1 = node1
 				sorting2_name, unit_id2 = node2
-				gt_label1 = self.sortings[sorting1_name].get_unit_property(unit_id1, 'gt_label')
-				gt_label2 = self.sortings[sorting2_name].get_unit_property(unit_id2, 'gt_label')
-				print(f"Edge {sorting1_name}:{unit_id1} - {sorting2_name}:{unit_id2}")
-				print(f"- labels: {gt_label1} - {gt_label2}")
-				print(f"- corr_diff: {data['corr_diff']}")
-				print(f"- temp_diff: {data['temp_diff']}")"""
 
-	def merge_sortings(self, graph: nx.Graph, refractory_period) -> si.NpzSortingExtractor:
+				C1 = utils.estimate_contamination(self.sortings[sorting1_name].get_unit_spike_train(unit_id1), refractory_period=params['refractory_period'])
+				C2 = utils.estimate_contamination(self.sortings[sorting2_name].get_unit_spike_train(unit_id2), refractory_period=params['refractory_period'])
+
+				if C1 > C2 + 0.04:
+					nodes_to_remove.append(node1)
+				elif C2 > C1 + 0.04:
+					nodes_to_remove.append(node2)
+
+		for node in nodes_to_remove:
+			graph.remove_node(node)
+
+	def merge_sortings(self, graph: nx.Graph, params: dict) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
-		@param refractory_period: float
-			The (censored_period, refractory_period) in ms.
+		@param params: dict
+			The parameters of the merge_sorting module.
 		@return merged_sorting: si.NpzSortingExtractor
 			The merged sorting.
 		"""
 
-		max_units_merge = 1
 		k = 2.5
-		t_c = int(round(refractory_period[0] * 1e-3 * self.recording.sampling_frequency))
+		t_c = int(round(params['refractory_period'][0] * 1e-3 * self.recording.sampling_frequency))
 		new_spike_trains = {}
 		logs = open(f"{self.logs_folder}/merge_sortings_logs.txt", 'w+')
 
 		for nodes in nx.connected_components(graph):  # For each putative neuron.
 			nodes = list(nodes)
 
-			for node in nodes.copy():
-				if graph.nodes[node]['merged']:
-					nodes.remove(node)
-			if len(nodes) == 0:
-				continue
-
 			new_unit_id = len(new_spike_trains)
 			best_score = -100000
 			unit_label = ""
 			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
 
-			for n_units in range(1, max_units_merge+1):
+			for n_units in range(1, params['max_units_merge']+1):
 				for sub_nodes in itertools.combinations(nodes, n_units):
 					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
 					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
@@ -453,7 +448,7 @@ class MergeSortings(MultiSortingsModule):
 					spike_train = np.delete(spike_train, indices_of_duplicates)
 
 					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
-					C = utils.estimate_contamination(spike_train, refractory_period)
+					C = utils.estimate_contamination(spike_train, params['refractory_period'])
 					score = f * (1 - (k+1)*C)
 					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]\n")
 
