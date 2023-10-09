@@ -26,6 +26,7 @@ class MergeUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.5,
 				'max_spikes_per_unit': 2_000,
+				'sparse': False,
 				'filter': {
 					'band': [100, 9000],
 					'filter_order': 2,
