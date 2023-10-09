@@ -149,9 +149,9 @@ def test_split_sorting(data: LussacData) -> None:
 
 
 def test_merge_sortings() -> None:
-	sorting1 = si.NumpySorting(30000, [0, 1, 3])
-	sorting2 = si.NumpySorting(30000, [5, 2, 9])
-	sorting3 = si.NumpySorting(30000, [1, 0, 6])
+	sorting1 = si.NumpySorting(np.array([]), 30000, [0, 1, 3])
+	sorting2 = si.NumpySorting(np.array([]), 30000, [5, 2, 9])
+	sorting3 = si.NumpySorting(np.array([]), 30000, [1, 0, 6])
 
 	sorting1.annotate(name="test")
 	sorting2.annotate(name="test")

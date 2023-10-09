@@ -70,6 +70,7 @@
 			"progress_bar": false,
 			"verbose": false
 		},
+		"overwrite_logs": false,
 		"pipeline": {
 			"units_categorization": {
 				"all": {
@@ -98,9 +99,7 @@
 			"remove_bad_units_0": {  // Remove normal spikes from analyses dedicated to CS.
 				"spikes": {
 					"sortings": ["ks2_cs", "ks3_cs"],
-					"firing_rate": {
-						"max": 10.0
-					}
+					"all": {}
 				}
 			},
 			"remove_bad_units": {

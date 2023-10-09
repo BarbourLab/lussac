@@ -220,7 +220,7 @@ WIP
 
 
 The :code:`find_purkinje_cells` module
----------------------------------
+--------------------------------------
 
 | This module is only meant for cerebellar cortex recordings. It will link simple spikes and complex spikes coming from the same Purkinje cell, and set it as a property :code:`lussac_purkinje` (this property is automatically exported in the :code:`export_to_phy` module).
 | TODO: Explain how it works.
@@ -235,7 +235,7 @@ This module's parameters are:
 
 
 Example of finding Purkinje cells
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: json
 
@@ -280,11 +280,11 @@ Example of export to phy
 				"compute_pc_features": false,
 				"copy_binary": false,
 				"template_mode": "average",
-				'sparsity': {
+				"sparsity": {
 					"method": "radius",
 					"radius_um": 75.0
 				},
-				"verbose": False
+				"verbose": false
 			},
 			"estimate_contamination": {
 				"all": [0.3, 1.0]

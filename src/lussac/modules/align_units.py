@@ -6,6 +6,7 @@ import scipy.signal
 from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
+import spikeinterface.curation as scur
 import spikeinterface.postprocessing as spost
 
 
@@ -37,7 +38,27 @@ class AlignUnits(MonoSortingModule):
 		shifts = self.get_units_shift(templates, wvf_extractor.nbefore - margin, params['threshold'], params['check_next'])
 		self._plot_alignment(templates, wvf_extractor.nbefore - margin, shifts, params['threshold'])
 
-		return spost.align_sorting(self.sorting, {self.sorting.unit_ids[i]: -shifts[i] for i in range(len(shifts))})
+		return self.shift_sorting(self.recording, self.sorting, {self.sorting.unit_ids[i]: -shifts[i] for i in range(len(shifts))})
+
+	@staticmethod
+	def shift_sorting(recording: si.BaseRecording, sorting: si.BaseSorting, shift: dict[Any, int]) -> si.BaseSorting:
+		"""
+		Shifts the spike train of the sorting by shift time samples.
+
+		@param recording: si.BaseRecording
+			The recording object (needed to check for spike going over the edges).
+		@param sorting: si.BaseSorting
+			The sorting to shift.
+		@param shift: dict[Any, int]
+			A dict mapping the unit id to its shift.
+		@return aligned_sorting: si.BaseSorting
+			The shifted sorting.
+		"""
+
+		aligned_sorting = spost.align_sorting(sorting, shift)
+		aligned_sorting = scur.remove_excess_spikes(aligned_sorting, recording)
+
+		return aligned_sorting
 
 	@staticmethod
 	def get_units_shift(templates: np.ndarray, nbefore: int, threshold: float, check_next: int) -> np.ndarray:

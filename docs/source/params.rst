@@ -191,11 +191,12 @@ This :code:`dict` maps the analysis name to its location. For example:
 The :code:`lussac` section
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section contains all the information needed for Lussac to know what to do with your data (i.e. post-processing and merging of multiple analyses). It is divided into 4 keys:
+This section contains all the information needed for Lussac to know what to do with your data (i.e. post-processing and merging of multiple analyses). It is divided into 5 keys:
 
 - :code:`logs_folder`: the path where to store the logs for Lussac (you will be able to inspect what Lussac did in this folder). If the directory doesn't exist, Lussac will create it. If the directory already exists and contains information about a previous run, Lussac will load this information (if a previous run crashed, Lussac will pick up where it left off).
 - :code:`tmp_folder`: the path to the temporary directory. To not load everything in memory, Lussac needs to write some information on the disk (preferentially a fast SSD rather than an HDD). The directory will be created by Lussac and removed at the end of the run.
 - :code:`si_global_job_kwargs`: some global keyword arguments for SpikeInterface (such as number of jobs, chunking ...). See example below.
+- :code:`overwrite_logs`: If :code:`true`, will delete the old logs (if they exist) and start from scratch (i.e. not loading from a previous run).
 - :code:`pipeline`: a dictionary containing what modules to run and in which order. See the next section below.
 
 

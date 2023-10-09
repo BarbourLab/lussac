@@ -2,8 +2,9 @@ import copy
 import os
 import numpy as np
 import pandas as pd
-from lussac.core import LussacPipeline, MonoSortingData
+from lussac.core import LussacData, LussacPipeline, MonoSortingData
 from lussac.modules import ExportToPhy
+import spikeinterface.core as si
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:
@@ -19,7 +20,8 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 		'wvf_extraction': {
 			'ms_before': 1.0,
 			'ms_after': 2.0,
-			'max_spikes_per_unit': 10
+			'max_spikes_per_unit': 10,
+			'sparse': False
 		},
 		'export_params': {
 			'compute_pc_features': False,
@@ -42,6 +44,12 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	assert os.path.exists(f"{folder}/ks2_best/spike_times.npy")
 	assert os.path.exists(f"{folder}/ms3_cs/spike_times.npy")
 	assert not os.path.exists(f"{folder}/ks2_cs/spike_times.npy")
+
+
+def test_empty_sorting(data: LussacData) -> None:
+	mono_sorting_data = MonoSortingData(data, si.NumpySorting.from_unit_dict({}, sampling_frequency=30000))
+	module = ExportToPhy("test_etp_empty", mono_sorting_data, "all")
+	module.run(module.default_params)
 
 
 def test_format_output_path(mono_sorting_data: MonoSortingData) -> None:

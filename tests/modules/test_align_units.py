@@ -1,7 +1,8 @@
 import os
 import numpy as np
-from lussac.core import MonoSortingData
+from lussac.core import LussacData, MonoSortingData
 from lussac.modules import AlignUnits
+import spikeinterface.core as si
 
 
 params = {
@@ -31,6 +32,18 @@ def test_align_units(mono_sorting_data: MonoSortingData) -> None:
 	assert os.path.exists(f"{module.logs_folder}/alignment.html")
 
 	assert sorting.get_num_units() == data.sorting.get_num_units()
+
+
+def test_shift_sorting(data: LussacData) -> None:
+	sorting = si.NumpySorting.from_unit_dict({0: np.array([5, data.recording.get_num_frames() - 5])}, sampling_frequency=data.recording.sampling_frequency)
+
+	new_sorting = AlignUnits.shift_sorting(data.recording, sorting, {0: 2})
+	assert new_sorting.get_num_units() == 1
+	assert np.all(new_sorting.get_unit_spike_train(0) == (3, data.recording.get_num_frames() - 7))
+
+	# Test that spikes over the edges are deleted.
+	assert AlignUnits.shift_sorting(data.recording, sorting, {0: 10}).get_num_units() == 1
+	assert AlignUnits.shift_sorting(data.recording, sorting, {0: -10}).get_num_units() == 1
 
 
 def test_get_units_shift() -> None:

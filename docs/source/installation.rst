@@ -11,7 +11,7 @@ It is recommended to install :code:`lussac` in an environment, such as conda:
 
 
 |:spider_web:| Installing from PyPi
-----------------------------------
+-----------------------------------
 
 You can install :code:`lussac` directly from PyPi using pip:
 

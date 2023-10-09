@@ -1,5 +1,4 @@
 import os
-import copy
 import pickle
 import pytest
 import networkx as nx
@@ -40,9 +39,9 @@ def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> No
 
 def test_compute_graph(data: LussacData) -> None:
 	sortings = {
-		'1': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'2': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'3': si.NumpySorting.from_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
+		'1': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
+		'2': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
+		'3': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
 	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
@@ -62,8 +61,12 @@ def test_compute_graph(data: LussacData) -> None:
 		}
 	}
 
-	graph = module._compute_graph(similarity_matrices, min_similarity=0.4)
+	p = {
+		'similarity': {'min_similarity': 0.4},
+		'require_multiple_sortings_match': False
+	}
 
+	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
 	assert graph.number_of_edges() == 6
 	assert graph.has_edge(('1', 0), ('2', 0))
@@ -74,6 +77,13 @@ def test_compute_graph(data: LussacData) -> None:
 	with open(f"{module.logs_folder}/similarity_graph.pkl", 'rb') as file:
 		graph_loaded = pickle.load(file)
 		assert nx.is_isomorphic(graph, graph_loaded)
+
+	p['require_multiple_sortings_match'] = True
+	graph = module._compute_graph(similarity_matrices, p)
+	assert graph.number_of_nodes() == 6  # Nodes not connected are removed.
+	assert graph.number_of_edges() == 6
+
+	# TODO: Test gt attributes.
 
 
 def test_graph(merge_sortings_module: MergeSortings) -> None:

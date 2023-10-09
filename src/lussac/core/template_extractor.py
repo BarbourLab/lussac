@@ -320,7 +320,7 @@ class TemplateExtractor:
 				spike_train = sorting.get_unit_spike_train(unit_id)
 				n_spikes = min(len(spike_train), self.params['max_spikes_per_unit'])
 				selected_spikes[unit_id] = np.sort(np.random.choice(spike_train, n_spikes, replace=False))
-			spike_vector = si.NumpySorting.from_dict(selected_spikes, self.sampling_frequency).to_spike_vector()
+			spike_vector = si.NumpySorting.from_unit_dict(selected_spikes, self.sampling_frequency).to_spike_vector()
 
 		(self.folder / "waveforms").mkdir(exist_ok=True, parents=True)
 		wvfs = si.extract_waveforms_to_buffers(recording, spike_vector, sorting.unit_ids, self.nbefore, 1 + self.nafter, mode="memmap",

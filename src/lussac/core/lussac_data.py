@@ -1,8 +1,9 @@
+import copy
 import logging
 import os
 import pathlib
+import shutil
 import sys
-import copy
 import tempfile
 from dataclasses import dataclass
 import numba
@@ -52,7 +53,7 @@ class LussacData:
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
-		self._setup_logs_directory(params['lussac']['logs_folder'])
+		self._setup_logs_directory(params['lussac']['logs_folder'], params['lussac']['overwrite_logs'])
 
 		if 'si_global_job_kwargs' in params['lussac']:
 			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
@@ -146,8 +147,9 @@ class LussacData:
 			for unit_id in sorting.unit_ids:
 				spike_train = sorting.get_unit_spike_train(unit_id)
 				assert np.all(np.diff(spike_train) >= 0)
-				assert spike_train[0] >= 0
-				assert spike_train[-1] < self.recording.get_num_frames()
+				if len(spike_train) > 0:
+					assert spike_train[0] >= 0
+					assert spike_train[-1] < self.recording.get_num_frames()
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
@@ -263,13 +265,18 @@ class LussacData:
 		return tmp_dir
 
 	@staticmethod
-	def _setup_logs_directory(folder_path: str) -> None:
+	def _setup_logs_directory(folder_path: str, overwrite_logs: bool = False) -> None:
 		"""
 		Sets up the folder containing Lussac's logs.
 
 		@param folder_path: str
 			Path for the logs directory.
+		@param overwrite_logs: bool
+			If True, will erase the logs folder if it already exists.
 		"""
+
+		if overwrite_logs and os.path.exists(folder_path):
+			shutil.rmtree(folder_path)
 
 		os.makedirs(folder_path, exist_ok=True)
 
