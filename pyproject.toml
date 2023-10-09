@@ -31,6 +31,7 @@ lussac = "lussac.main:main"
 
 [project.optional-dependencies]
 dev = [
+	"spikeinterface@git+https://github.com/SpikeInterface/spikeinterface.git",
 	"pytest>=7.1.3",
 	"pytest-cov>=4.0.0",
 	"matplotlib",
@@ -79,5 +80,5 @@ testpaths = ["tests/"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["lussac"]
+include = ["lussac*"]
 namespaces = false
