@@ -23,7 +23,8 @@ class ExportToPhy(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 1.0,
 				'ms_after': 3.0,
-				'max_spikes_per_unit': 1_000
+				'max_spikes_per_unit': 1_000,
+				'sparse': False
 			},
 			'export_params': {
 				'compute_amplitudes': True,
