@@ -56,7 +56,7 @@ class ExportToPhy(MonoSortingModule):
 
 		for property_name in self.sorting.get_property_keys():
 			if property_name.startswith('lussac_'):
-				unit_ids = new_unit_ids['si_unit_id'][np.argmax(new_unit_ids['cluster_id'].values == self.sorting.unit_ids[:, None], axis=1)].values
+				unit_ids = new_unit_ids['cluster_id'][np.argmax(new_unit_ids['si_unit_id'].values == self.sorting.unit_ids[:, None], axis=1)].values
 				self.write_tsv_file(output_folder / f"{property_name}.tsv", property_name, unit_ids, self.sorting.get_property(property_name))
 
 		if 'estimate_contamination' in params:
