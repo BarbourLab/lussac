@@ -58,12 +58,12 @@ def test_merge_dict() -> None:
 	assert np.all(d4_keys == ('a', 'b', 'c', 2, 1))
 
 
-def test_binom_cdf() -> None:
+def test_binom_sf() -> None:
 	x, n, p = 3, 30.5, 0.1
-	res = 0.635629357849
+	res = 1 - 0.635629357849
 
-	assert math.isclose(utils.binom_cdf(x, math.floor(n), p), scipy.stats.binom.cdf(x, math.floor(n), p), rel_tol=1e-5, abs_tol=1e-5)
-	assert math.isclose(utils.binom_cdf(x, n, p), res, rel_tol=1e-5, abs_tol=1e-5)
+	assert math.isclose(utils.binom_sf(x, math.floor(n), p), scipy.stats.binom.sf(x, math.floor(n), p), rel_tol=1e-5, abs_tol=1e-5)
+	assert math.isclose(utils.binom_sf(x, n, p), res, rel_tol=1e-5, abs_tol=1e-5)
 
 
 def test_gaussian_histogram() -> None:

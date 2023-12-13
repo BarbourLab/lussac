@@ -115,11 +115,16 @@ def merge_dict(d1: dict, d2: dict) -> dict:
 	return res
 
 
-def binom_cdf(x: int, n: float, p: float) -> float:
+def binom_sf(x: int, n: float, p: float) -> float:
+	"""
+	TODO
+	sf = survival function (1 - cdf).
+	"""
+
 	n_array = np.arange(math.floor(n-2), math.ceil(n+3), 1)
 	n_array = n_array[n_array >= 1]
 
-	res = [scipy.stats.binom.cdf(x, n_, p) for n_ in n_array]
+	res = [scipy.stats.binom.sf(x, n_, p) for n_ in n_array]
 	f = scipy.interpolate.interp1d(n_array, res, kind="quadratic")
 
 	return f(n)
@@ -227,7 +232,7 @@ def estimate_contamination(spike_train: np.ndarray, refractory_period: tuple[flo
 
 
 def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndarray,
-								 refractory_period: tuple[float, float], limit: float = 0.3) -> tuple[float, float]:
+								 refractory_period: tuple[float, float], limit: float | None = None) -> tuple[float, float]:
 	"""
 	Estimates the cross-contamination of the second spike train with the neuron of the first spike train.
 	Also performs a statistical test to check if the cross-contamination is significantly higher than a given limit.
@@ -238,10 +243,11 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 		The spike train of the second unit.
 	@param refractory_period: tuple[float, float]
 		The censored and refractory period (t_c, t_r) used (in ms).
-	@param limit: float
+	@param limit: float | None
 		The higher limit of cross-contamination for the statistical test.
-	@return (estimated_cross_cont, p_value): tuple[float, float]
-		Returns the estimation of cross-contamination, as well as the p-value of the statistical test.
+	@return (estimated_cross_cont, p_value): tuple[float, float] if limit is not None
+			estimated_cross_cont: float if limit is None
+		Returns the estimation of cross-contamination, as well as the p-value of the statistical test if the limit is given.
 	"""
 	spike_train1 = spike_train1.astype(np.int64)
 	spike_train2 = spike_train2.astype(np.int64)
@@ -256,10 +262,13 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 
 	estimation = 1 - ((n_violations * Utils.t_max) / (2*N1*N2 * t_r) - 1) / (C1 - 1) if C1 != 1.0 else -np.inf
 
+	if limit is None:
+		return estimation
+
 	# n and p for the binomial law for the number of coincidence (under the hypothesis of cross-contamination = limit).
 	n = N1 * N2 * ((1 - C1) * limit + C1)
 	p = 2 * t_r / Utils.t_max
-	p_value = 1 - binom_cdf(n_violations - 1, n, p)
+	p_value = binom_sf(n_violations - 1, n, p)
 	if np.isnan(p_value):  # pragma: no cover (should be unreachable).
 		raise ValueError(f"Could not compute p-value for cross-contamination:\n\tn_violations = {n_violations}\n\tn = {n}\n\tp = {p}")
 
