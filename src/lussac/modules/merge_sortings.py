@@ -2,6 +2,7 @@ import copy
 import itertools
 import math
 import pickle
+import shutil
 from typing import Any
 from overrides import override
 import networkx as nx
@@ -12,7 +13,9 @@ import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 from spikeinterface.curation.curation_tools import find_duplicated_spikes
+import spikeinterface.preprocessing as spre
 import spikeinterface.postprocessing as spost
+import spikeinterface.qualitymetrics as sqm
 
 
 class MergeSortings(MultiSortingsModule):
@@ -58,14 +61,14 @@ class MergeSortings(MultiSortingsModule):
 	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
 		params = super().update_params(params)
 
+		assert params['max_shift'] < params['waveform_validation']['margin_ms']
+
 		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
-		if 'correlogram_validation' in params and isinstance(params['correlogram_validation'], dict):
-			params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
-			params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
-			params['correlogram_validation']['censored_period'] = params['similarity']['window']
-		if 'waveform_validation' in params and isinstance(params['waveform_validation'], dict):
-			params['waveform_validation']['margin_ms'] = max(1.0, params['waveform_validation']['margin_ms'])
+		params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
+		params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
+		params['correlogram_validation']['censored_period'] = params['similarity']['window']
+		params['waveform_validation']['margin_ms'] = max(1.0, params['waveform_validation']['margin_ms'])
 
 		return params
 
@@ -75,13 +78,11 @@ class MergeSortings(MultiSortingsModule):
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
 		graph = self._compute_graph(similarity_matrices, params)
+		self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
+		self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
 
 		if params['merge_check']:
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
-		if params['correlogram_validation']:
-			self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		if params['waveform_validation']:
-			self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
 		self.clean_graph(graph, params)
 		self._save_graph(graph, "final_graph")
 
@@ -164,12 +165,29 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing the edged for each pair of similar units.
 		"""
 
+		censored_period, refractory_period = params['refractory_period']
+		min_f, max_f = params['waveform_validation']['filter']
+		recording_f = spre.gaussian_bandpass_filter(self.recording, freq_min=min_f, freq_max=max_f)
+
+		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()
 		for (name, sorting) in self.sortings.items():
+			if sorting.get_num_units() == 0: continue
+			wvf_extractor = si.extract_waveforms(recording_f, sorting, folder=self.tmp_folder / f"wvfs_{name}", ms_before=1.5, ms_after=1.5, max_spikes_per_unit=150, sparse=False)
+			spost.compute_spike_amplitudes(wvf_extractor, peak_sign="both", return_scaled=recording_f.has_scaled())
+			contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
+			# sd_ratio = sqm.compute_sd_ratio(wvf_extractor)
+
 			for unit_id in sorting.unit_ids:
 				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
+				attr['contamination'] = contamination[unit_id]
+				# attr['sd_ratio'] = sd_ratio[unit_id]
 				graph.add_node((name, unit_id), **attr)
 
+			del wvf_extractor
+			shutil.rmtree(self.tmp_folder / f"wvfs_{name}")
+
+		# Connecting nodes using the similarity.
 		for i, (name1, sorting1) in enumerate(self.sortings.items()):
 			for j, (name2, sorting2) in enumerate(self.sortings.items()):
 				if j <= i:
@@ -239,8 +257,8 @@ class MergeSortings(MultiSortingsModule):
 
 				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1) + cross_shifts[sorting_name][sorting1_name][unit_ind, unit_ind1]
 				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2) + cross_shifts[sorting_name][sorting2_name][unit_ind, unit_ind2]
-				C1 = utils.estimate_contamination(spike_train1, refractory_period)
-				C2 = utils.estimate_contamination(spike_train2, refractory_period)
+				C1 = graph.nodes[(sorting1_name, unit_id1)]['contamination']
+				C2 = graph.nodes[(sorting2_name, unit_id2)]['contamination']
 				if C2 < C1:
 					spike_train1, spike_train2 = spike_train2, spike_train1
 				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
@@ -252,7 +270,7 @@ class MergeSortings(MultiSortingsModule):
 					continue
 
 				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
-				C = utils.estimate_contamination(spike_train, refractory_period)
+				C = graph.nodes[(sorting_name, unit_id)]['contamination']
 				cross_cont1, p_value1 = utils.estimate_cross_contamination(spike_train1, spike_train, refractory_period, limit=0.1)
 				cross_cont2, p_value2 = utils.estimate_cross_contamination(spike_train2, spike_train, refractory_period, limit=0.1)
 				p_value1, p_value2 = 1 - p_value1, 1 - p_value2  # Reverse the p-values because we want to know the probability <= and not >=.
@@ -348,9 +366,8 @@ class MergeSortings(MultiSortingsModule):
 		params = copy.deepcopy(params)
 		n_channels = params['num_channels']
 		margin = round(params['margin_ms'] * self.sampling_f * 1e-3)
-		wvf_extraction_params = params['wvf_extraction']
-		wvf_extraction_params['ms_before'] += params['margin_ms']
-		wvf_extraction_params['ms_after'] += params['margin_ms']
+		params['wvf_extraction']['ms_before'] += params['margin_ms']
+		params['wvf_extraction']['ms_after'] += params['margin_ms']
 		params_channels = {
 			'ms_before': min(params['wvf_extraction']['ms_before'], 2.0),
 			'ms_after': min(params['wvf_extraction']['ms_after'], 2.0)
@@ -407,10 +424,10 @@ class MergeSortings(MultiSortingsModule):
 				C1 = utils.estimate_contamination(self.sortings[sorting1_name].get_unit_spike_train(unit_id1), refractory_period=params['refractory_period'])
 				C2 = utils.estimate_contamination(self.sortings[sorting2_name].get_unit_spike_train(unit_id2), refractory_period=params['refractory_period'])
 
-				if C1 > C2 + 0.04:
+				"""if C1 > C2 + 0.04:
 					nodes_to_remove.append(node1)
 				elif C2 > C1 + 0.04:
-					nodes_to_remove.append(node2)
+					nodes_to_remove.append(node2)"""
 
 		for node in nodes_to_remove:
 			graph.remove_node(node)
