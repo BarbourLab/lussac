@@ -125,9 +125,12 @@ def test_estimate_cross_contamination() -> None:
 	# Testing without any censored period.
 	spike_train1 = generate_contaminated_spike_train(firing_rates[0], t_r, C[0])
 	spike_train2 = generate_contaminated_spike_train(firing_rates[1], t_r, C[1])
-	n_transfer = int(round((1 - cross_contamination) * len(spike_train2) / (cross_contamination - C[0])))
+
+	estimation = utils.estimate_cross_contamination(spike_train1, spike_train2, (0, 0.9*t_r), limit=None)
+	assert math.isclose(estimation, 1.0, abs_tol=0.2)
 
 	cross_contaminations = np.empty(50, dtype=np.float32)
+	n_transfer = int(round((1 - cross_contamination) * len(spike_train2) / (cross_contamination - C[0])))
 	for i in range(len(cross_contaminations)):
 		indices = np.sort(np.random.choice(range(len(spike_train1)), n_transfer, replace=False))
 		train2 = np.sort(np.concatenate((spike_train2, spike_train1[indices])))
@@ -137,7 +140,7 @@ def test_estimate_cross_contamination() -> None:
 		assert p_value < 1e-6
 		cross_contaminations[i] = estimation
 
-	assert math.isclose(np.mean(cross_contaminations), cross_contamination, abs_tol=0.1, rel_tol=0.1)
+	assert math.isclose(np.mean(cross_contaminations), cross_contamination, abs_tol=0.1, rel_tol=0)
 
 	# Testing with t_c != 0
 	# TODO
