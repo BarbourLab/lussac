@@ -416,6 +416,7 @@ class TemplateExtractor:
 			'max_spikes_per_unit': self.params['max_spikes_sparsity'],
 			'precompute_template': ("average", ),
 			'return_scaled': False,
+			'sparse': False,
 			'allow_unfiltered': True
 		}
 		wvf_extractor = si.extract_waveforms(self.recording, sorting, mode="memory", n_jobs=1, **params)

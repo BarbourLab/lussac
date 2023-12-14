@@ -199,7 +199,7 @@ class LussacData:
 
 			if not path.exists():
 				raise FileNotFoundError(f"Could not find the sorting file {path}.")
-			elif path.is_dir():
+			elif path.is_dir() and (path / "spike_times.npy").exists():
 				sorting = se.PhySortingExtractor(path)
 			else:
 				sorting = si.load_extractor(path, base_folder=True)

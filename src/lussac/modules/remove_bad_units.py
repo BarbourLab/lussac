@@ -52,6 +52,6 @@ class RemoveBadUnits(MonoSortingModule):
 			The sorting object containing the bad units.
 		"""
 
-		wvf_extractor = self.extract_waveforms(sorting=bad_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
+		wvf_extractor = self.extract_waveforms(sorting=bad_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500, sparse=False)
 		annotations = [{'text': reason, 'x': 0.6, 'y': 1.02, 'xref': "paper", 'yref': "paper", 'xanchor': "center", 'yanchor': "bottom", 'showarrow': False} for reason in reasons_for_removal]
 		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/bad_units", annotations_change=annotations)

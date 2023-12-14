@@ -39,9 +39,9 @@ def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> No
 
 def test_compute_graph(data: LussacData) -> None:
 	sortings = {
-		'1': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'2': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0]), 2: np.array([0])}, sampling_frequency=30000),
-		'3': si.NumpySorting.from_unit_dict({0: np.array([0]), 1: np.array([0])}, sampling_frequency=30000)
+		'1': si.NumpySorting.from_unit_dict({0: np.array([100, 300]), 1: np.array([350, 500]), 2: np.array([200, 400, 600])}, sampling_frequency=30000),
+		'2': si.NumpySorting.from_unit_dict({0: np.array([150, 400]), 1: np.array([650, 800]), 2: np.array([150, 750, 900])}, sampling_frequency=30000),
+		'3': si.NumpySorting.from_unit_dict({0: np.array([500, 900]), 1: np.array([400, 700])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
 	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
@@ -62,8 +62,10 @@ def test_compute_graph(data: LussacData) -> None:
 	}
 
 	p = {
+		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
-		'require_multiple_sortings_match': False
+		'require_multiple_sortings_match': False,
+		'waveform_validation': {'filter': [150, 9_000]}
 	}
 
 	graph = module._compute_graph(similarity_matrices, p)
@@ -84,6 +86,9 @@ def test_compute_graph(data: LussacData) -> None:
 	assert graph.number_of_edges() == 6
 
 	# TODO: Test gt attributes.
+	assert 'contamination' in graph.nodes[('1', 0)]
+	# assert 'sd_ratio' in graph.nodes[('1', 0)]
+	assert 'aze' not in graph.nodes[('1', 0)]
 
 
 def test_graph(merge_sortings_module: MergeSortings) -> None:

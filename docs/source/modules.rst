@@ -13,7 +13,7 @@ This module will label units as belonging to a certain category if they meet som
 
 This module takes as a key the name of the category, and as a value a dictionary containing the criteria. Each criterion return a value for each unit, and a minimum and/or maximum can be set.
 
-TODO: Explain filter.
+For some parameters, you can specify the parameters for :code:`wvf_extraction` and :code:`filter` (parameters given to the SpikeInterface method :code:`core.extract_waveforms` and :code:`preprocessing.filter` respectively).
 
 - :code:`firing_rate`: returns the mean firing rate of the unit (in Hz).
 - :code:`contamination`: returns the estimated contamination of the unit (between 0 and 1; 0 being pure). The :code:`refractory_period = [censored_period, refractory_period]` has to be set (in ms).
@@ -52,7 +52,17 @@ Here is an example for categorizing complex-spikes from more regular spikes (cer
 				},
 				"SNR": {
 					"peak_sign": "neg",  // Example of an SI parameter.
-					"min": 2.5
+					"min": 2.5,
+					"wvf_extraction": {  // Specifying how to extract the waveforms for SNR computing.
+						"ms_before": 1.0,
+						"ms_after": 1.0,
+						"max_spikes_per_unit": 500
+					},
+					"filter": {  // Parameters for spikeinterface.preprocessing.filter
+						"band": [150, 7_000],
+						"filter_order": 2,
+						"ftype": "bessel"
+					}
 				}
 			}
 		}

@@ -249,9 +249,24 @@ class MonoSortingModule(LussacModule):
 		default_params = {
 			'firing_rate': {},
 			'contamination': {},
-			'amplitude': {'peak_sign': "both", 'mode': "extremum"},
-			'SNR': {'peak_sign': "both", 'mode': "extremum"},
-			'amplitude_std': {'peak_sign': "both", 'return_scaled': True},
+			'amplitude': {
+				'peak_sign': "both",
+				'mode': "extremum",
+				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
+				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+			},
+			'SNR': {
+				'peak_sign': "both",
+				'mode': "extremum",
+				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
+				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+			},
+			'amplitude_std': {
+				'peak_sign': "both",
+				'return_scaled': True,
+				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
+				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+			},
 			'ISI_portion': {}
 		}
 
