@@ -51,12 +51,23 @@ def test_launch(pipeline: LussacPipeline) -> None:
 				'refractory_period': [0.7, 25.0],
 				'similarity': {
 					'min_similarity': 0.4
+				},
+				'waveform_validation': {
+					'wvf_extraction': {
+						'ms_after': 3.0,
+						'max_spikes_per_unit': 200
+					}
 				}
 			},
 			'rest': {
 				'refractory_period': [0.17, 0.99],
 				'similarity': {
 					'min_similarity': 0.4
+				},
+				'waveform_validation': {
+					'wvf_extraction': {
+						'max_spikes_per_unit': 200
+					}
 				}
 			}
 		}

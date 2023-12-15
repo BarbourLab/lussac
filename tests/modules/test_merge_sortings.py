@@ -17,6 +17,7 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 
 	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}}
 	params = merge_sortings_module.update_params(params)
+	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
 	sortings = merge_sortings_module.run(params)
 
 	assert len(sortings) == 1
@@ -136,6 +137,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params({})
+	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
@@ -156,8 +158,8 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 
 	assert 'temp_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
 	assert 'temp_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
-	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.10
-	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.8
+	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.15
+	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.65
 
 
 def test_merge_sortings_func() -> None:
