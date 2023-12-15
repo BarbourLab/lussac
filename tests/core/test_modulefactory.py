@@ -18,10 +18,10 @@ def test_get_module_member() -> None:
 	with pytest.raises(ModuleNotFoundError):
 		ModuleFactory._get_module_member("not_a_module")
 
-	with pytest.raises(Exception):
+	with pytest.raises(Exception):  # Fails because it contains no module.
 		ModuleFactory._get_module_member("lussac.core.lussac_data")
 
-	with pytest.raises(Exception):
+	with pytest.raises(Exception):  # Fails because it contains two modules.
 		ModuleFactory._get_module_member("tests.core.test_modulefactory")
 
 	assert ModuleFactory._get_module_member("lussac.modules.export_to_phy") == ExportToPhy
