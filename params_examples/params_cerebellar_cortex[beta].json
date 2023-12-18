@@ -108,11 +108,7 @@
 				},
 				"spikes": {
 					"amplitude": {
-						"filter": {
-							"band": [450, 9000],
-							"filter_order": 2,
-							"ftype": "bessel"
-						},
+						"filter": [450, 9000],
 						"min": 20,
 						"wvf_extraction": {
 							"ms_before": 2.0,
@@ -175,11 +171,7 @@
 						"ms_before": 1.5,
 						"ms_after": 3.5,
 						"max_spikes_per_unit": 2000,
-						"filter": {
-							"band": [150, 3000],
-							"filter_order": 2,
-							"ftype": "bessel"
-						}
+						"filter": [150, 3000]
 					},
 					"auto_merge_params": {
 						"minimum_spikes": 300,
@@ -199,11 +191,7 @@
 						"ms_before": 1.2,
 						"ms_after": 1.2,
 						"max_spikes_per_unit": 2000,
-						"filter": {
-							"band": [300, 6000],
-							"filter_order": 2,
-							"ftype": "bessel"
-						}
+						"filter": [300, 6000]
 					},
 					"auto_merge_params": {
 						"bin_ms": 0.05,
