@@ -17,9 +17,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": {
-			"band": [200, 5000]
-		},
+		"filter": [200, 5000],
 		"min": 20
 	},
 	"SNR": {
@@ -28,20 +26,16 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": {
-			"band": [300, 6000]
-		},
+		"filter": [300, 6000],
 		"min": 1.2
 	},
-	"amplitude_std": {
+	"sd_ratio": {
 		"wvf_extraction": {
 			"ms_before": 1.0,
 			"ms_after": 1.0,
 		},
-		"filter": {
-			"band": [200, 5000]
-		},
-		"max": 140
+		"filter": [200, 5000],
+		"max": 2.0
 	}
 }
 

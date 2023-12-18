@@ -13,13 +13,13 @@ This module will label units as belonging to a certain category if they meet som
 
 This module takes as a key the name of the category, and as a value a dictionary containing the criteria. Each criterion return a value for each unit, and a minimum and/or maximum can be set.
 
-For some parameters, you can specify the parameters for :code:`wvf_extraction` and :code:`filter` (parameters given to the SpikeInterface method :code:`core.extract_waveforms` and :code:`preprocessing.filter` respectively).
+For some parameters, you can specify the parameters for :code:`wvf_extraction` (parameters given to the SpikeInterface method :code:`core.extract_waveforms`) and :code:`filter` (a list :code:`[freq_min, freq_max]` for Gaussian bandpass filtering).
 
 - :code:`firing_rate`: returns the mean firing rate of the unit (in Hz).
 - :code:`contamination`: returns the estimated contamination of the unit (between 0 and 1; 0 being pure). The :code:`refractory_period = [censored_period, refractory_period]` has to be set (in ms).
 - :code:`amplitude`: returns the mean amplitude of the unit's template (in µV if the recording object can be scaled to µV). Optional parameters can be set to the function :code:`spikeinterface.core.get_template_extremum_amplitude`.
 - :code:`SNR`: returns the signal-to-noise ratio of the unit. Optional parameters can be set to the function :code:`spikeinterface.qualitymetrics.compute_snrs`
-- :code:`amplitude_std`: returns the standard deviation in the spike amplitudes for the unit. Optional parameters can be set to the function :code:`spikeinterface.postprocessing.compute_spike_amplitudes`
+- :code:`sd_ratio`: returns the standard deviation in the spike amplitudes for the unit divided by the standard deviation on the same channel. Optional parameters can be set to the function :code:`spikeinterface.postprocessing.compute_spike_amplitudes` as a dictionary with key :code:`spike_amplitudes_kwargs`. Optional parameters can be set to the function :code:`spikeinterface.qualitymetrics.compute_sd_ratio` as a dictionary with key :code:`sd_ratio_kwargs`.
 - :code:`ISI_portion`: Returns the fraction (between 0 and 1) of inter-spike intervals inside a time range. the :code:`range = [min_t, max_t]` has to be set (in ms).
 
 
@@ -58,11 +58,7 @@ Here is an example for categorizing complex-spikes from more regular spikes (cer
 						"ms_after": 1.0,
 						"max_spikes_per_unit": 500
 					},
-					"filter": {  // Parameters for spikeinterface.preprocessing.filter
-						"band": [150, 7_000],
-						"filter_order": 2,
-						"ftype": "bessel"
-					}
+					"filter": [150, 7_000] // Gaussian bandpass filter with cutoffs at 150 and 7,000 Hz.
 				}
 			}
 		}
@@ -140,8 +136,8 @@ Example of units removal
 			"firing_rate": {
 				"min": 1.0
 			},
-			"amplitude_std": {
-				"max": 80.0
+			"sd_ratio": {
+				"max": 2.0
 			}
 		}
 

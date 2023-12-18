@@ -18,9 +18,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": {
-			"band": [200, 5000]
-		},
+		"filter": [200, 5000],
 		"min": 20
 	},
 	"SNR": {
@@ -29,20 +27,16 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": {
-			"band": [300, 6000]
-		},
+		"filter": [300, 6000],
 		"min": 1.2
 	},
-	"amplitude_std": {
+	"sd_ratio": {
 		"wvf_extraction": {
 			"ms_before": 1.0,
 			"ms_after": 1.0,
 		},
-		"filter": {
-			"band": [200, 5000]
-		},
-		"max": 140
+		"filter": [200, 5000],
+		"max": 2.0
 	}
 }
 
@@ -142,9 +136,9 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	assert isinstance(SNRs, np.ndarray)
 	assert SNRs.shape == (num_units, )
 
-	amplitude_std = module.get_units_attribute_arr("amplitude_std", params['amplitude_std'])
-	assert isinstance(amplitude_std, np.ndarray)
-	assert amplitude_std.shape == (num_units, )
+	sd_ratio = module.get_units_attribute_arr("sd_ratio", params['sd_ratio'])
+	assert isinstance(sd_ratio, np.ndarray)
+	assert sd_ratio.shape == (num_units, )
 
 	with pytest.raises(ValueError):
 		module.get_units_attribute("test", {})
