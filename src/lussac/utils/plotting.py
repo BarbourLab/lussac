@@ -208,7 +208,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 
 		template = wvf_extractor.get_template(unit_id, mode="average")
 		best_channels = np.argsort(np.max(np.abs(template), axis=0))[::-1]
-		for i in range(n_channels): # TODO: share y axis for all templates in a unit.
+		for i in range(n_channels):  # TODO: share y axis for all templates in a unit.
 			channel = best_channels[i]
 			fig.add_trace(go.Scatter(
 				x=xaxis,
