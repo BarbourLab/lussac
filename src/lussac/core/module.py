@@ -180,7 +180,8 @@ class MonoSortingModule(LussacModule):
 
 		recording = self.recording
 		if filter is not None:
-			recording = spre.gaussian_bandpass_filter(recording, *filter)
+			assert len(filter) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
+			recording = spre.gaussian_bandpass_filter(recording, *filter, margin_sd=2)
 
 		sorting = self.sorting if sorting is None else sorting
 		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
@@ -277,7 +278,8 @@ class MonoSortingModule(LussacModule):
 		recording = self.data.recording
 		sorting = self.sorting
 		if 'filter' in params:
-			recording = spre.gaussian_bandpass_filter(recording, *params['filter'])
+			assert len(params['filter']) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
+			recording = spre.gaussian_bandpass_filter(recording, *params['filter'], margin_sd=2)
 
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
 						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
@@ -311,7 +313,7 @@ class MonoSortingModule(LussacModule):
 			case "ISI_portion":  # Returns the portion of consecutive spikes that are between a certain range (in ms).
 				low, high = np.array(params['range']) * recording.sampling_frequency * 1e-3
 				diff = {unit_id: np.diff(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
-				ISI_portion = {unit_id: np.sum((low < d) & (d < high)) / len(d) for unit_id, d in diff.items()}
+				ISI_portion = {unit_id: np.nan if len(d) == 0 else (np.sum((low < d) & (d < high)) / len(d)) for unit_id, d in diff.items()}
 				return ISI_portion
 
 			case _:  # pragma: no cover (unreachable code)
