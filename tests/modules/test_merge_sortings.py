@@ -171,13 +171,12 @@ def test_merge_sortings_func() -> None:
 def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# Copy the dataset with fewer sortings and fewer units to go faster.
 	data = data.clone()
-	del data.sortings['ms3_low_thresh']
-	del data.sortings['ms3_cs']
-	del data.sortings['ks2_best']
-	del data.sortings['ks2_cs']
-	data.sortings['ks2_low_thresh'] = data.sortings['ks2_low_thresh'].select_units([7, 13, 15, 23, 24, 26, 27, 30, 32, 48, 49, 56, 63, 64, 70, 72, 74, 80]).frame_slice(0, 3_000_000)
-	data.sortings['ms3_best'] = data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 3_000_000)
-	data.sortings['ms4_cs'] = data.sortings['ms4_cs'].select_units([0, 5, 7, 8, 9, 17, 19, 20, 23, 25, 32, 53, 56, 58, 59, 62, 69, 70]).frame_slice(0, 3_000_000)
+	data.recording = data.recording.frame_slice(0, 1_000_000)
+	data.sortings = {
+		'ks2_low_thresh': data.sortings['ks2_low_thresh'].select_units([7, 13, 15, 23, 24, 26, 27, 30, 32, 48, 49, 56, 63, 64, 70, 72, 74, 80]).frame_slice(0, 1_000_000),
+		'ms3_best': data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 1_000_000),
+		'ms4_cs': data.sortings['ms4_cs'].select_units([0, 5, 7, 8, 9, 17, 19, 20, 23, 25, 32, 53, 56, 58, 59, 62, 69, 70]).frame_slice(0, 1_000_000)
+	}
 
 	multi_sortings_data = MultiSortingsData(data, data.sortings)
 	return MergeSortings("merge_sortings", multi_sortings_data, "all")

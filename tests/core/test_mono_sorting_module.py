@@ -1,3 +1,4 @@
+import math
 import pytest
 from typing import Any
 import numpy as np
@@ -121,7 +122,7 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	frequencies = module.get_units_attribute_arr("firing_rate", params['firing_rate'])
 	assert isinstance(frequencies, np.ndarray)
 	assert frequencies.shape == (num_units, )
-	assert abs(frequencies[0] - 22.978) < 0.01
+	assert math.isclose(frequencies[0], 22.978, rel_tol=0.0, abs_tol=0.001)
 
 	contaminations = module.get_units_attribute_arr("contamination", params['contamination'])
 	assert isinstance(contaminations, np.ndarray)

@@ -15,10 +15,10 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
 	data = pipeline.data.clone()
 	data.params = params
+	data.recording = data.recording.frame_slice(0, 1_000_000)
 	data.sortings = {
-		'ms3_low_thresh': data.sortings['ms3_low_thresh'].frame_slice(0, 3_000_000),
-		'ks2_best': data.sortings['ks2_best'].frame_slice(0, 3_000_000),
-		'ms3_best': data.sortings['ms3_best'].frame_slice(0, 3_000_000)
+		'ks2_best': data.sortings['ks2_best'].frame_slice(0, 1_000_000),
+		'ms3_best': data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 1_000_000)
 	}
 
 	wrong_pipeline = LussacPipeline(data)
