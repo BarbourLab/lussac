@@ -48,7 +48,7 @@ class MergeSortings(MultiSortingsModule):
 					'ms_after': 2.0,
 					'max_spikes_per_unit': 1_000
 				},
-				'filter': [200.0, 6_000.0],
+				'filter': [250.0, 6_000.0],
 				'margin_ms': 5.0,
 				'num_channels': 5
 			},
@@ -83,7 +83,9 @@ class MergeSortings(MultiSortingsModule):
 
 		if params['merge_check']:
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
-		self.clean_graph(graph, cross_shifts, params)
+		self.clean_edges(graph, cross_shifts, params)
+		if len(self.sortings) >= 4:
+			self.separate_communities(graph)
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, params)
@@ -104,7 +106,7 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
-		cross_shifts = {name1: {name2: 0 for name2 in self.sortings.keys() if name1 != name2} for name1 in self.sortings.keys()}
+		cross_shifts = {name1: {} for name1 in self.sortings.keys()}
 
 		for i, (name1, sorting1) in enumerate(self.sortings.items()):
 			for j, (name2, sorting2) in enumerate(self.sortings.items()):
@@ -167,7 +169,7 @@ class MergeSortings(MultiSortingsModule):
 
 		censored_period, refractory_period = params['refractory_period']
 		min_f, max_f = params['waveform_validation']['filter']
-		recording_f = spre.gaussian_bandpass_filter(self.recording, freq_min=min_f, freq_max=max_f)
+		recording_f = spre.gaussian_bandpass_filter(self.recording, freq_min=min_f, freq_max=max_f, margin_sd=2)
 
 		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()
@@ -177,11 +179,13 @@ class MergeSortings(MultiSortingsModule):
 			spost.compute_spike_amplitudes(wvf_extractor, peak_sign="both", return_scaled=recording_f.has_scaled())
 			contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
 			sd_ratio = sqm.compute_sd_ratio(wvf_extractor)
+			snrs = sqm.compute_snrs(wvf_extractor, peak_sign="both", peak_mode="extremum")
 
 			for unit_id in sorting.unit_ids:
 				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
 				attr['contamination'] = contamination[unit_id]
 				attr['sd_ratio'] = sd_ratio[unit_id]
+				attr['SNR'] = snrs[unit_id]
 				graph.add_node((name, unit_id), **attr)
 
 			del wvf_extractor
@@ -281,11 +285,19 @@ class MergeSortings(MultiSortingsModule):
 				], dtype=bool)
 				if np.any(cases_removed):
 					nodes_to_remove.append(node)
-					break  # Don't need to check the other ones.
+					break  # Don't need to check this node again.
+				else:  # Couldn't definitely say that 'node' is a merged unit. Check whether 'node1' or 'node2' is bad.
+					cc1, p1 = utils.estimate_cross_contamination(spike_train, spike_train1, (0.4, 1.8), limit=0.10)
+					cc2, p2 = utils.estimate_cross_contamination(spike_train, spike_train2, (0.4, 1.8), limit=0.10)
+		
+					if p1 < 5e-3 and cc2 < 0.1 and C1 > C + 0.03:
+						nodes_to_remove.append(node1)
+					elif p2 < 5e-3 and cc1 < 0.1 and C2 > C + 0.03:
+						nodes_to_remove.append(node2)
 
 		if len(nodes_to_remove) > 0:
 			logs.write("\nRemoved units:\n")
-			for node in nodes_to_remove:  # Remove node then re-add it no remove all the edges.
+			for node in set(nodes_to_remove):  # Remove node then re-add it no remove all the edges.
 				graph.remove_node(node)
 
 				sorting_name, unit_id = node
@@ -388,7 +400,7 @@ class MergeSortings(MultiSortingsModule):
 			template_diff = np.sum(np.abs(template1 - template2)) / np.sum(np.abs(template1) + np.abs(template2))
 			graph[node1][node2]['temp_diff'] = template_diff
 
-	def clean_graph(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> None:
+	def clean_edges(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> None:
 		"""
 		TODO
 
@@ -431,18 +443,43 @@ class MergeSortings(MultiSortingsModule):
 
 			# From this point on, the edge is treated as problematic.
 			if sd1 - sd2 > (C2 - C1) * sd_threshold/C_threshold + sd_threshold and sd1 > 1.05:  # node 1 is problematic
-				if node1 not in nodes_to_remove:
-					nodes_to_remove.append(node1)
+				nodes_to_remove.append(node1)
 			elif sd2 - sd1 > (C1 - C2) * sd_threshold/C_threshold + sd_threshold and sd2 > 1.05:  # node 2 is problematic
-				if node2 not in nodes_to_remove:
-					nodes_to_remove.append(node2)
+				nodes_to_remove.append(node2)
 			else:  # Couldn't decide which one is problematic, Remove the connection between them.
 				edges_to_remove.append((node1, node2))
 
-		for node in nodes_to_remove:
+		for node in set(nodes_to_remove):
 			graph.remove_node(node)
 		for edge in edges_to_remove:
-			graph.remove_edge(*edge)
+			if graph.has_edge(*edge):
+				graph.remove_edge(*edge)
+
+	def separate_communities(self, graph: nx.Graph) -> None:
+		"""
+		TODO
+		"""
+
+		for nodes in list(nx.connected_components(graph)):
+			subgraph = graph.subgraph(nodes)
+			communities = list(nx.community.louvain_communities(subgraph, resolution=0.85))
+
+			if len(communities) == 1:
+				continue
+
+			# Remove edges between communities
+			for i in range(len(communities) - 1):
+				for j in range(i+1, len(communities)):
+					for node1 in communities[i]:
+						for node2 in communities[j]:
+							if graph.has_edge(node1, node2):
+								graph.remove_edge(node1, node2)
+
+			# Remove small communities
+			for community in communities:
+				if len(community) <= 2:
+					for node in community:
+						graph.remove_node(node)
 
 	def merge_sortings(self, graph: nx.Graph, params: dict) -> si.NpzSortingExtractor:
 		"""
@@ -468,6 +505,10 @@ class MergeSortings(MultiSortingsModule):
 			best_score = -100000
 			unit_label = ""
 			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
+
+			# if len(nodes) == 1 and graph.nodes[nodes[0]]['contamination'] < 0.05:  # Be more strict about nodes that end up being alone.
+			# if len(nodes) == 1:
+			# 	continue
 
 			for n_units in range(1, params['max_units_merge']+1):
 				for sub_nodes in itertools.combinations(nodes, n_units):
