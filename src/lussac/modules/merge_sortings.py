@@ -120,12 +120,13 @@ class MergeSortings(MultiSortingsModule):
 
 		return cross_shifts
 
-	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:
+	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray | None]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:
 		"""
 		Computes the similarity matrix between all sortings.
 
-		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+		@param cross_shifts: dict[str, dict[str, np.ndarray | None]]
 			The cross-shifts between units.
+			If None, will default to no shift.
 		@param params: dict
 			The parameters of the merge_sorting module.
 		@return similarity_matrices: dict[str, dict[str, np.ndarray]]
@@ -455,7 +456,8 @@ class MergeSortings(MultiSortingsModule):
 			if graph.has_edge(*edge):
 				graph.remove_edge(*edge)
 
-	def separate_communities(self, graph: nx.Graph) -> None:
+	@staticmethod
+	def separate_communities(graph: nx.Graph) -> None:
 		"""
 		TODO
 		"""

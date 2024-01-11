@@ -15,7 +15,7 @@ def test_default_params(merge_sortings_module: MergeSortings) -> None:
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}}
+	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}, 'require_multiple_sortings_match': False}
 	params = merge_sortings_module.update_params(params)
 	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
 	sortings = merge_sortings_module.run(params)
@@ -92,7 +92,7 @@ def test_compute_graph(data: LussacData) -> None:
 	assert 'aze' not in graph.nodes[('1', 0)]
 
 
-def test_graph(merge_sortings_module: MergeSortings) -> None:
+def test_save_load_graph(merge_sortings_module: MergeSortings) -> None:
 	G = nx.Graph()
 	G.add_node('A', connected=True)
 	G.add_node('B', connected=True)
@@ -160,6 +160,22 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	assert 'temp_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
 	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.15
 	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.65
+
+
+def test_separate_communities() -> None:
+	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9)])
+	MergeSortings.separate_communities(graph)
+
+	# Only nodes '8' and '9' need to be removed
+	print(graph.nodes)
+	assert graph.number_of_nodes() == 8
+	assert 1 in graph
+	assert 8 not in graph
+	assert 9 not in graph
+
+	# Only edges (1, 8), (8, 9) and (3, 4) need to be removed
+	assert graph.number_of_edges() == 13
+	assert not graph.has_edge(4, 5)
 
 
 def test_merge_sortings_func() -> None:
