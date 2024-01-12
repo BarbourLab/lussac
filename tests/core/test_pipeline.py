@@ -159,6 +159,7 @@ def test_merge_sortings() -> None:
 	sorting1 = si.NumpySorting(np.array([]), 30000, [0, 1, 3])
 	sorting2 = si.NumpySorting(np.array([]), 30000, [5, 2, 9])
 	sorting3 = si.NumpySorting(np.array([]), 30000, [1, 0, 6])
+	empty_sorting = si.NumpySorting(np.array([]), 30000, [])
 
 	sorting1.annotate(name="test")
 	sorting2.annotate(name="test")
@@ -172,6 +173,9 @@ def test_merge_sortings() -> None:
 	sorting1_3 = LussacPipeline.merge_sortings(sorting1, sorting3)
 	assert np.all(sorting1_3.unit_ids == (0, 1, 3, 7, 8, 6))
 	assert np.all(sorting1_3.get_property("test2") == (0, 1, 2, 3, 4, 5))
+
+	assert LussacPipeline.merge_sortings(sorting1, empty_sorting) == sorting1
+	assert LussacPipeline.merge_sortings(empty_sorting, sorting2) == sorting2
 
 
 def test_save_load_sortings(pipeline: LussacPipeline) -> None:
