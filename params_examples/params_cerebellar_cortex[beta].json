@@ -228,7 +228,6 @@
 					},
 					"correlogram_validation": {
 						"max_time": 400,
-						"max_difference": 0.35,
 						"gaussian_std": 10.0,
 						"gaussian_truncate": 5.0
 					}
@@ -240,8 +239,7 @@
 						"min_similarity": 0.4
 					},
 					"correlogram_validation": {
-						"max_time": 75.0,
-						"max_difference": 0.14
+						"max_time": 75.0
 					}
 				}
 			},

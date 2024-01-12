@@ -162,19 +162,56 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.65
 
 
+def test_clean_edges(data: LussacData) -> None:
+	data = data.clone()
+	data.sortings = {
+		'ks2_best': data.sortings['ks2_best'].select_units([13, 22, 41]),
+		'ms3_best': data.sortings['ms3_best'].select_units([14, 71])
+	}
+	multi_sortings_data = MultiSortingsData(data, data.sortings)
+	merge_sortings_module = MergeSortings("merge_sortings_edges", multi_sortings_data, "all")
+
+	# Making a graph with approximate parameters for testing.
+	graph = nx.Graph()
+	graph.add_node(('ks2_best', 41), contamination=0.002, SNR=6.26, sd_ratio=1.05)  # Beautiful SSpk.
+	graph.add_node(('ks2_best', 13), contamination=0.001, SNR=3.94, sd_ratio=1.11)  # Beautiful mossy fiber.
+	graph.add_node(('ks2_best', 22), contamination=0.316, SNR=4.27, sd_ratio=1.35)  # Noisy unit.
+	graph.add_node(('ms3_best', 71), contamination=0.000, SNR=6.35, sd_ratio=0.89)  # Same SSpk (but spikes missing).
+	graph.add_node(('ms3_best', 14), contamination=0.001, SNR=4.35, sd_ratio=1.16)  # Same mossy fiber.
+
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 71), similarity=0.998, corr_diff=0.008, temp_diff=0.051)  # Linking SSpk together.
+	graph.add_edge(('ks2_best', 13), ('ms3_best', 14), similarity=0.964, corr_diff=0.081, temp_diff=0.074)  # Linking MF together.
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 14), similarity=0.052, corr_diff=0.723, temp_diff=0.947)  # Erroneous link: edge should be removed but not the nodes.
+	graph.add_edge(('ks2_best', 22), ('ms3_best', 71), similarity=0.030, corr_diff=0.733, temp_diff=0.969)  # node1 is bad --> should get removed
+
+	# Running "clean_edges"
+	cross_shifts = merge_sortings_module.compute_cross_shifts(30)
+	merge_sortings_module.clean_edges(graph, cross_shifts, merge_sortings_module.update_params({}))
+
+	# Making sure everything is as expected.
+	assert graph.number_of_nodes() == 4
+	assert graph.number_of_edges() == 2
+	assert ('ks2_best', 41) in graph
+	assert ('ms3_best', 14) in graph
+	assert ('ks2_best', 22) not in graph
+	assert ('ms3_best', 71) in graph
+	assert graph.has_edge(('ks2_best', 41), ('ms3_best', 71))
+	assert not graph.has_edge(('ks2_best', 41), ('ms3_best', 14))
+
+
 def test_separate_communities() -> None:
-	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9)])
+	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9), (10, 11)])
 	MergeSortings.separate_communities(graph)
 
 	# Only nodes '8' and '9' need to be removed
 	print(graph.nodes)
-	assert graph.number_of_nodes() == 8
+	assert graph.number_of_nodes() == 10
 	assert 1 in graph
 	assert 8 not in graph
 	assert 9 not in graph
 
 	# Only edges (1, 8), (8, 9) and (3, 4) need to be removed
-	assert graph.number_of_edges() == 13
+	assert graph.number_of_edges() == 14
 	assert not graph.has_edge(4, 5)
 
 

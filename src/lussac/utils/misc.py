@@ -133,7 +133,7 @@ def binom_sf(x: int, n: float, p: float) -> float:
 	"""
 
 	n_array = np.arange(math.floor(n-2), math.ceil(n+3), 1)
-	n_array = n_array[n_array >= 1]
+	n_array = n_array[n_array >= 0]
 
 	res = [scipy.stats.binom.sf(x, n_, p) for n_ in n_array]
 	f = scipy.interpolate.interp1d(n_array, res, kind="quadratic")

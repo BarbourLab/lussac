@@ -37,12 +37,10 @@ class MergeSortings(MultiSortingsModule):
 			},
 			'correlogram_validation': {
 				'max_time': 70.0,
-				'max_difference': 0.25,
 				'gaussian_std': 0.6,
 				'gaussian_truncate': 5.0
 			},
 			'waveform_validation': {
-				'max_difference': 0.20,
 				'wvf_extraction': {
 					'ms_before': 1.0,
 					'ms_after': 2.0,
@@ -439,7 +437,7 @@ class MergeSortings(MultiSortingsModule):
 
 			cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, params['refractory_period'], limit=0.06)  # TODO: make 'limit' a parameter.
 
-			if p_value > 5e-3 or data['temp_diff'] > 0.10 or data['corr_diff'] > 0.12:  # Make these parameters.
+			if p_value > 5e-3 or data['temp_diff'] < 0.10 or data['corr_diff'] < 0.12:  # TODO: Make these parameters.
 				continue
 
 			# From this point on, the edge is treated as problematic.
@@ -459,7 +457,13 @@ class MergeSortings(MultiSortingsModule):
 	@staticmethod
 	def separate_communities(graph: nx.Graph) -> None:
 		"""
-		TODO
+		Looks for all subgraphs (connected component) and uses the Louvain algorithm to check if
+		multiple communities are found. If so, the edges between communities are removed.
+		Additionally, small communities are removed.
+		Warning: it's recommended to run this function if there are at least 4 analyses.
+
+		@param graph: nx.Graph
+			The graph containing all the units and connected by their similarity.
 		"""
 
 		for nodes in list(nx.connected_components(graph)):
