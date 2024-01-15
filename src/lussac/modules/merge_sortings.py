@@ -41,9 +41,9 @@ class MergeSortings(MultiSortingsModule):
 				'wvf_extraction': {
 					'ms_before': 1.0,
 					'ms_after': 2.0,
-					'max_spikes_per_unit': 1_000
+					'max_spikes_per_unit': 1_000,
+					'filter': [250.0, 6_000.0]
 				},
-				'filter': [250.0, 6_000.0],
 				'num_channels': 5
 			},
 			'merge_check': {
@@ -67,7 +67,7 @@ class MergeSortings(MultiSortingsModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
-		self.aggregated_wvf_extractor = self.extract_waveforms(filter=params['waveform_validation']['filter'], sparse=False, **params['waveform_validation']['wvf_extraction'])
+		self.aggregated_wvf_extractor = self.extract_waveforms(sparse=False, **params['waveform_validation']['wvf_extraction'])
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
@@ -163,7 +163,6 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		censored_period, refractory_period = params['refractory_period']
-		min_f, max_f = params['waveform_validation']['filter']
 
 		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()

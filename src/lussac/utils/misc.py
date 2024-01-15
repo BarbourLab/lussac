@@ -1,6 +1,6 @@
 import inspect
 import math
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 import scipy.interpolate
 import scipy.stats
 import numba
@@ -9,6 +9,27 @@ import numpy.typing as npt
 from .variables import Utils
 from spikeinterface.curation.auto_merge import get_unit_adaptive_window, normalize_correlogram
 from spikeinterface.postprocessing.correlograms import _compute_crosscorr_numba
+
+
+T = TypeVar("T", bound=npt.ArrayLike)
+
+
+def gaussian_pdf(x: T, mu: float = 0.0, sigma: float = 1.0) -> T:
+	"""
+	Computes the pdf of a Normal distribution.
+	On my machine, is ~8x faster than scipy.stats.norm.pdf.
+
+	@param x: ArrayLike
+		The number or array on which to compute the pdf.
+	@param mu: float
+		The mean of the Normal distribution.
+	@param sigma: float
+	 	The standard deviation of the Normal distribution.
+	@return gaussian_pdf: ArrayLike
+		The computed pdf.
+	"""
+
+	return 1/(sigma * np.sqrt(2*np.pi)) * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 
 def filter_kwargs(kwargs: dict[str, Any], function: Callable) -> dict[str, Any]:
@@ -213,6 +234,39 @@ def _gaussian_kernel(events, t_axis, sigma, truncate) -> npt.NDArray[np.float32]
 			histogram[i] += np.exp(-0.5 * ((e - t_axis[i]) / sigma) ** 2)
 
 	return histogram / (sigma * np.sqrt(2*np.pi))
+
+
+@numba.jit((numba.int64[:], numba.int64[:]), nopython=True, nogil=True, cache=True)
+def spike_vector_to_spike_trains(sample_indices, unit_indices) -> list[np.ndarray[np.int64]]:
+	"""
+	Converts a spike vector to a list of spike trains in a really fast manner.
+
+	@param sample_indices: array[int64] (n_spikes1)
+		All the spike timings.
+	@param unit_indices: array[int64] (n_spikes1)
+		The unit labels (i.e. unit index of each spike).
+	@return spike_trains: list[array[int64]]
+		The list of spike trains.
+	"""
+
+	num_units = 1 + np.max(unit_indices)
+	num_spikes = sample_indices.size
+
+	num_spikes_per_unit = np.zeros(num_units, dtype=np.int32)
+	for s in range(num_spikes):
+		num_spikes_per_unit[unit_indices[s]] += 1
+
+	spike_trains = []
+	for u in range(num_units):
+		spike_trains.append(np.empty(num_spikes_per_unit[u], dtype=np.int64))
+
+	current_x = np.zeros(num_units, dtype=np.int32)
+	for s in range(num_spikes):
+		unit_index = unit_indices[s]
+		spike_trains[unit_index][current_x[unit_index]] = sample_indices[s]
+		current_x[unit_index] += 1
+
+	return spike_trains
 
 
 def estimate_contamination(spike_train: np.ndarray, refractory_period: tuple[float, float]) -> float:
@@ -507,7 +561,8 @@ def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np
 		The cross-shift matrix containing the shift between each pair of units.
 	"""
 
-	return compute_cross_shift(spike_vector1['sample_index'], spike_vector1['unit_index'], spike_vector2['sample_index'], spike_vector2['unit_index'], max_shift, gaussian_std)
+	return compute_cross_shift(spike_vector1['sample_index'].astype(np.int64, copy=False), spike_vector1['unit_index'].astype(np.int64, copy=False),
+							   spike_vector2['sample_index'].astype(np.int64, copy=False), spike_vector2['unit_index'].astype(np.int64, copy=False), max_shift, gaussian_std)
 
 
 @numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.float32),
@@ -540,12 +595,8 @@ def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2
 	N = math.ceil(5 * gaussian_std)
 	gaussian = np.exp(-np.arange(-N, N+1)**2 / (2 * gaussian_std**2)) / (gaussian_std * math.sqrt(2*math.pi))
 
-	spike_trains1 = numba.typed.List()
-	spike_trains2 = numba.typed.List()
-	for unit1 in range(n_units1):
-		spike_trains1.append(spike_times1[spike_labels1 == unit1])
-	for unit2 in range(n_units2):
-		spike_trains2.append(spike_times2[spike_labels2 == unit2])
+	spike_trains1 = spike_vector_to_spike_trains(spike_times1, spike_labels1)
+	spike_trains2 = spike_vector_to_spike_trains(spike_times2, spike_labels2)
 
 	for unit1 in numba.prange(n_units1):
 		for unit2 in range(n_units2):
@@ -609,11 +660,11 @@ def _create_fft_gaussian(N: int, cutoff_freq: float) -> np.ndarray:
 		sigma = Utils.sampling_frequency / (2 * math.pi * cutoff_freq)
 		limit = int(round(6*sigma)) + 1
 		xaxis = np.arange(-limit, limit+1) / sigma
-		gaussian = scipy.stats.norm.pdf(xaxis) / sigma
+		gaussian = gaussian_pdf(xaxis) / sigma
 		return np.abs(np.fft.fft(gaussian, n=N))
 	else:
 		freq_axis = np.fft.fftfreq(N, d=1/Utils.sampling_frequency)
-		return scipy.stats.norm.pdf(freq_axis / cutoff_freq) * math.sqrt(2 * math.pi)
+		return gaussian_pdf(freq_axis / cutoff_freq) * math.sqrt(2 * math.pi)
 
 
 def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarray, cross_corr: np.ndarray, n1: int, n2: int) -> float:

@@ -26,7 +26,6 @@ class MergeUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.5,
 				'max_spikes_per_unit': 2_000,
-				'sparse': False,
 				'filter': [100, 9000]
 			},
 			'auto_merge_params': {
@@ -49,7 +48,7 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
+		wvf_extractor = self.extract_waveforms(sparse=False, **params['wvf_extraction'])
 		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)

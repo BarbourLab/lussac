@@ -8,6 +8,14 @@ import spikeinterface.core as si
 from spikeinterface.curation.curation_tools import find_duplicated_spikes
 
 
+def test_gaussian_pdf() -> None:
+	xaxis = np.arange(-10, 10, 0.01)
+	mu = 0.3
+	sigma = 1.2
+
+	assert np.allclose(utils.gaussian_pdf(xaxis, mu, sigma), scipy.stats.norm.pdf(xaxis, loc=mu, scale=sigma), atol=0, rtol=1e-10)
+
+
 def test_filter_kwargs() -> None:
 	assert utils.filter_kwargs({}, test_flatten_dict) == {}
 	assert utils.filter_kwargs({'t_r': 2.0, 't_c': 1.0}, generate_spike_train) == {'t_r': 2.0}

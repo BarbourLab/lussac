@@ -71,10 +71,10 @@ def test_compute_graph(data: LussacData) -> None:
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
 		'require_multiple_sortings_match': False,
-		'waveform_validation': {'filter': [150.0, 9_000.0], 'wvf_extraction': {}}
+		'waveform_validation': {'wvf_extraction': {'filter': [150.0, 9_000.0]}}
 	}
 
-	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", filter=p['waveform_validation']['filter'], sparse=False, **p['waveform_validation']['wvf_extraction'])
+	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", sparse=False, **p['waveform_validation']['wvf_extraction'])
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -145,7 +145,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params({})
 	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
-	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", filter=params['waveform_validation']['filter'], sparse=False, **params['waveform_validation']['wvf_extraction'])
+	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", sparse=False, **params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
