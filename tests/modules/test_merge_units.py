@@ -34,12 +34,11 @@ def test_inner_merge(mono_sorting_data: MonoSortingData) -> None:
 
 def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	data = mono_sorting_data.data.clone()
-	data.recording = data.recording
 	data.sortings = {'ms3_best': data.sortings['ms3_best'].select_units([18, 20, 22, 29, 31, 53, 55, 59, 67, 68, 69, 70, 71, 78, 81])}
 	mono_sorting_data = MonoSortingData(data, data.sortings['ms3_best'])
 
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
-	params = module.update_params({'minimum_spikes': 500, 'wvf_extraction': {'max_spikes_per_unit': 500}, 'auto_merge_params': {'template_diff_thresh': 0.28}})
+	params = module.update_params({'minimum_spikes': 500, 'wvf_extraction': {'max_spikes_per_unit': 200, 'filter': [300.0, 6_000.0]}, 'auto_merge_params': {'template_diff_thresh': 0.28}})
 
 	big_split = [53, 68, 69, 71, 78, 81]  # Lots of units that are the same Purkinje cell.
 
