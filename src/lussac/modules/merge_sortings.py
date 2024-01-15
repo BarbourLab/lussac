@@ -1,19 +1,16 @@
-import copy
 import itertools
 import math
 import pickle
-import shutil
 from typing import Any
 from overrides import override
 import networkx as nx
 import numpy as np
 import scipy.stats
-from lussac.core import MultiSortingsModule, TemplateExtractor
+from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 from spikeinterface.curation.curation_tools import find_duplicated_spikes
-import spikeinterface.preprocessing as spre
 import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
 
@@ -47,7 +44,6 @@ class MergeSortings(MultiSortingsModule):
 					'max_spikes_per_unit': 1_000
 				},
 				'filter': [250.0, 6_000.0],
-				'margin_ms': 5.0,
 				'num_channels': 5
 			},
 			'merge_check': {
@@ -59,25 +55,25 @@ class MergeSortings(MultiSortingsModule):
 	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
 		params = super().update_params(params)
 
-		assert params['max_shift'] < params['waveform_validation']['margin_ms']
-
-		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
 		params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 		params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
 		params['correlogram_validation']['censored_period'] = params['similarity']['window']
-		params['waveform_validation']['margin_ms'] = max(1.0, params['waveform_validation']['margin_ms'])
+		params['waveform_validation']['wvf_extraction']['ms_before'] += params['max_shift']
+		params['waveform_validation']['wvf_extraction']['ms_after']  += params['max_shift']
+		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
 
 		return params
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
+		self.aggregated_wvf_extractor = self.extract_waveforms(filter=params['waveform_validation']['filter'], sparse=False, **params['waveform_validation']['wvf_extraction'])
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
 		graph = self._compute_graph(similarity_matrices, params)
 		self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-		self.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+		self.compute_waveform_difference(graph, cross_shifts, params)
 
 		if params['merge_check']:
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
@@ -168,27 +164,23 @@ class MergeSortings(MultiSortingsModule):
 
 		censored_period, refractory_period = params['refractory_period']
 		min_f, max_f = params['waveform_validation']['filter']
-		recording_f = spre.gaussian_bandpass_filter(self.recording, freq_min=min_f, freq_max=max_f, margin_sd=2)
 
 		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()
+		spost.compute_spike_amplitudes(self.aggregated_wvf_extractor, peak_sign="both", return_scaled=self.recording.has_scaled())
+		contamination, _ = sqm.compute_refrac_period_violations(self.aggregated_wvf_extractor, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
+		sd_ratio = sqm.compute_sd_ratio(self.aggregated_wvf_extractor)
+		snrs = sqm.compute_snrs(self.aggregated_wvf_extractor, peak_sign="both", peak_mode="extremum")
+
 		for (name, sorting) in self.sortings.items():
-			if sorting.get_num_units() == 0: continue
-			wvf_extractor = si.extract_waveforms(recording_f, sorting, folder=self.tmp_folder / f"wvfs_{name}", ms_before=1.5, ms_after=1.5, max_spikes_per_unit=150, sparse=False)
-			spost.compute_spike_amplitudes(wvf_extractor, peak_sign="both", return_scaled=recording_f.has_scaled())
-			contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
-			sd_ratio = sqm.compute_sd_ratio(wvf_extractor)
-			snrs = sqm.compute_snrs(wvf_extractor, peak_sign="both", peak_mode="extremum")
-
 			for unit_id in sorting.unit_ids:
-				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
-				attr['contamination'] = contamination[unit_id]
-				attr['sd_ratio'] = sd_ratio[unit_id]
-				attr['SNR'] = snrs[unit_id]
-				graph.add_node((name, unit_id), **attr)
+				new_unit_id = self.aggregated_wvf_extractor.renamed_unit_ids[name][unit_id]
 
-			del wvf_extractor
-			shutil.rmtree(self.tmp_folder / f"wvfs_{name}")
+				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
+				attr['contamination'] = contamination[new_unit_id]
+				attr['sd_ratio'] = sd_ratio[new_unit_id]
+				attr['SNR'] = snrs[new_unit_id]
+				graph.add_node((name, unit_id), **attr)
 
 		# Connecting nodes using the similarity.
 		for i, (name1, sorting1) in enumerate(self.sortings.items()):
@@ -361,35 +353,22 @@ class MergeSortings(MultiSortingsModule):
 		@param cross_shifts: dict[str, dict[str, np.ndarray]]
 			The cross-shifts between units.
 		@param params: dict
-			The parameters for the waveform difference.
+			The parameters for the remove_merge function.
 		"""
 
-		params = copy.deepcopy(params)
-		n_channels = params['num_channels']
-		margin = round(params['margin_ms'] * self.sampling_f * 1e-3)
-		params['wvf_extraction']['ms_before'] += params['margin_ms']
-		params['wvf_extraction']['ms_after'] += params['margin_ms']
-		params_channels = {
-			'ms_before': min(params['wvf_extraction']['ms_before'], 2.0),
-			'ms_after': min(params['wvf_extraction']['ms_after'], 2.0)
-		}
-
-		template_extractors = {name: TemplateExtractor(self.recording, sorting, self.tmp_folder, params['wvf_extraction']) for name, sorting in self.sortings.items()}
+		n_channels = params['waveform_validation']['num_channels']
+		margin = params['max_shift']
 
 		for node1, node2 in graph.edges:
 			sorting1_name, unit_id1 = node1
 			sorting2_name, unit_id2 = node2
 			unit_idx1 = self.sortings[sorting1_name].id_to_index(unit_id1)
 			unit_idx2 = self.sortings[sorting2_name].id_to_index(unit_id2)
+			new_unit_id1 = self.aggregated_wvf_extractor.renamed_unit_ids[sorting1_name][unit_id1]
+			new_unit_id2 = self.aggregated_wvf_extractor.renamed_unit_ids[sorting2_name][unit_id2]
 
-			best_channels1 = template_extractors[sorting1_name].get_unit_best_channels(unit_id1, **params_channels)
-			best_channels2 = template_extractors[sorting2_name].get_unit_best_channels(unit_id2, **params_channels)
-			channel_ids = np.unique(np.concatenate((best_channels1[:n_channels], best_channels2[:n_channels])))
-
-			template1 = template_extractors[sorting1_name].get_template(unit_id1, channel_ids, return_scaled=self.recording.has_scaled())
-			template2 = template_extractors[sorting2_name].get_template(unit_id2, channel_ids, return_scaled=self.recording.has_scaled())
-			template1 = utils.filter(template1, params['filter'], axis=0)
-			template2 = utils.filter(template2, params['filter'], axis=0)
+			template1 = self.aggregated_wvf_extractor.get_template(new_unit_id1)
+			template2 = self.aggregated_wvf_extractor.get_template(new_unit_id2)
 			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
 
 			shift = cross_shifts[sorting1_name][sorting2_name][unit_idx1, unit_idx2]

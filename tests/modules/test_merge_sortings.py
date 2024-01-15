@@ -12,6 +12,11 @@ def test_default_params(merge_sortings_module: MergeSortings) -> None:
 	assert isinstance(merge_sortings_module.default_params, dict)
 
 
+def test_extract_multi_sortings_wvfs() -> None:
+	# TODO
+	pass
+
+
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
@@ -66,8 +71,10 @@ def test_compute_graph(data: LussacData) -> None:
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
 		'require_multiple_sortings_match': False,
-		'waveform_validation': {'filter': [150, 9_000]}
+		'waveform_validation': {'filter': [150.0, 9_000.0], 'wvf_extraction': {}}
 	}
+
+	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", filter=p['waveform_validation']['filter'], sparse=False, **p['waveform_validation']['wvf_extraction'])
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -138,10 +145,11 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params({})
 	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
+	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", filter=params['waveform_validation']['filter'], sparse=False, **params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params)
 
 	graph.add_edge(('ks2_low_thresh', 70), ('ms3_best', 71))  # Same unit
 	graph.add_edge(('ks2_low_thresh', 64), ('ms3_best', 80))  # Different units
@@ -149,7 +157,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	ss2 = sortings['ms3_best'].id_to_index(71)
 	cross_shifts['ks2_low_thresh']['ms3_best'][ss1, ss2] = -1
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params)
 
 	assert 'corr_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
 	assert 'corr_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
@@ -232,4 +240,5 @@ def merge_sortings_module(data: LussacData) -> MergeSortings:
 	}
 
 	multi_sortings_data = MultiSortingsData(data, data.sortings)
-	return MergeSortings("merge_sortings", multi_sortings_data, "all")
+	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
+	return module
