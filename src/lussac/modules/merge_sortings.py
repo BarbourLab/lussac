@@ -47,7 +47,12 @@ class MergeSortings(MultiSortingsModule):
 				'num_channels': 5
 			},
 			'merge_check': {
-				'cross_cont_limit': 0.10
+				'cross_cont_threshold': 0.10
+			},
+			'clean_edges': {
+				'template_diff_threshold': 0.10,
+				'corr_diff_threshold': 0.12,
+				'cross_cont_threshold': 0.06
 			}
 		}
 
@@ -190,7 +195,7 @@ class MergeSortings(MultiSortingsModule):
 				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
 						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= params['similarity']['min_similarity']:
-							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity, problem=False)
+							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
 
 		if params['require_multiple_sortings_match']:
 			for node in dict(graph.nodes):
@@ -260,7 +265,7 @@ class MergeSortings(MultiSortingsModule):
 				sd2 = graph.nodes[node2]['sd_ratio']
 				if C2 < C1:
 					spike_train1, spike_train2 = spike_train2, spike_train1
-				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_limit'])
+				cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_threshold'])
 
 				logs.write(f"\nUnit {node} is connected to {node1} and {node2}:\n")
 				logs.write(f"\tcross-cont = {cross_cont:.2%} (p_value={p_value:.2e})\n")
@@ -287,7 +292,7 @@ class MergeSortings(MultiSortingsModule):
 
 		if len(nodes_to_remove) > 0:
 			logs.write("\nRemoved units:\n")
-			for node in set(nodes_to_remove):  # Remove node then re-add it no remove all the edges.
+			for node in set(nodes_to_remove):
 				graph.remove_node(node)
 
 				sorting_name, unit_id = node
@@ -379,7 +384,10 @@ class MergeSortings(MultiSortingsModule):
 
 	def clean_edges(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> None:
 		"""
-		TODO
+		Checks for edges that are bad (based on cross-contamination, template/correlogram difference)
+		If an edge is bad, tries to find if one of the nodes is bad, and removes it
+		If it cannot find a bad node, then it simply removes the edge.
+		Nodes left alone (i.e. not connected) by this process are removed.
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
@@ -388,9 +396,12 @@ class MergeSortings(MultiSortingsModule):
 		@param params: dict
 			The parameters of the merge_sorting module.
 		"""
-		# TODO: Make these parameters.
-		sd_threshold = 0.20
+
+		logs = open(f"{self.logs_folder}/clean_edges_logs.txt", 'w+')
+		sd_threshold = 0.20  # TODO: Make these parameters.
 		C_threshold = 0.08
+		refractory_period = params['refractory_period']
+		params = params['clean_edges']
 
 		nodes_to_remove = []
 		edges_to_remove = []
@@ -408,29 +419,48 @@ class MergeSortings(MultiSortingsModule):
 			sd1 = graph.nodes[node1]['sd_ratio']
 			sd2 = graph.nodes[node2]['sd_ratio']
 
-			spike_train1 = self.sortings[sorting_name1].get_unit_spike_train(unit_id1).astype(np.int64)
-			spike_train2 = self.sortings[sorting_name2].get_unit_spike_train(unit_id2).astype(np.int64) + cross_shifts[sorting_name1][sorting_name2][unit_ind1, unit_ind2]
+			spike_train1 = self.sortings[sorting_name1].get_unit_spike_train(unit_id1)
+			spike_train2 = self.sortings[sorting_name2].get_unit_spike_train(unit_id2) + cross_shifts[sorting_name1][sorting_name2][unit_ind1, unit_ind2]
 			if C2 < C1:
 				spike_train1, spike_train2 = spike_train2, spike_train1
 
-			cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, params['refractory_period'], limit=0.06)  # TODO: make 'limit' a parameter.
+			cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_threshold'])
 
-			if p_value > 5e-3 or data['temp_diff'] < 0.10 or data['corr_diff'] < 0.12:  # TODO: Make these parameters.
+			if p_value > 5e-3 or data['temp_diff'] < params['template_diff_threshold'] or data['corr_diff'] < params['corr_diff_threshold']:
 				continue
 
 			# From this point on, the edge is treated as problematic.
+			logs.write(f"\nEdge {node1} -- {node2} is problematic:\n")
+			logs.write(f"\t- {graph.nodes[node1]}")
+			logs.write(f"\t- {graph.nodes[node2]}")
+			logs.write(f"\t- cross-cont = {cross_cont:.2%} (p={p_value:.2e})\n")
+			logs.write(f"\t- edge data: {data}n")
+
 			if sd1 - sd2 > (C2 - C1) * sd_threshold/C_threshold + sd_threshold and sd1 > 1.05:  # node 1 is problematic
+				logs.write(f"\t=> Removing node {node1}\n")
 				nodes_to_remove.append(node1)
 			elif sd2 - sd1 > (C1 - C2) * sd_threshold/C_threshold + sd_threshold and sd2 > 1.05:  # node 2 is problematic
+				logs.write(f"\t=> Removing node {node2}\n")
 				nodes_to_remove.append(node2)
 			else:  # Couldn't decide which one is problematic, Remove the connection between them.
+				logs.write(f"\t=> Removing the connection\n")
 				edges_to_remove.append((node1, node2))
 
+		logs.write("\n\nComplete list:\n")
 		for node in set(nodes_to_remove):
 			graph.remove_node(node)
+			logs.write(f"\t- Node {node}\n")
 		for edge in edges_to_remove:
 			if graph.has_edge(*edge):
+				logs.write(f"\t- Edge {edge}\n")
 				graph.remove_edge(*edge)
+
+				for node in edge:  # If a node is left alone, remove it.
+					if len(graph.edges(node)) == 0:
+						graph.remove_node(node)
+						logs.write(f"\t(also removed node {node} because left alone)\n")
+
+		logs.close()
 
 	@staticmethod
 	def separate_communities(graph: nx.Graph) -> None:

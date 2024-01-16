@@ -157,7 +157,7 @@ class TestMonoSortingModule(MonoSortingModule):
 
 	__test__ = False
 
-	def __init__(self, mono_sorting_data: MonoSortingData):
+	def __init__(self, mono_sorting_data: MonoSortingData) -> None:
 		# Create a smaller data object for testing (faster).
 		data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([0, 1, 2, 3, 4]))
 		super().__init__("test_mono_sorting_module", data, "all")

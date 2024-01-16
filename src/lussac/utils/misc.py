@@ -314,8 +314,8 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 			estimated_cross_cont: float if limit is None
 		Returns the estimation of cross-contamination, as well as the p-value of the statistical test if the limit is given.
 	"""
-	spike_train1 = spike_train1.astype(np.int64)
-	spike_train2 = spike_train2.astype(np.int64)
+	spike_train1 = spike_train1.astype(np.int64, copy=False)
+	spike_train2 = spike_train2.astype(np.int64, copy=False)
 
 	N1 = len(spike_train1)
 	N2 = len(spike_train2)
