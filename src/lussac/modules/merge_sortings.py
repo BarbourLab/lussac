@@ -20,6 +20,8 @@ class MergeSortings(MultiSortingsModule):
 	Merges the sortings into a single one.
 	"""
 
+	aggregated_wvf_extractor: si.WaveformExtractor  # Waveform extractor for all analyses.
+
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:

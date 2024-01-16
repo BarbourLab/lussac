@@ -34,9 +34,9 @@ class ExportToSIGUI(MonoSortingModule):
 		path = self._format_output_path(params['path'])
 		wvf_extractor = si.extract_waveforms(self.recording, self.sorting, path, **params['wvf_extraction'])
 
-		if params['spike_amplitudes']:
+		if isinstance(params['spike_amplitudes'], dict):
 			spost.compute_spike_amplitudes(wvf_extractor, **params['spike_amplitudes'])
-		if params['principal_components']:
+		if isinstance(params['principal_components'], dict):
 			spost.compute_principal_components(wvf_extractor, **params['principal_components'])
 
 		return self.sorting
