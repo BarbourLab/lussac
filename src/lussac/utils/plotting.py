@@ -170,9 +170,9 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		bins = np.arange(bin_size/2, max_time, bin_size)
 		ISI = np.histogram(np.diff(spike_train), bins=np.arange(0, max_time+bin_size, bin_size))[0]
 		fig.add_trace(go.Bar(
-			x=bins,
+			x=bins * 1e3 / sf,
 			y=ISI,
-			width=bin_size,
+			width=bin_size_ms,
 			name="ISI",
 			marker_color="CornflowerBlue"
 		), row=1, col=1)
@@ -183,7 +183,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		fig.add_trace(go.Bar(
 			x=bins[:-1] + bin,
 			y=auto_corr,
-			width=bin_size,
+			width=bin_size_ms,
 			name="Auto-correlogram",
 			marker_color="CornflowerBlue"
 		), row=1, col=2)

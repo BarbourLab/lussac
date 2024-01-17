@@ -206,6 +206,8 @@ def test_clean_edges(data: LussacData) -> None:
 	assert graph.has_edge(('ks2_best', 41), ('ms3_best', 71))
 	assert not graph.has_edge(('ks2_best', 41), ('ms3_best', 14))
 
+	assert os.path.exists(f"{merge_sortings_module.logs_folder}/clean_edges_logs.txt")
+
 
 def test_separate_communities() -> None:
 	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9), (10, 11)])

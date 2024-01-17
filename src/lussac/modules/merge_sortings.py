@@ -433,10 +433,10 @@ class MergeSortings(MultiSortingsModule):
 
 			# From this point on, the edge is treated as problematic.
 			logs.write(f"\nEdge {node1} -- {node2} is problematic:\n")
-			logs.write(f"\t- {graph.nodes[node1]}")
-			logs.write(f"\t- {graph.nodes[node2]}")
+			logs.write(f"\t- {node1} - {graph.nodes[node1]}\n")
+			logs.write(f"\t- {node2} - {graph.nodes[node2]}\n")
 			logs.write(f"\t- cross-cont = {cross_cont:.2%} (p={p_value:.2e})\n")
-			logs.write(f"\t- edge data: {data}n")
+			logs.write(f"\t- edge data: {data}\n")
 
 			if sd1 - sd2 > (C2 - C1) * sd_threshold/C_threshold + sd_threshold and sd1 > 1.05:  # node 1 is problematic
 				logs.write(f"\t=> Removing node {node1}\n")
@@ -450,8 +450,8 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.write("\n\nComplete list:\n")
 		for node in set(nodes_to_remove):
+			logs.write(f"\t- Node {node} - {graph.nodes[node]}\n")
 			graph.remove_node(node)
-			logs.write(f"\t- Node {node}\n")
 		for edge in edges_to_remove:
 			if graph.has_edge(*edge):
 				logs.write(f"\t- Edge {edge}\n")
@@ -459,8 +459,8 @@ class MergeSortings(MultiSortingsModule):
 
 				for node in edge:  # If a node is left alone, remove it.
 					if len(graph.edges(node)) == 0:
+						logs.write(f"\t\t(also removed node {node} - {graph.nodes[node]} because left alone)\n")
 						graph.remove_node(node)
-						logs.write(f"\t(also removed node {node} because left alone)\n")
 
 		logs.close()
 
