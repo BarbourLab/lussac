@@ -249,7 +249,7 @@ def spike_vector_to_spike_trains(sample_indices, unit_indices) -> list[np.ndarra
 		The list of spike trains.
 	"""
 
-	num_units = 1 + np.max(unit_indices)
+	num_units = (1 + np.max(unit_indices)) if len(unit_indices) > 0 else 0
 	num_spikes = sample_indices.size
 
 	num_spikes_per_unit = np.zeros(num_units, dtype=np.int32)
@@ -289,8 +289,7 @@ def estimate_contamination(spike_train: np.ndarray, refractory_period: tuple[flo
 	n_v = compute_nb_violations(spike_train.astype(np.int64), t_r)
 
 	N = len(spike_train)
-	T = Utils.t_max
-	D = 1 - n_v * (T - 2*N*t_c) / (N**2 * (t_r - t_c))
+	D = 1 - n_v * (Utils.t_max - 2*N*t_c) / (N**2 * (t_r - t_c))
 	contamination = 1.0 if D < 0 else 1 - math.sqrt(D)
 
 	return contamination
@@ -496,12 +495,12 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
-	n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
-	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
-	coincidence_matrix = np.zeros((n_units1, n_units2), dtype=np.int64)
-
 	if cross_shifts is None:
+		n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
+		n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
 		cross_shifts = np.zeros((n_units1, n_units2), dtype=np.int32)
+
+	coincidence_matrix = np.zeros(cross_shifts.shape, dtype=np.int64)
 
 	start_j = 0
 	for i in range(len(spike_times1)):

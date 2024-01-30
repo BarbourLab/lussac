@@ -8,6 +8,21 @@ from lussac.modules import MergeSortings
 import spikeinterface.core as si
 
 
+PARAMS = {
+	'refractory_period': (0.2, 1.0),
+	'require_multiple_sortings_match': False,
+	'similarity': {
+		'min_similarity': 0.4,
+		'window': 0.2
+	},
+	'waveform_validation': {
+		'wvf_extraction': {
+			'max_spikes_per_unit': 200
+		}
+	}
+}
+
+
 def test_default_params(merge_sortings_module: MergeSortings) -> None:
 	assert isinstance(merge_sortings_module.default_params, dict)
 
@@ -20,9 +35,7 @@ def test_extract_multi_sortings_wvfs() -> None:
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}, 'require_multiple_sortings_match': False}
-	params = merge_sortings_module.update_params(params)
-	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
+	params = merge_sortings_module.update_params(PARAMS)
 	sortings = merge_sortings_module.run(params)
 
 	assert len(sortings) == 1
@@ -32,10 +45,29 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
 
+def test_merge_empty(data: LussacData) -> None:
+	# Testing if everything works correctly with sortings having no units or no spikes.
+	sortings = {
+		'no_units': si.NumpySorting.from_unit_dict({}, sampling_frequency=30000),
+		'no_spikes': si.NumpySorting.from_unit_dict({0: np.array([])}, sampling_frequency=30000),
+		'one_good_one_bad': si.NumpySorting.from_unit_dict({0: np.array([100, 300]), 1: np.array([])}, sampling_frequency=30000)
+	}
+
+	multi_sortings_data = MultiSortingsData(data, sortings)
+	module = MergeSortings("merge_sortings_empty", multi_sortings_data, "all")
+
+	params = module.update_params(PARAMS)
+	sortings = module.run(params)
+
+	assert len(sortings) == 1
+	assert 'merged_sorting' in sortings
+	assert sortings['merged_sorting'].get_num_units() == 1
+
+
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: None for name2 in merge_sortings_module.sortings.keys()} for name1 in merge_sortings_module.sortings.keys()}
-	params = {'refractory_period': [0.2, 1.0], 'similarity': {'window': 6}}
 
+	params = merge_sortings_module.update_params(PARAMS)
 	similarity_matrices = merge_sortings_module._compute_similarity_matrices(cross_shifts, params)
 
 	assert 'ks2_low_thresh' in similarity_matrices
@@ -143,8 +175,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	graph = nx.Graph()
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
-	params = merge_sortings_module.update_params({})
-	params['waveform_validation']['wvf_extraction']['max_spikes_per_unit'] = 200
+	params = merge_sortings_module.update_params(PARAMS)
 	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", sparse=False, **params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph

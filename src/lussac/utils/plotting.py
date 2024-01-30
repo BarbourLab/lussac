@@ -1,3 +1,4 @@
+import itertools
 import os
 from typing import Any
 import copy
@@ -208,7 +209,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 
 		template = wvf_extractor.get_template(unit_id, mode="average")
 		best_channels = np.argsort(np.max(np.abs(template), axis=0))[::-1]
-		for i in range(n_channels):  # TODO: share y axis for all templates in a unit.
+		for i in range(n_channels):
 			channel = best_channels[i]
 			fig.add_trace(go.Scatter(
 				x=xaxis,
@@ -271,26 +272,19 @@ def create_graph_plot(graph: nx.Graph) -> go.Figure:  # pragma: no cover (test f
 
 	fig = go.Figure()
 
-	for node1, node2, data in graph.edges(data=True):
-		color = "rgba(0, 0, 0, 0.8)"
-		if 'problem' in data and data['problem']:
-			color = "rgba(255, 0, 0, 0.8)"
-
-		fig.add_trace(go.Scatter(
-			x=[nodes_pos[node1][0], nodes_pos[node2][0]],
-			y=[nodes_pos[node1][1], nodes_pos[node2][1]],
-			mode="lines",
-			line=dict(width=1, color=color),
-			showlegend=False,
-			text="<br />".join([f"{key}: {value}" for key, value in data.items()]),
-			hoverinfo="text"
-		))
+	fig.add_trace(go.Scatter(
+		x=list(itertools.chain(*[[nodes_pos[node1][0], nodes_pos[node2][0], None] for node1, node2 in graph.edges])),
+		y=list(itertools.chain(*[[nodes_pos[node1][1], nodes_pos[node2][1], None] for node1, node2 in graph.edges])),
+		mode="lines",
+		line=dict(width=1, color="rgba(0, 0, 0, 0.8)"),  # TODO: color problematic edges in red.
+		showlegend=False
+	))
 
 	fig.add_trace(go.Scatter(
 		x=np.array(list(nodes_pos.values()))[:, 0],
 		y=np.array(list(nodes_pos.values()))[:, 1],
 		mode="markers",
-		marker_color="CornflowerBlue",
+		marker_color=["Crimson" if 'problem' in data and data['problem'] else "CornflowerBlue" for _, data in graph.nodes(data=True)],
 		text=[(f"{name}<br />" + "<br />".join(f"{key}: {value}" for key, value in data.items())) for name, data in graph.nodes(data=True)]
 	))
 

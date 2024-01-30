@@ -74,6 +74,8 @@ class MergeSortings(MultiSortingsModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
+		self.data.sortings = {name: sorting.remove_empty_units() for name, sorting in self.sortings.items()}
+
 		self.aggregated_wvf_extractor = self.extract_waveforms(sparse=False, **params['waveform_validation']['wvf_extraction'])
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
@@ -316,7 +318,7 @@ class MergeSortings(MultiSortingsModule):
 		"""
 
 		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'])
-		gaussian = scipy.stats.norm.pdf(np.arange(-N, N+1), loc=0.0, scale=params['gaussian_std'])
+		gaussian = utils.gaussian_pdf(np.arange(-N, N+1), 0.0, params['gaussian_std'])
 
 		for nodes in nx.connected_components(graph):  # For each community.
 			nodes = list(nodes)
@@ -428,7 +430,12 @@ class MergeSortings(MultiSortingsModule):
 
 			cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_threshold'])
 
-			if p_value > 5e-3 or data['temp_diff'] < params['template_diff_threshold'] or data['corr_diff'] < params['corr_diff_threshold']:
+			problem_cases = [
+				p_value < 5e-3 and data['temp_diff'] > params['template_diff_threshold'] and data['corr_diff'] > params['corr_diff_threshold'],
+				p_value < 0.80 and data['similarity'] < 0.60 and data['temp_diff'] > 0.05 and data['corr_diff'] > 0.05
+			]
+
+			if not np.any(problem_cases):
 				continue
 
 			# From this point on, the edge is treated as problematic.
@@ -522,9 +529,17 @@ class MergeSortings(MultiSortingsModule):
 			unit_label = ""
 			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
 
-			# if len(nodes) == 1 and graph.nodes[nodes[0]]['contamination'] < 0.05:  # Be more strict about nodes that end up being alone.
-			# if len(nodes) == 1:
-			# 	continue
+			if len(nodes) == 1 and params['require_multiple_sortings_match']:  # Be more strict about nodes that end up being alone.
+				node = nodes[0]
+				if graph.nodes[node]['contamination'] > 0.10:
+					logs.write(f"\t- Contamination too high (C = {graph.nodes[node]['contamination']:.1%})\n\t--> SKIPPING\n")
+					continue
+				if graph.nodes[node]['SNR'] < 3.0:
+					logs.write(f"\t- SNR too low (SNR = {graph.nodes[node]['SNR']:.2f})\n\t--> SKIPPING\n")
+					continue
+				if abs(graph.nodes[node]['sd_ratio'] - 1) > 0.2:
+					logs.write(f"\t- SD ratio too different from 1.0 (SD ratio = {graph.nodes[node]['sd_ratio']:.2f})\n\t--> SKIPPING\n")
+					continue
 
 			for n_units in range(1, params['max_units_merge']+1):
 				for sub_nodes in itertools.combinations(nodes, n_units):

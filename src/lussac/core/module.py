@@ -115,6 +115,7 @@ class LussacModule(ABC):
 			assert len(filter) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
 			recording = spre.gaussian_bandpass_filter(recording, *filter, margin_sd=2)
 
+		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
 		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
 
 
