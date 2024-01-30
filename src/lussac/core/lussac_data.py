@@ -1,4 +1,5 @@
 import copy
+import datetime
 import logging
 import os
 import pathlib
@@ -63,7 +64,7 @@ class LussacData:
 		targets[0].terminator = ''
 		targets[1].terminator = ''
 		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets)
-		logging.info("\nRunning Lussac!\n\n")  # TODO: Add date and hour.
+		logging.info(f"\nRunning Lussac!\n{datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
 		self._sanity_check()
 
