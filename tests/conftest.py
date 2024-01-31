@@ -36,6 +36,14 @@ def pipeline(data: LussacData) -> LussacPipeline:
 	return LussacPipeline(data)
 
 
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: list[pytest.Item]) -> None:
+	# test "test_dataset_exists" has to be run first!
+	for item in items.copy():
+		if item.parent.name == "test_main.py":
+			items.remove(item)
+			items.insert(0, item)
+
+
 def pytest_sessionstart(session: pytest.Session) -> None:
 	# Remove lussac folder if exists.
 	shutil.rmtree("tests/datasets/cerebellar_cortex/lussac", ignore_errors=True)

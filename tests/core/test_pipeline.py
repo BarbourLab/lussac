@@ -15,10 +15,10 @@ def test_launch(pipeline: LussacPipeline) -> None:
 	params['lussac']['pipeline'] = {'not_a_module': {'cat': {}}}
 	data = pipeline.data.clone()
 	data.params = params
+	data.recording = data.recording.frame_slice(0, 1_000_000)
 	data.sortings = {
-		'ms3_low_thresh': data.sortings['ms3_low_thresh'].frame_slice(0, 3_000_000),
-		'ks2_best': data.sortings['ks2_best'].frame_slice(0, 3_000_000),
-		'ms3_best': data.sortings['ms3_best'].frame_slice(0, 3_000_000)
+		'ks2_best': data.sortings['ks2_best'].frame_slice(0, 1_000_000),
+		'ms3_best': data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 1_000_000)
 	}
 
 	wrong_pipeline = LussacPipeline(data)
@@ -51,12 +51,23 @@ def test_launch(pipeline: LussacPipeline) -> None:
 				'refractory_period': [0.7, 25.0],
 				'similarity': {
 					'min_similarity': 0.4
+				},
+				'waveform_validation': {
+					'wvf_extraction': {
+						'ms_after': 3.0,
+						'max_spikes_per_unit': 200
+					}
 				}
 			},
 			'rest': {
 				'refractory_period': [0.17, 0.99],
 				'similarity': {
 					'min_similarity': 0.4
+				},
+				'waveform_validation': {
+					'wvf_extraction': {
+						'max_spikes_per_unit': 200
+					}
 				}
 			}
 		}
@@ -148,6 +159,7 @@ def test_merge_sortings() -> None:
 	sorting1 = si.NumpySorting(np.array([]), 30000, [0, 1, 3])
 	sorting2 = si.NumpySorting(np.array([]), 30000, [5, 2, 9])
 	sorting3 = si.NumpySorting(np.array([]), 30000, [1, 0, 6])
+	empty_sorting = si.NumpySorting(np.array([]), 30000, [])
 
 	sorting1.annotate(name="test")
 	sorting2.annotate(name="test")
@@ -161,6 +173,9 @@ def test_merge_sortings() -> None:
 	sorting1_3 = LussacPipeline.merge_sortings(sorting1, sorting3)
 	assert np.all(sorting1_3.unit_ids == (0, 1, 3, 7, 8, 6))
 	assert np.all(sorting1_3.get_property("test2") == (0, 1, 2, 3, 4, 5))
+
+	assert LussacPipeline.merge_sortings(sorting1, empty_sorting) == sorting1
+	assert LussacPipeline.merge_sortings(empty_sorting, sorting2) == sorting2
 
 
 def test_save_load_sortings(pipeline: LussacPipeline) -> None:

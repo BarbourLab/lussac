@@ -1,10 +1,9 @@
 import os
-
-import numba
 import pytest
+import numba
 import numpy as np
-import probeinterface as pi
 from lussac.core import LussacData
+import probeinterface as pi
 import spikeinterface.core as si
 
 
@@ -83,6 +82,23 @@ def test_load_sortings(data: LussacData) -> None:
 		data._load_sortings({'aze': "./qdjsgpfdhsig.json"})
 
 	# TODO: Generate 'provenance.json' file in tmp folder and test loading from it.
+
+
+def test_setup_logs_directtory(data: LussacData) -> None:
+	folder_path = data.logs_folder / "aze"
+	folder_path.mkdir(parents=True)
+
+	# Create a text file, then check that it is deleted with overwrite=True
+	(folder_path / "test.txt").touch()
+
+	LussacData._setup_logs_directory(str(folder_path), overwrite_logs=False)
+	assert (folder_path / "test.txt").exists()
+
+	LussacData._setup_logs_directory(str(folder_path), overwrite_logs=True)
+	assert not (folder_path / "test.txt").exists()
+
+	# Check that the plotly JS file has been exported.
+	assert (folder_path / "plotly.min.js").exists()
 
 
 def test_create_from_params(data: LussacData) -> None:

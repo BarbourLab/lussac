@@ -1,6 +1,6 @@
 import copy
 import os
-from lussac.core import LussacPipeline, MonoSortingData
+from lussac.core import LussacData, LussacPipeline, MonoSortingData
 from lussac.modules import ExportToSIGUI
 
 
@@ -9,7 +9,12 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 	assert isinstance(module.default_params, dict)
 
 
-def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
+def test_export_multiple_sortings(data: LussacData) -> None:
+	data = data.clone()
+	data.recording = data.recording.frame_slice(0, 1_000_000)
+	data.sortings = {name: data.sortings[name].frame_slice(0, 1_000_000) for name in data.sortings.keys() if name in ["ks2_cs", "ms3_cs", "ks2_best"]}
+	pipeline = LussacPipeline(data)
+
 	folder = "tests/datasets/cerebellar_cortex/lussac/output_sigui"
 	params = {
 		'sortings': ['ks2_best', 'ms3_cs'],
@@ -20,8 +25,8 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 			'max_spikes_per_unit': 10,
 			'allow_unfiltered': True
 		},
-		'spike_amplitudes': {'chunk_duration': '1s', 'n_jobs': 6},
-		'principal_components': {'n_components': 3, 'chunk_duration': '1s', 'n_jobs': 6}
+		'spike_amplitudes': {},
+		'principal_components': {'n_components': 3}
 	}
 
 	pipeline._run_mono_sorting_module(ExportToSIGUI, "export_to_sigui", "all", params)

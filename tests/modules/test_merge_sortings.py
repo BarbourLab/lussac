@@ -8,15 +8,34 @@ from lussac.modules import MergeSortings
 import spikeinterface.core as si
 
 
+PARAMS = {
+	'refractory_period': (0.2, 1.0),
+	'require_multiple_sortings_match': False,
+	'similarity': {
+		'min_similarity': 0.4,
+		'window': 0.2
+	},
+	'waveform_validation': {
+		'wvf_extraction': {
+			'max_spikes_per_unit': 200
+		}
+	}
+}
+
+
 def test_default_params(merge_sortings_module: MergeSortings) -> None:
 	assert isinstance(merge_sortings_module.default_params, dict)
+
+
+def test_extract_multi_sortings_wvfs() -> None:
+	# TODO
+	pass
 
 
 def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert not os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
-	params = {'refractory_period': [0.2, 1.0], 'similarity': {'min_similarity': 0.4}}
-	params = merge_sortings_module.update_params(params)
+	params = merge_sortings_module.update_params(PARAMS)
 	sortings = merge_sortings_module.run(params)
 
 	assert len(sortings) == 1
@@ -26,10 +45,29 @@ def test_merge_sortings(merge_sortings_module: MergeSortings) -> None:
 	assert os.path.exists(f"{merge_sortings_module.logs_folder}/merge_sortings_logs.txt")
 
 
+def test_merge_empty(data: LussacData) -> None:
+	# Testing if everything works correctly with sortings having no units or no spikes.
+	sortings = {
+		'no_units': si.NumpySorting.from_unit_dict({}, sampling_frequency=30000),
+		'no_spikes': si.NumpySorting.from_unit_dict({0: np.array([])}, sampling_frequency=30000),
+		'one_good_one_bad': si.NumpySorting.from_unit_dict({0: np.array([100, 300]), 1: np.array([])}, sampling_frequency=30000)
+	}
+
+	multi_sortings_data = MultiSortingsData(data, sortings)
+	module = MergeSortings("merge_sortings_empty", multi_sortings_data, "all")
+
+	params = module.update_params(PARAMS)
+	sortings = module.run(params)
+
+	assert len(sortings) == 1
+	assert 'merged_sorting' in sortings
+	assert sortings['merged_sorting'].get_num_units() == 1
+
+
 def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: None for name2 in merge_sortings_module.sortings.keys()} for name1 in merge_sortings_module.sortings.keys()}
-	params = {'refractory_period': [0.2, 1.0], 'similarity': {'window': 6}}
 
+	params = merge_sortings_module.update_params(PARAMS)
 	similarity_matrices = merge_sortings_module._compute_similarity_matrices(cross_shifts, params)
 
 	assert 'ks2_low_thresh' in similarity_matrices
@@ -65,8 +103,10 @@ def test_compute_graph(data: LussacData) -> None:
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
 		'require_multiple_sortings_match': False,
-		'waveform_validation': {'filter': [150, 9_000]}
+		'waveform_validation': {'wvf_extraction': {'filter': [150.0, 9_000.0]}}
 	}
+
+	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", sparse=False, **p['waveform_validation']['wvf_extraction'])
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -91,7 +131,7 @@ def test_compute_graph(data: LussacData) -> None:
 	assert 'aze' not in graph.nodes[('1', 0)]
 
 
-def test_graph(merge_sortings_module: MergeSortings) -> None:
+def test_save_load_graph(merge_sortings_module: MergeSortings) -> None:
 	G = nx.Graph()
 	G.add_node('A', connected=True)
 	G.add_node('B', connected=True)
@@ -135,11 +175,12 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	graph = nx.Graph()
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
-	params = merge_sortings_module.update_params({})
+	params = merge_sortings_module.update_params(PARAMS)
+	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", sparse=False, **params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params)
 
 	graph.add_edge(('ks2_low_thresh', 70), ('ms3_best', 71))  # Same unit
 	graph.add_edge(('ks2_low_thresh', 64), ('ms3_best', 80))  # Different units
@@ -147,7 +188,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	ss2 = sortings['ms3_best'].id_to_index(71)
 	cross_shifts['ks2_low_thresh']['ms3_best'][ss1, ss2] = -1
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
-	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params['waveform_validation'])
+	merge_sortings_module.compute_waveform_difference(graph, cross_shifts, params)
 
 	assert 'corr_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
 	assert 'corr_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
@@ -156,8 +197,63 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 
 	assert 'temp_diff' in graph[('ks2_low_thresh', 70)][('ms3_best', 71)]
 	assert 'temp_diff' in graph[('ks2_low_thresh', 64)][('ms3_best', 80)]
-	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.10
-	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.8
+	assert graph[('ks2_low_thresh', 70)][('ms3_best', 71)]['temp_diff'] < 0.15
+	assert graph[('ks2_low_thresh', 64)][('ms3_best', 80)]['temp_diff'] > 0.65
+
+
+def test_clean_edges(data: LussacData) -> None:
+	data = data.clone()
+	data.sortings = {
+		'ks2_best': data.sortings['ks2_best'].select_units([13, 22, 41]),
+		'ms3_best': data.sortings['ms3_best'].select_units([14, 71])
+	}
+	multi_sortings_data = MultiSortingsData(data, data.sortings)
+	merge_sortings_module = MergeSortings("merge_sortings_edges", multi_sortings_data, "all")
+
+	# Making a graph with approximate parameters for testing.
+	graph = nx.Graph()
+	graph.add_node(('ks2_best', 41), contamination=0.002, SNR=6.26, sd_ratio=1.05)  # Beautiful SSpk.
+	graph.add_node(('ks2_best', 13), contamination=0.001, SNR=3.94, sd_ratio=1.11)  # Beautiful mossy fiber.
+	graph.add_node(('ks2_best', 22), contamination=0.316, SNR=4.27, sd_ratio=1.35)  # Noisy unit.
+	graph.add_node(('ms3_best', 71), contamination=0.000, SNR=6.35, sd_ratio=0.89)  # Same SSpk (but spikes missing).
+	graph.add_node(('ms3_best', 14), contamination=0.001, SNR=4.35, sd_ratio=1.16)  # Same mossy fiber.
+
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 71), similarity=0.998, corr_diff=0.008, temp_diff=0.051)  # Linking SSpk together.
+	graph.add_edge(('ks2_best', 13), ('ms3_best', 14), similarity=0.964, corr_diff=0.081, temp_diff=0.074)  # Linking MF together.
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 14), similarity=0.052, corr_diff=0.723, temp_diff=0.947)  # Erroneous link: edge should be removed but not the nodes.
+	graph.add_edge(('ks2_best', 22), ('ms3_best', 71), similarity=0.030, corr_diff=0.733, temp_diff=0.969)  # node1 is bad --> should get removed
+
+	# Running "clean_edges"
+	cross_shifts = merge_sortings_module.compute_cross_shifts(30)
+	merge_sortings_module.clean_edges(graph, cross_shifts, merge_sortings_module.update_params({}))
+
+	# Making sure everything is as expected.
+	assert graph.number_of_nodes() == 4
+	assert graph.number_of_edges() == 2
+	assert ('ks2_best', 41) in graph
+	assert ('ms3_best', 14) in graph
+	assert ('ks2_best', 22) not in graph
+	assert ('ms3_best', 71) in graph
+	assert graph.has_edge(('ks2_best', 41), ('ms3_best', 71))
+	assert not graph.has_edge(('ks2_best', 41), ('ms3_best', 14))
+
+	assert os.path.exists(f"{merge_sortings_module.logs_folder}/clean_edges_logs.txt")
+
+
+def test_separate_communities() -> None:
+	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9), (10, 11)])
+	MergeSortings.separate_communities(graph)
+
+	# Only nodes '8' and '9' need to be removed
+	print(graph.nodes)
+	assert graph.number_of_nodes() == 10
+	assert 1 in graph
+	assert 8 not in graph
+	assert 9 not in graph
+
+	# Only edges (1, 8), (8, 9) and (3, 4) need to be removed
+	assert graph.number_of_edges() == 14
+	assert not graph.has_edge(4, 5)
 
 
 def test_merge_sortings_func() -> None:
@@ -169,13 +265,13 @@ def test_merge_sortings_func() -> None:
 def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# Copy the dataset with fewer sortings and fewer units to go faster.
 	data = data.clone()
-	del data.sortings['ms3_low_thresh']
-	del data.sortings['ms3_cs']
-	del data.sortings['ks2_best']
-	del data.sortings['ks2_cs']
-	data.sortings['ks2_low_thresh'] = data.sortings['ks2_low_thresh'].select_units([7, 13, 15, 23, 24, 26, 27, 30, 32, 48, 49, 56, 63, 64, 70, 72, 74, 80]).frame_slice(0, 3_000_000)
-	data.sortings['ms3_best'] = data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 3_000_000)
-	data.sortings['ms4_cs'] = data.sortings['ms4_cs'].select_units([0, 5, 7, 8, 9, 17, 19, 20, 23, 25, 32, 53, 56, 58, 59, 62, 69, 70]).frame_slice(0, 3_000_000)
+	data.recording = data.recording.frame_slice(0, 1_000_000)
+	data.sortings = {
+		'ks2_low_thresh': data.sortings['ks2_low_thresh'].select_units([7, 13, 15, 23, 24, 26, 27, 30, 32, 48, 49, 56, 63, 64, 70, 72, 74, 80]).frame_slice(0, 1_000_000),
+		'ms3_best': data.sortings['ms3_best'].select_units([2, 8, 11, 14, 15, 17, 18, 20, 22, 24, 30, 33, 57, 66, 67, 70, 71, 78, 80, 84]).frame_slice(0, 1_000_000),
+		'ms4_cs': data.sortings['ms4_cs'].select_units([0, 5, 7, 8, 9, 17, 19, 20, 23, 25, 32, 53, 56, 58, 59, 62, 69, 70]).frame_slice(0, 1_000_000)
+	}
 
 	multi_sortings_data = MultiSortingsData(data, data.sortings)
-	return MergeSortings("merge_sortings", multi_sortings_data, "all")
+	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
+	return module

@@ -90,6 +90,34 @@ class LussacModule(ABC):
 
 		return utils.merge_dict(params, self.default_params)
 
+	def extract_waveforms(self, sorting: si.BaseSorting, sub_folder: str | None = None, filter: list[float, float] | None = None, **params) -> si.WaveformExtractor:
+		"""
+		Creates the WaveformExtractor object and returns it.
+
+		@param sorting: BaseSorting
+			The sorting for the WaveformExtractor.
+		@param sub_folder: str | None:
+			The sub-folder where to save the waveforms.
+		@param params
+			The parameters for the waveform extractor.
+		@param filter: list[float, float] | None
+			The cutoff frequencies for the Gaussian bandpass filter to apply to the recording.
+		@return wvf_extractor: WaveformExtractor
+			The waveform extractor object.
+		"""
+		if sub_folder is None:
+			sub_folder = "wvf_extractor"
+
+		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{sorting.get_annotation('name')}/{sub_folder}"
+
+		recording = self.recording
+		if filter is not None:
+			assert len(filter) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
+			recording = spre.gaussian_bandpass_filter(recording, *filter, margin_sd=2)
+
+		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
+		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
+
 
 @dataclass(slots=True)
 class MonoSortingModule(LussacModule):
@@ -157,33 +185,16 @@ class MonoSortingModule(LussacModule):
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		...
 
-	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, filter: dict[str, Any] | None = None, **params) -> si.WaveformExtractor:
+	def extract_waveforms(self, sorting: si.BaseSorting | None = None, sub_folder: str | None = None, filter: list[float, float] | None = None, **params) -> si.WaveformExtractor:
 		"""
-		Creates the WaveformExtractor object and returns it.
-
-		@param sorting: BaseSorting | None
-			The sorting for the WaveformExtractor.
-			If None, will take the sorting from the data object.
-		@param sub_folder: str | None:
-			The sub-folder where to save the waveforms.
-		@param params
-			The parameters for the waveform extractor.
-		@param filter: dict | None
-			The filter to apply to the recording.
-		@return wvf_extractor: WaveformExtractor
-			The waveform extractor object.
+		Calls the parent LussacModule.extract_waveforms
+		'sorting' argument is optional. If None (default), will take the MonoSortingModule.data.sorting
 		"""
-		if sub_folder is None:
-			sub_folder = "wvf_extractor"
 
-		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.data.name}/{sub_folder}"
+		if sorting is None:
+			sorting = self.sorting
 
-		recording = self.recording
-		if filter is not None:
-			recording = spre.filter(recording, **filter)
-
-		sorting = self.sorting if sorting is None else sorting
-		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
+		return super(MonoSortingModule, self).extract_waveforms(sorting, sub_folder, filter, **params)
 
 	def get_templates(self, params: dict, filter_band: tuple[float, float] | list[float, float] | np.ndarray | None = None, margin: float = 3.0,
 					  sub_folder: str = "templates", return_extractor: bool = False) -> np.ndarray | tuple[np.ndarray, si.WaveformExtractor, int]:
@@ -250,22 +261,22 @@ class MonoSortingModule(LussacModule):
 			'firing_rate': {},
 			'contamination': {},
 			'amplitude': {
+				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
 				'peak_sign': "both",
 				'mode': "extremum",
-				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
-				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+				'filter': [100, 9_000]
 			},
 			'SNR': {
+				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
 				'peak_sign': "both",
 				'mode': "extremum",
-				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
-				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+				'filter': [100, 9_000]
 			},
-			'amplitude_std': {
-				'peak_sign': "both",
-				'return_scaled': True,
+			'sd_ratio': {
 				'wvf_extraction': {'ms_before': 1.0, 'ms_after': 1.0, 'max_spikes_per_unit': 500},
-				'filter': {'band': [100, 9_000], 'filter_order': 2, 'ftype': "bessel"}
+				'spike_amplitudes_kwargs': {'peak_sign': "both"},
+				'sd_ratio_kwargs': {},
+				'filter': [100, 9_000]
 			},
 			'ISI_portion': {}
 		}
@@ -277,7 +288,8 @@ class MonoSortingModule(LussacModule):
 		recording = self.data.recording
 		sorting = self.sorting
 		if 'filter' in params:
-			recording = spre.filter(recording, **params['filter'])
+			assert len(params['filter']) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
+			recording = spre.gaussian_bandpass_filter(recording, *params['filter'], margin_sd=2)
 
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
 						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
@@ -303,16 +315,15 @@ class MonoSortingModule(LussacModule):
 				SNRs = sqm.compute_snrs(wvf_extractor, **params)
 				return SNRs
 
-			case "amplitude_std":  # Returns the standard deviation of the amplitude of spikes.
-				params = utils.filter_kwargs(params, spost.compute_spike_amplitudes)
-				amplitudes = spost.compute_spike_amplitudes(wvf_extractor, outputs='by_unit', **params)[0]
-				std_amplitudes = {unit_id: np.std(amp) for unit_id, amp in amplitudes.items()}
-				return std_amplitudes
+			case "sd_ratio":  # Returns the standard deviation of the amplitude of spikes divided by the standard deviation on the same channel.
+				_ = spost.compute_spike_amplitudes(wvf_extractor, **params['spike_amplitudes_kwargs'])
+				sd_ratio = sqm.compute_sd_ratio(wvf_extractor, **params['sd_ratio_kwargs'])
+				return sd_ratio
 
 			case "ISI_portion":  # Returns the portion of consecutive spikes that are between a certain range (in ms).
 				low, high = np.array(params['range']) * recording.sampling_frequency * 1e-3
 				diff = {unit_id: np.diff(sorting.get_unit_spike_train(unit_id)) for unit_id in sorting.unit_ids}
-				ISI_portion = {unit_id: np.sum((low < d) & (d < high)) / len(d) for unit_id, d in diff.items()}
+				ISI_portion = {unit_id: np.nan if len(d) == 0 else (np.sum((low < d) & (d < high)) / len(d)) for unit_id, d in diff.items()}
 				return ISI_portion
 
 			case _:  # pragma: no cover (unreachable code)
@@ -384,3 +395,26 @@ class MultiSortingsModule(LussacModule):
 	@abstractmethod
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		...
+
+	def extract_waveforms(self, sub_folder: str | None = None, filter: list[float, float] | None = None, **params) -> si.WaveformExtractor:
+		"""
+		Aggregates all sortings and calls parent LussacModule.extract_waveforms.
+		The returned WaveformExtractor has a variable 'renamed_unit_ids' which is a dict[str, dict[Any, Any]]
+		where the first key is the analysis name, and the second one is the 'old' unit_id.
+		"""
+
+		aggregated_sortings = si.aggregate_units(list(self.sortings.values()))
+		aggregated_sortings.annotate(name="aggregated_sortings")
+		wvf_extractor = super(MultiSortingsModule, self).extract_waveforms(aggregated_sortings, sub_folder, filter, **params)
+
+		wvf_extractor.sortings = self.sortings
+		wvf_extractor.renamed_unit_ids = {}
+		renamed_unit_id = 0
+		for sorting_name in self.sortings.keys():
+			wvf_extractor.renamed_unit_ids[sorting_name] = {}
+
+			for unit_id in self.sortings[sorting_name].unit_ids:
+				wvf_extractor.renamed_unit_ids[sorting_name][unit_id] = renamed_unit_id
+				renamed_unit_id += 1
+
+		return wvf_extractor
