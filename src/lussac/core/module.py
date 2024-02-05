@@ -113,7 +113,7 @@ class LussacModule(ABC):
 		recording = self.recording
 		if filter is not None:
 			assert len(filter) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
-			recording = spre.gaussian_bandpass_filter(recording, *filter, margin_sd=2)
+			recording = spre.gaussian_filter(recording, *filter, margin_sd=2)
 
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
 		return si.extract_waveforms(recording, sorting, folder_path, allow_unfiltered=True, **params)
@@ -289,7 +289,7 @@ class MonoSortingModule(LussacModule):
 		sorting = self.sorting
 		if 'filter' in params:
 			assert len(params['filter']) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
-			recording = spre.gaussian_bandpass_filter(recording, *params['filter'], margin_sd=2)
+			recording = spre.gaussian_filter(recording, *params['filter'], margin_sd=2)
 
 		wvf_extractor = self.extract_waveforms(sub_folder=attribute, **params['wvf_extraction']) if 'wvf_extraction' in params \
 						else si.WaveformExtractor(recording, sorting, allow_unfiltered=True)
