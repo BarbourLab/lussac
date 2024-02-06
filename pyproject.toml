@@ -3,7 +3,7 @@ requires = ["pip>=21.3", "setuptools>=65.6.3"]
 
 [project]
 name = "lussac"
-version = "2.0.0b5"
+version = "2.0.0b5.post1"
 authors = [
 	{name="Aurélien Wyngaard", email="aurelien.wyngaard@gmail.com"}
 ]
@@ -11,19 +11,19 @@ description = "Python package for automatic post-processing and merging of multi
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-	"networkx>=3.0",
-	"numpy>=1.23",
-	"pandas>=1.4.4",
-	"scikit-learn>=1.1.0",
-	"scipy>=1.9",
-	"plotly>=5.8.2",
+	"networkx >= 3.0",
+	"numpy >= 1.23",
+	"pandas >= 1.4.4",
+	"scikit-learn >= 1.1.0",
+	"scipy >= 1.9",
+	"plotly >= 5.8.2",
 	"kaleido",
-	"jsmin>=3.0",
-	"numba>=0.56.2",
-	"tqdm>=4.64.0",
-	"requests>=2.28.0",
-	"overrides>=7.3.1",
-	"spikeinterface>=0.99.1"
+	"jsmin >= 3.0",
+	"numba >= 0.56.2",
+	"tqdm >= 4.64.0",
+	"requests >= 2.28.0",
+	"overrides >= 7.3.1",
+	"spikeinterface >= 0.100.0, < 0.101.0"
 ]
 
 [project.scripts]
@@ -45,7 +45,7 @@ dev = [
 [project.urls]
 homepage = "https://github.com/BarbourLab/lussac"
 repository = "https://github.com/BarbourLab/lussac"
-documentation = "http://lussac.readthedocs.io/"
+documentation = "https://lussac.readthedocs.io/"
 changelog = "https://github.com/BarbourLab/lussac/releases"
 
 [tool.coverage.run]

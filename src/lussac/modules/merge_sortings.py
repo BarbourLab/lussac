@@ -5,7 +5,6 @@ from typing import Any
 from overrides import override
 import networkx as nx
 import numpy as np
-import scipy.stats
 from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
