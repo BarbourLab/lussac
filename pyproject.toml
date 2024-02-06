@@ -45,7 +45,7 @@ dev = [
 [project.urls]
 homepage = "https://github.com/BarbourLab/lussac"
 repository = "https://github.com/BarbourLab/lussac"
-documentation = "http://lussac.readthedocs.io/"
+documentation = "https://lussac.readthedocs.io/"
 changelog = "https://github.com/BarbourLab/lussac/releases"
 
 [tool.coverage.run]
