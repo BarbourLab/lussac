@@ -637,7 +637,7 @@ def filter(data: np.ndarray, band: tuple[float, float] | list[float, float] | np
 	gaussian_lowpass  = _create_fft_gaussian(N, band[1])
 
 	broadcast = tuple(slice(None) if i == axis else None for i in range(data_fft.ndim))
-	filtered_data_fft = data_fft * (gaussian_lowpass - gaussian_highpass)[broadcast]
+	filtered_data_fft = data_fft * (gaussian_lowpass * (1-gaussian_highpass))[broadcast]
 	filtered_data = np.fft.ifft(filtered_data_fft, axis=axis).real
 
 	return filtered_data
