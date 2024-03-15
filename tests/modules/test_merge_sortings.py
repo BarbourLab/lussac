@@ -53,6 +53,8 @@ def test_merge_empty(data: LussacData) -> None:
 		'one_good_one_bad': si.NumpySorting.from_unit_dict({0: np.array([100, 300]), 1: np.array([])}, sampling_frequency=30000)
 	}
 
+	data = data.clone()
+	data.recording = data.recording.frame_slice(0, 50_000)
 	multi_sortings_data = MultiSortingsData(data, sortings)
 	module = MergeSortings("merge_sortings_empty", multi_sortings_data, "all")
 
@@ -103,10 +105,11 @@ def test_compute_graph(data: LussacData) -> None:
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
 		'require_multiple_sortings_match': False,
-		'waveform_validation': {'wvf_extraction': {'filter': [150.0, 9_000.0]}}
+		'waveform_validation': {'wvf_extraction': {'filter': None}}
 	}
+	p = module.update_params(p)
 
-	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", sparse=False, **p['waveform_validation']['wvf_extraction'])
+	module._create_analyzer(p['waveform_validation']['wvf_extraction'], sub_folder="compute_graph")
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -176,7 +179,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params(PARAMS)
-	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", sparse=False, **params['waveform_validation']['wvf_extraction'])
+	merge_sortings_module._create_analyzer(params['waveform_validation']['wvf_extraction'], sub_folder="compute_differences")
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
@@ -261,7 +264,7 @@ def test_merge_sortings_func() -> None:
 	pass
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# Copy the dataset with fewer sortings and fewer units to go faster.
 	data = data.clone()

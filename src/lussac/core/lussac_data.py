@@ -51,6 +51,9 @@ class LussacData:
 
 		self.recording = recording
 		self.sortings = {name: scur.remove_excess_spikes(sorting.remove_empty_units(), recording) for name, sorting in sortings.items()}
+		for name, sorting in self.sortings.items():
+			sorting.annotate(name=name)
+
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
@@ -204,7 +207,6 @@ class LussacData:
 				sorting = si.load_extractor(path, base_folder=True)
 				assert isinstance(sorting, si.BaseSorting)
 
-			sorting.annotate(name=name)
 			sortings[name] = sorting
 
 		return sortings

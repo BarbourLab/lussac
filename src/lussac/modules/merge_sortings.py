@@ -19,7 +19,7 @@ class MergeSortings(MultiSortingsModule):
 	Merges the sortings into a single one.
 	"""
 
-	aggregated_wvf_extractor: si.WaveformExtractor  # Waveform extractor for all analyses.
+	aggregated_analyzer: si.SortingAnalyzer  # Sorting analyzer for all analyses.
 
 	@property
 	@override
@@ -74,8 +74,8 @@ class MergeSortings(MultiSortingsModule):
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		self.data.sortings = {name: sorting.remove_empty_units() for name, sorting in self.sortings.items()}
+		self._create_analyzer(params['waveform_validation']['wvf_extraction'])
 
-		self.aggregated_wvf_extractor = self.extract_waveforms(sparse=False, **params['waveform_validation']['wvf_extraction'])
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
 		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
@@ -93,6 +93,16 @@ class MergeSortings(MultiSortingsModule):
 		merged_sorting = self.merge_sortings(graph, params)
 
 		return {'merged_sorting': merged_sorting}
+
+	def _create_analyzer(self, params: dict, sub_folder: str | None = None):
+		self.aggregated_analyzer = self.create_analyzer(filter_band=params['filter'], sub_folder=sub_folder, sparse=False)
+
+		self.aggregated_analyzer.compute({
+			'noise_levels': {},
+			'random_spikes': {'max_spikes_per_unit': params['max_spikes_per_unit']},
+			'fast_templates': {'ms_before': params['ms_before'], 'ms_after': params['ms_after']},
+			'spike_amplitudes': {'peak_sign': 'both', 'return_scaled': self.recording.has_scaled()}
+		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
 		"""
@@ -174,14 +184,13 @@ class MergeSortings(MultiSortingsModule):
 
 		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()
-		spost.compute_spike_amplitudes(self.aggregated_wvf_extractor, peak_sign="both", return_scaled=self.recording.has_scaled())
-		contamination, _ = sqm.compute_refrac_period_violations(self.aggregated_wvf_extractor, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
-		sd_ratio = sqm.compute_sd_ratio(self.aggregated_wvf_extractor)
-		snrs = sqm.compute_snrs(self.aggregated_wvf_extractor, peak_sign="both", peak_mode="extremum")
+		contamination, _ = sqm.compute_refrac_period_violations(self.aggregated_analyzer, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
+		sd_ratio = sqm.compute_sd_ratio(self.aggregated_analyzer)
+		snrs = sqm.compute_snrs(self.aggregated_analyzer, peak_sign="both", peak_mode="extremum")
 
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
-				new_unit_id = self.aggregated_wvf_extractor.renamed_unit_ids[name][unit_id]
+				new_unit_id = self.aggregated_analyzer.renamed_unit_ids[name][unit_id]
 
 				attr = {key: sorting.get_unit_property(unit_id, key) for key in sorting.get_property_keys() if key.startswith('gt_')}
 				attr['contamination'] = contamination[new_unit_id]
@@ -365,17 +374,21 @@ class MergeSortings(MultiSortingsModule):
 
 		n_channels = params['waveform_validation']['num_channels']
 		margin = params['max_shift']
+		templates = self.aggregated_analyzer.get_extension("fast_templates").get_data()
 
 		for node1, node2 in graph.edges:
 			sorting1_name, unit_id1 = node1
 			sorting2_name, unit_id2 = node2
 			unit_idx1 = self.sortings[sorting1_name].id_to_index(unit_id1)
 			unit_idx2 = self.sortings[sorting2_name].id_to_index(unit_id2)
-			new_unit_id1 = self.aggregated_wvf_extractor.renamed_unit_ids[sorting1_name][unit_id1]
-			new_unit_id2 = self.aggregated_wvf_extractor.renamed_unit_ids[sorting2_name][unit_id2]
+			new_unit_id1 = self.aggregated_analyzer.renamed_unit_ids[sorting1_name][unit_id1]
+			new_unit_id2 = self.aggregated_analyzer.renamed_unit_ids[sorting2_name][unit_id2]
 
-			template1 = self.aggregated_wvf_extractor.get_template(new_unit_id1)
-			template2 = self.aggregated_wvf_extractor.get_template(new_unit_id2)
+			# TODO
+			# template1 = self.aggregated_analyzer.get_extension("fast_templates").get_unit_template(new_unit_id1)
+			# template2 = self.aggregated_analyzer.get_extension("fast_templates").get_unit_template(new_unit_id2)
+			template1 = templates[self.aggregated_analyzer.sorting.id_to_index(new_unit_id1)]
+			template2 = templates[self.aggregated_analyzer.sorting.id_to_index(new_unit_id2)]
 			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
 
 			shift = cross_shifts[sorting1_name][sorting2_name][unit_idx1, unit_idx2]

@@ -26,7 +26,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": [300, 6000],
+		"filter": None,
 		"min": 1.2
 	},
 	"sd_ratio": {
@@ -35,7 +35,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": [200, 5000],
+		"filter": None,
 		"max": 2.0
 	}
 }

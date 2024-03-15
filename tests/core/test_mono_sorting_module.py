@@ -5,7 +5,7 @@ import numpy as np
 from lussac.core import MonoSortingData, MonoSortingModule
 
 
-params = {
+PARAMS = {
 	"firing_rate": {
 		"min": 0.5
 	},
@@ -19,7 +19,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": [200, 5000],
+		"filter": None,
 		"min": 20
 	},
 	"SNR": {
@@ -28,7 +28,7 @@ params = {
 			"ms_after": 1.0,
 			"max_spikes_per_unit": 10
 		},
-		"filter": [300, 6000],
+		"filter": None,
 		"min": 1.2
 	},
 	"sd_ratio": {
@@ -36,7 +36,7 @@ params = {
 			"ms_before": 1.0,
 			"ms_after": 1.0,
 		},
-		"filter": [200, 5000],
+		"filter": None,
 		"max": 2.0
 	}
 }
@@ -82,32 +82,33 @@ def test_tmp_folder(mono_sorting_module: MonoSortingModule) -> None:
 	assert mono_sorting_module.tmp_folder.exists() and mono_sorting_module.tmp_folder.is_dir()
 
 
-def test_extract_waveforms(mono_sorting_module: MonoSortingModule) -> None:
-	wvf_extractor_1 = mono_sorting_module.extract_waveforms(ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
-	wvf_extractor_2 = mono_sorting_module.extract_waveforms(sub_folder="aze", ms_before=1.5, ms_after=2.0, max_spikes_per_unit=10, overwrite=True)
+def test_create_analyzer(mono_sorting_module: MonoSortingModule) -> None:
+	analyzer_1 = mono_sorting_module.create_analyzer(sparse=False)
+	analyzer_2 = mono_sorting_module.create_analyzer(sub_folder="aze", sparse=False)
 	tmp_folder = mono_sorting_module.data.tmp_folder
 
-	assert wvf_extractor_1 is not None
-	assert wvf_extractor_2 is not None
-	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "wvf_extractor" / "waveforms").is_dir()
-	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "aze" / "waveforms").is_dir()
+	assert analyzer_1 is not None
+	assert analyzer_2 is not None
+	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "analyzer").is_dir()
+	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "aze").is_dir()
 
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	ms_before, ms_after = (2.0, 2.0)
-	templates, wvf_extractor, margin = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after, 'max_spikes_per_unit': 10},
-																		 filter_band=[300, 6000], return_extractor=True)
+	templates, analyzer, margin = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
+																		 filter_band=[300, 6000], return_analyzer=True)
+	templates_ext = analyzer.get_extension("fast_templates")
 
 	n_units = mono_sorting_module.sorting.get_num_units()
-	n_samples = wvf_extractor.nsamples - 2*margin
+	n_samples = templates_ext.nbefore + templates_ext.nafter - 2*margin
 	n_channels = mono_sorting_module.recording.get_num_channels()
 
 	assert templates is not None
 	assert templates.shape == (n_units, n_samples, n_channels)
-	assert np.all(wvf_extractor.unit_ids == mono_sorting_module.sorting.unit_ids)
+	assert np.all(analyzer.unit_ids == mono_sorting_module.sorting.unit_ids)
 
-	templates = mono_sorting_module.get_templates({'ms_before': ms_before, 'ms_after': ms_after, 'max_spikes_per_unit': 10},
-												  filter_band=[300, 6000], sub_folder="templates2", return_extractor=False)
+	templates = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
+												  filter_band=[300, 6000], sub_folder="templates2", return_analyzer=False)
 
 	assert templates is not None
 	assert templates.shape == (n_units, n_samples, n_channels)
@@ -119,25 +120,25 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	module = TestMonoSortingModule(mono_sorting_data)
 	num_units = module.data.sorting.get_num_units()
 
-	frequencies = module.get_units_attribute_arr("firing_rate", params['firing_rate'])
+	frequencies = module.get_units_attribute_arr("firing_rate", PARAMS['firing_rate'])
 	assert isinstance(frequencies, np.ndarray)
 	assert frequencies.shape == (num_units, )
 	assert math.isclose(frequencies[0], 22.978, rel_tol=0.0, abs_tol=0.001)
 
-	contaminations = module.get_units_attribute_arr("contamination", params['contamination'])
+	contaminations = module.get_units_attribute_arr("contamination", PARAMS['contamination'])
 	assert isinstance(contaminations, np.ndarray)
 	assert contaminations.shape == (num_units, )
 	assert contaminations[0] >= 1.0
 
-	amplitude = module.get_units_attribute_arr("amplitude", params['amplitude'])
+	amplitude = module.get_units_attribute_arr("amplitude", PARAMS['amplitude'])
 	assert isinstance(amplitude, np.ndarray)
 	assert amplitude.shape == (num_units, )
 
-	SNRs = module.get_units_attribute_arr("SNR", params['SNR'])
+	SNRs = module.get_units_attribute_arr("SNR", PARAMS['SNR'])
 	assert isinstance(SNRs, np.ndarray)
 	assert SNRs.shape == (num_units, )
 
-	sd_ratio = module.get_units_attribute_arr("sd_ratio", params['sd_ratio'])
+	sd_ratio = module.get_units_attribute_arr("sd_ratio", PARAMS['sd_ratio'])
 	assert isinstance(sd_ratio, np.ndarray)
 	assert sd_ratio.shape == (num_units, )
 

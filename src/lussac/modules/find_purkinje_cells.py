@@ -42,8 +42,8 @@ class FindPurkinjeCells(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		wvf_extractor = si.WaveformExtractor(self.recording, self.sorting, allow_unfiltered=True)
-		firing_rates = sqm.compute_firing_rates(wvf_extractor)
+		analyzer = si.SortingAnalyzer.create(self.sorting, self.recording)
+		firing_rates = sqm.compute_firing_rates(analyzer)
 
 		putative_ss_units = [unit_id for unit_id, mean_fr in firing_rates.items() if mean_fr >= params['ss_min_fr']]
 		putative_cs_units = [unit_id for unit_id, mean_fr in firing_rates.items() if params['cs_min_fr'] <= mean_fr <= params['cs_max_fr']]

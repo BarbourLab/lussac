@@ -5,6 +5,7 @@ import pandas as pd
 from lussac.core import LussacData, LussacPipeline, MonoSortingData
 from lussac.modules import ExportToPhy
 import spikeinterface.core as si
+import spikeinterface.extractors as se
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:
@@ -44,6 +45,10 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	assert os.path.exists(f"{folder}/ks2_best/spike_times.npy")
 	assert os.path.exists(f"{folder}/ms3_cs/spike_times.npy")
 	assert not os.path.exists(f"{folder}/ks2_cs/spike_times.npy")
+
+	sorting_saved = se.PhySortingExtractor(f"{folder}/ks2_best")
+	sorting = pipeline.data.sortings['ks2_best']
+	assert np.all(sorting.to_spike_vector() == sorting_saved.to_spike_vector())
 
 
 def test_empty_sorting(data: LussacData) -> None:

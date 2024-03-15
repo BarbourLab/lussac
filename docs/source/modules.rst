@@ -303,7 +303,7 @@ The :code:`export_to_sigui` module
 ----------------------------------
 
 | This module will export all sortings in their current state to the SpikeInterface GUI format (if :code:`merge_sortings` was called before, will only export the merged sorting).
-| This is equivalent to just a :code:`WaveformExtractor` with some extra arguments.
+| This is equivalent to just a :code:`SortingAnalyzer` with some extra arguments.
 
 This module's parameters are:
 

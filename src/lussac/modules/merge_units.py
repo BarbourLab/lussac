@@ -48,12 +48,22 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		wvf_extractor = self.extract_waveforms(sparse=False, **params['wvf_extraction'])
-		potential_merges, extra_outputs = scur.get_potential_auto_merge(wvf_extractor, extra_outputs=True, **params['auto_merge_params'])
+		analyzer = self.create_analyzer(filter_band = params['wvf_extraction']['filter'], sparse=False)
+		"""analyzer.compute({
+			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
+		})"""
+		# TODO
+		analyzer.compute({
+			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
+			'templates': {'operators': ["average"]}
+		})
+		potential_merges, extra_outputs = scur.get_potential_auto_merge(analyzer, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
 		sorting = self._merge(sorting, potential_merges, params)
-		self.plot_merging(potential_merges, wvf_extractor, extra_outputs, params['auto_merge_params'])
+		self.plot_merging(potential_merges, analyzer, extra_outputs, params['auto_merge_params'])
 
 		return sorting
 
@@ -78,8 +88,8 @@ class MergeUnits(MonoSortingModule):
 		k = params['auto_merge_params']['firing_contamination_balance']
 
 		units_to_remove = []
-		wvf_extractor = si.WaveformExtractor(self.recording, sorting, allow_unfiltered=True)
-		contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)
+		analyzer = si.SortingAnalyzer.create(sorting, self.recording, format="memory")
+		contamination, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
 
 		for pair in extra_outputs['pairs_decreased_score']:
 			unit1, unit2 = pair
@@ -112,8 +122,8 @@ class MergeUnits(MonoSortingModule):
 		t_c, t_r = params['refractory_period']
 		k = params['auto_merge_params']['firing_contamination_balance']
 
-		wvf_extractor = si.WaveformExtractor(self.recording, sorting, allow_unfiltered=True)
-		contamination, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)
+		analyzer = si.SortingAnalyzer.create(sorting, self.recording, format="memory")
+		contamination, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
 		sorting = scur.CurationSorting(sorting, properties_policy="keep")
 
 		graph = nx.Graph()
@@ -139,8 +149,8 @@ class MergeUnits(MonoSortingModule):
 
 				for unit1, unit2 in subgraph.edges:
 					sorting_merged = scur.MergeUnitsSorting(sorting.sorting, [[unit1, unit2]], new_unit_ids=[unit1], delta_time_ms=t_c).select_units([unit1])
-					wvf_extractor = si.WaveformExtractor(self.recording, sorting_merged, allow_unfiltered=True)
-					C = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period_ms=t_r, censored_period_ms=t_c)[0][unit1]
+					analyzer = si.SortingAnalyzer.create(sorting_merged, self.recording, format="memory")
+					C = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)[0][unit1]
 					score = len(sorting_merged.get_unit_spike_train(unit1)) * (1 - (k+1) * C)
 
 					if score > highest_score:
@@ -160,14 +170,14 @@ class MergeUnits(MonoSortingModule):
 
 		return sorting.sorting
 
-	def plot_merging(self, potential_merges: list[tuple], wvf_extractor: si.WaveformExtractor, extra_outputs: dict[str, Any], params: dict[str, Any]) -> None:
+	def plot_merging(self, potential_merges: list[tuple], analyzer: si.SortingAnalyzer, extra_outputs: dict[str, Any], params: dict[str, Any]) -> None:
 		"""
 		Makes different plots about the merging process.
 
 		@param potential_merges: list[tuple]
 			List of potential merges pairwise.
-		@param wvf_extractor: WaveformExtractor
-			Waveform extractor used to extract the waveforms.
+		@param analyzer: SortingAnalyzer
+			Sorting analyzer used to extract the waveforms.
 		@param extra_outputs: dict[str, Any]
 			Extra outputs given by the merging process.
 		@param params: dict[str, Any]
@@ -175,10 +185,10 @@ class MergeUnits(MonoSortingModule):
 			i.e. params['auto_merge_params']
 		"""
 
-		self.plot_results(potential_merges, extra_outputs, params, wvf_extractor)
+		self.plot_results(potential_merges, extra_outputs, params, analyzer)
 		self.plot_difference_matrix(extra_outputs, params)
 
-	def plot_results(self, potential_merges: list[tuple], extra_outputs: dict[str, Any], params: dict[str, Any], wvf_extractor: si.WaveformExtractor) -> None:
+	def plot_results(self, potential_merges: list[tuple], extra_outputs: dict[str, Any], params: dict[str, Any], analyzer: si.SortingAnalyzer) -> None:
 		"""
 		Plots the result of the merging process (i.e. the pairs merged or closed to be merged).
 
@@ -188,8 +198,8 @@ class MergeUnits(MonoSortingModule):
 			The extra outputs given by the merging process.
 		@param params: dict[str, Any]
 			The parameters given to the merging process.
-		@param wvf_extractor: WaveformExtractor
-			The waveform extractor used by the merging process.
+		@param analyzer: SortingAnalyzer
+			The sorting analyzer used by the merging process.
 		"""
 		bins = extra_outputs['bins']
 		correlograms = extra_outputs['correlograms']
@@ -201,8 +211,9 @@ class MergeUnits(MonoSortingModule):
 
 		fig = go.Figure().set_subplots(rows=2, cols=2)
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
-		t_axis = np.arange(-wvf_extractor.nbefore, wvf_extractor.nafter) / wvf_extractor.sampling_frequency * 1e3
-		wvfs_unit = "µV" if wvf_extractor.return_scaled else "A.U."
+		templates = analyzer.get_extension("templates")  # TODO: Fast templates
+		t_axis = np.arange(-templates.nbefore, templates.nafter) / analyzer.sampling_frequency * 1e3
+		wvfs_unit = "µV" if templates.params['return_scaled'] else "A.U."
 		labels = []
 		args = []
 
@@ -218,9 +229,9 @@ class MergeUnits(MonoSortingModule):
 			color = "black" if (unit_id_1, unit_id_2) in potential_merges or (unit_id_2, unit_id_1) in potential_merges else "red"
 
 			annotation_gt = {}
-			if 'gt_label' in wvf_extractor.sorting.get_property_keys():
-				gt_label_1 = wvf_extractor.sorting.get_unit_property(unit_id_1, 'gt_label')
-				gt_label_2 = wvf_extractor.sorting.get_unit_property(unit_id_2, 'gt_label')
+			if 'gt_label' in analyzer.sorting.get_property_keys():
+				gt_label_1 = analyzer.sorting.get_unit_property(unit_id_1, 'gt_label')
+				gt_label_2 = analyzer.sorting.get_unit_property(unit_id_2, 'gt_label')
 				annotation_gt = {
 					'x': 1.0,
 					'y': 1.05,
@@ -285,11 +296,11 @@ class MergeUnits(MonoSortingModule):
 			), row=1, col=2)
 			# TODO: Plot window size for correlogram.
 
-			templates1 = wvf_extractor.get_template(unit_id_1)
-			templates2 = wvf_extractor.get_template(unit_id_2)
+			templates1 = templates.data['average'][analyzer.sorting.id_to_index(unit_id_1)]
+			templates2 = templates.data['average'][analyzer.sorting.id_to_index(unit_id_2)]
 			best_channels = np.argsort(np.max(np.abs(templates1) + np.abs(templates2), axis=0))[::-1]
 			for i in range(2):
-				channel_id = wvf_extractor.recording.get_channel_ids()[best_channels[i]]
+				channel_id = analyzer.recording.get_channel_ids()[best_channels[i]]
 				fig.add_trace(go.Scatter(
 					x=t_axis,
 					y=templates1[:, best_channels[i]],
