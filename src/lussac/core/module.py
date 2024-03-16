@@ -115,7 +115,10 @@ class LussacModule(ABC):
 			recording = spre.gaussian_filter(recording, *filter_band, margin_sd=2)
 
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
-		return si.create_sorting_analyzer(sorting, recording, format="binary_folder", folder=folder_path, **params)
+		if pathlib.Path(folder_path).exists():
+			return si.load_sorting_analyzer(folder=folder_path)
+		else:
+			return si.create_sorting_analyzer(sorting, recording, format="binary_folder", folder=folder_path, **params)
 
 
 @dataclass(slots=True)
@@ -295,6 +298,7 @@ class MonoSortingModule(LussacModule):
 		sorting = self.sorting
 
 		filter_band = None if 'filter' not in params else params['filter']
+
 		analyzer = self.create_analyzer(sub_folder=attribute, filter_band=filter_band)
 
 		match attribute:
