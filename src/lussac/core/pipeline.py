@@ -96,9 +96,10 @@ class LussacPipeline:
 			if 'sortings' in params0:
 				del params0['sortings']
 
-			sub_sorting = module_instance.run(params0)
+			if len(unit_ids) > 0:
+				sub_sorting = module_instance.run(params0)
 
-			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
+				self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
 			t2 = time.perf_counter()
 			logging.info(f" (Done in {t2-t1:.1f} s)\n")
