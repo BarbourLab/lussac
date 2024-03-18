@@ -83,10 +83,15 @@ class LussacPipeline:
 			if 'sortings' in params and name not in params['sortings']:
 				continue
 
-			logging.info(f"\t- Sorting  {name:<18}")
-			t1 = time.perf_counter()
-
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
+
+			if len(unit_ids) == 0:
+				logging.info(f"\t- Sorting {name:<18} skipped (no units)")
+				continue
+
+			logging.info(f"\t- Sorting  {name:<18}")
+			
+			t1 = time.perf_counter()
 			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
 
 			data = MonoSortingData(self.data, sub_sorting)
@@ -97,7 +102,6 @@ class LussacPipeline:
 				del params0['sortings']
 
 			sub_sorting = module_instance.run(params0)
-
 			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
 			t2 = time.perf_counter()
