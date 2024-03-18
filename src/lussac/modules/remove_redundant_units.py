@@ -47,7 +47,7 @@ class RemoveRedundantUnits(MonoSortingModule):
 		redundancies = self._get_redundancies(redundant_unit_ids, redundant_unit_pairs)
 		self._plot_redundant_units(redundant_sorting, redundancies)
 
-		return new_sorting
+		return self.sorting.select_units(new_sorting.unit_ids)  # can't use `new_sorting` because parent is SharedMemorySorting, which can't be pickled
 
 	@staticmethod
 	def _get_redundancies(redundant_unit_ids: list, redundant_unit_pairs: list[list]) -> dict:

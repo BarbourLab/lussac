@@ -161,7 +161,6 @@ class LussacPipeline:
 		for name, sorting in self.data.sortings.items():
 			path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
 			# sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder)
-			print(sorting)
 			sorting.dump_to_pickle(file_path=path, include_properties=True)
 			# TODO: Make relative paths work with pickle in SI.
 
