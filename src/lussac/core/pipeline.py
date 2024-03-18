@@ -8,7 +8,7 @@ import time
 from typing import Type
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
 import spikeinterface.core as si
 

@@ -3,7 +3,7 @@ import requests
 import pathlib
 import pytest
 import shutil
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import lussac.main
 from conftest import params_path
 import spikeinterface.core as si
