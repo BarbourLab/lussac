@@ -36,7 +36,7 @@
 		"ks2_cs": {
 			"sorter_name": "kilosort2",
 			"preprocessing": {
-				"filter": {"band":  [150, 2000], "filter_order": 3, "ftype": "bessel"}
+				"filter": {"band":  [150, 4000], "filter_order": 3, "ftype": "bessel"}
 			},
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_cs",
@@ -48,7 +48,7 @@
 		"ks3_cs": {
 			"sorter_name": "kilosort3",
 			"preprocessing": {
-				"filter": {"band":  [150, 1000], "filter_order": 2, "ftype": "bessel"}
+				"filter": {"band":  [150, 5000], "filter_order": 2, "ftype": "bessel"}
 			},
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks3_cs",
@@ -107,14 +107,14 @@
 					"all": {}
 				},
 				"spikes": {
+					"wvf_extraction": {
+						"ms_before": 2.0,
+						"ms_after": 2.0,
+						"max_spikes_per_unit": 1000,
+						"filter": [450, 9000]
+					},
 					"amplitude": {
-						"filter": [450, 9000],
-						"min": 20,
-						"wvf_extraction": {
-							"ms_before": 2.0,
-							"ms_after": 2.0,
-							"max_spikes_per_unit": 1000
-						}
+						"min": 20.0
 					}
 				}
 			},

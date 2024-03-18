@@ -31,16 +31,16 @@
 			},
 			"remove_bad_units": {
 				"all": {
+					"wvf_extraction": {
+						"ms_before": 0.5,
+						"ms_after": 1.0,
+						"max_spikes_per_unit": 500,
+						"filter": [300, 6000]
+					},
 					"firing_rate": {
 						"min": 0.4
 					},
 					"SNR": {
-						"wvf_extraction": {
-							"ms_before": 0.5,
-							"ms_after": 1.0,
-							"max_spikes_per_unit": 500
-						},
-						"filter": [300, 6000],
 						"min": 1.5
 					},
 					"contamination": {
@@ -48,13 +48,6 @@
 						"max": 0.35
 					},
 					"sd_ratio": {
-						"wvf_extraction": {
-							"ms_before": 0.5,
-							"ms_after": 1.0,
-							"max_spikes_per_unit": 500,
-							"return_scaled": true
-						},
-						"filter": [300, 6000],
 						"max": 2.0
 					}
 				}
