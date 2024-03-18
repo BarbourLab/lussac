@@ -14,10 +14,20 @@ class UnitsCategorization(MonoSortingModule):
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:
-		return {}
+		return {
+			'wvf_extraction': {
+				'ms_before': 1.0,
+				'ms_after': 1.0,
+				'max_spikes_per_unit': 500,
+				'filter': [100, 9000]
+			}
+		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
+		wvf_extraction_params = params.pop('wvf_extraction', {})
+		self.create_analyzer(filter_band=wvf_extraction_params['filter'], sparse=False)
+
 		for category, rules in params.items():
 			units_to_categorize = self._init_units_to_categorize()
 
@@ -26,7 +36,7 @@ class UnitsCategorization(MonoSortingModule):
 				continue
 
 			for attribute, p in rules.items():
-				value = self.get_units_attribute_arr(attribute, p)
+				value = self.get_units_attribute_arr(attribute, p, **wvf_extraction_params)
 				if 'min' in p:
 					units_to_categorize &= value > p['min']
 				if 'max' in p:

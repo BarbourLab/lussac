@@ -48,22 +48,22 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		analyzer = self.create_analyzer(filter_band = params['wvf_extraction']['filter'], sparse=False)
+		self.create_analyzer(filter_band = params['wvf_extraction']['filter'], sparse=False)
 		"""analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
 		})"""
 		# TODO
-		analyzer.compute({
+		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
 			'templates': {'operators': ["average"]}
 		})
-		potential_merges, extra_outputs = scur.get_potential_auto_merge(analyzer, extra_outputs=True, **params['auto_merge_params'])
+		potential_merges, extra_outputs = scur.get_potential_auto_merge(self.analyzer, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
 		sorting = self._merge(sorting, potential_merges, params)
-		self.plot_merging(potential_merges, analyzer, extra_outputs, params['auto_merge_params'])
+		self.plot_merging(potential_merges, self.analyzer, extra_outputs, params['auto_merge_params'])
 
 		return sorting
 

@@ -14,29 +14,12 @@ PARAMS = {
 		"max": 0.25
 	},
 	"amplitude": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-			"max_spikes_per_unit": 10
-		},
-		"filter": None,
 		"min": 20
 	},
 	"SNR": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-			"max_spikes_per_unit": 10
-		},
-		"filter": None,
 		"min": 1.2
 	},
 	"sd_ratio": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-		},
-		"filter": None,
 		"max": 2.0
 	}
 }
@@ -83,14 +66,11 @@ def test_tmp_folder(mono_sorting_module: MonoSortingModule) -> None:
 
 
 def test_create_analyzer(mono_sorting_module: MonoSortingModule) -> None:
-	analyzer_1 = mono_sorting_module.create_analyzer(sparse=False)
-	analyzer_2 = mono_sorting_module.create_analyzer(sub_folder="aze", sparse=False)
+	mono_sorting_module.create_analyzer(sparse=False)
 	tmp_folder = mono_sorting_module.data.tmp_folder
 
-	assert analyzer_1 is not None
-	assert analyzer_2 is not None
+	assert mono_sorting_module.analyzer is not None
 	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "analyzer").is_dir()
-	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "aze").is_dir()
 
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
@@ -107,18 +87,18 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	assert templates.shape == (n_units, n_samples, n_channels)
 	assert np.all(analyzer.unit_ids == mono_sorting_module.sorting.unit_ids)
 
-	templates = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
-												  filter_band=[300, 6000], sub_folder="templates2", return_analyzer=False)
-
-	assert templates is not None
-	assert templates.shape == (n_units, n_samples, n_channels)
-
 
 def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 	mono_sorting_data = MonoSortingData(mono_sorting_data.data, mono_sorting_data.sorting.select_units([0, 1, 2, 3, 4]))
 
 	module = TestMonoSortingModule(mono_sorting_data)
+	module.create_analyzer(sparse=False)
 	num_units = module.data.sorting.get_num_units()
+
+	module.analyzer.compute({
+		'random_spikes': {'max_spikes_per_unit': 10},
+		'fast_templates': {'ms_before': 1.0, 'ms_after': 1.0}
+	})
 
 	frequencies = module.get_units_attribute_arr("firing_rate", PARAMS['firing_rate'])
 	assert isinstance(frequencies, np.ndarray)

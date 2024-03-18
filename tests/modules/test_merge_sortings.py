@@ -84,7 +84,7 @@ def test_compute_graph(data: LussacData) -> None:
 		'3': si.NumpySorting.from_unit_dict({0: np.array([500, 900]), 1: np.array([400, 700])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
-	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
+	module = MergeSortings("merge_sortings_graph", multi_sortings_data, "all")
 
 	similarity_matrices = {
 		'1': {
@@ -109,7 +109,7 @@ def test_compute_graph(data: LussacData) -> None:
 	}
 	p = module.update_params(p)
 
-	module._create_analyzer(p['waveform_validation']['wvf_extraction'], sub_folder="compute_graph")
+	module._create_analyzer(p['waveform_validation']['wvf_extraction'])
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -179,7 +179,8 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params(PARAMS)
-	merge_sortings_module._create_analyzer(params['waveform_validation']['wvf_extraction'], sub_folder="compute_differences")
+	if merge_sortings_module.analyzer is None:
+		merge_sortings_module._create_analyzer(params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])

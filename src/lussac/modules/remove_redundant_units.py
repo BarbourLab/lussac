@@ -33,14 +33,14 @@ class RemoveRedundantUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		analyzer = self.create_analyzer()
+		self.create_analyzer()
 		if params['wvf_extraction'] is not None:
-			analyzer.compute({
+			self.analyzer.compute({
 				'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 				'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
 			})
 
-		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(analyzer, extra_outputs=True, **params['arguments'])
+		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(self.analyzer, extra_outputs=True, **params['arguments'])
 
 		redundant_unit_ids = [unit_id for unit_id in self.sorting.unit_ids if unit_id not in new_sorting.unit_ids]
 		redundant_sorting = self.sorting.select_units(redundant_unit_ids)
@@ -82,11 +82,12 @@ class RemoveRedundantUnits(MonoSortingModule):
 		if redundant_sorting.get_num_units() == 0:
 			return
 
-		analyzer = self.create_analyzer(sorting=redundant_sorting, sub_folder="plot_redundant", sparse=False)
-		analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': 500},
-			'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
-		})
+		analyzer = self.analyzer.select_units(redundant_sorting.unit_ids, format="memory")
+		if not analyzer.has_extension("fast_templates"):
+			analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': 500},
+				'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
+			})
 
 		annotations = [{'text': f"Unit {unit_id} is redundant with unit(s): {' '.join(np.array(redundancies[unit_id]).astype(str))}", 'x': 0.6, 'y': 1.07,
 						'xref': "paper", 'yref': "paper", 'showarrow': False} for unit_id in redundant_sorting.unit_ids]

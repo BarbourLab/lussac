@@ -3,7 +3,7 @@ from lussac.core import MonoSortingData
 from lussac.modules import RemoveBadUnits
 
 
-params = {
+PARAMS = {
 	"firing_rate": {
 		"min": 0.5
 	},
@@ -55,11 +55,13 @@ def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 
 	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all")
 	assert not os.path.exists(f"{module.logs_folder}/bad_units.html")
+	params = module.update_params(PARAMS)
 	sorting = module.run(params)
 	assert os.path.exists(f"{module.logs_folder}/bad_units.html")
 
 	assert 0 < sorting.get_num_units() < mono_sorting_data.sorting.get_num_units()
 
 	module = RemoveBadUnits("test_rbu_all", mono_sorting_data, "all")
-	sorting = module.run({"all": {}})
+	params = module.update_params({"all": {}})
+	sorting = module.run(params)
 	assert sorting.get_num_units() == 0

@@ -45,13 +45,13 @@ class ExportToPhy(MonoSortingModule):
 		if self.sorting.get_num_units() == 0:  # Export crashes if the sorting contains no units.
 			return self.sorting
 
-		analyzer = self.create_analyzer(sparse=params['wvf_extraction']['sparse'])
+		self.create_analyzer(sparse=params['wvf_extraction']['sparse'])
 		"""analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
 		})"""
 		# TODO
-		analyzer.compute({
+		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
 			'templates': {'operators': [params['export_params']['template_mode']]}
@@ -60,9 +60,9 @@ class ExportToPhy(MonoSortingModule):
 		output_folder = pathlib.Path(self._format_output_path(params['path']))
 
 		if 'sparsity' in params['export_params'] and params['export_params']['sparsity'] is not None:
-			params['export_params']['sparsity'] = si.compute_sparsity(analyzer, **params['export_params']['sparsity'])
+			params['export_params']['sparsity'] = si.compute_sparsity(self.analyzer, **params['export_params']['sparsity'])
 
-		export_to_phy(analyzer, output_folder, **params['export_params'])
+		export_to_phy(self.analyzer, output_folder, **params['export_params'])
 		new_unit_ids = pd.read_csv(output_folder / "cluster_si_unit_ids.tsv", delimiter='\t')
 
 		for property_name in self.sorting.get_property_keys():

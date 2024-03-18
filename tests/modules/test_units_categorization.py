@@ -1,3 +1,4 @@
+import shutil
 import numpy as np
 from lussac.core import MonoSortingData
 from lussac.modules import UnitsCategorization
@@ -21,9 +22,13 @@ def test_units_categorization(mono_sorting_data: MonoSortingData) -> None:
 	}}
 
 	module = UnitsCategorization("test_categorization", mono_sorting_data, "all")
+	params = module.update_params(params)
 	sorting = module.run(params)
 
 	assert np.all(sorting.unit_ids[sorting.get_property("lussac_category") == "CS"] == (2, 5, 8, 51, 56, 57, 70))
 
-	sorting = module.run({"clear": {}})
+	shutil.rmtree(module.analyzer.folder)
+	module.analyzer = None
+	params = module.update_params({"clear": {}})
+	sorting = module.run(params)
 	assert sorting.get_property("lussac_category") is None

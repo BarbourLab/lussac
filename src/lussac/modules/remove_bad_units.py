@@ -15,10 +15,20 @@ class RemoveBadUnits(MonoSortingModule):
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:
-		return {}
+		return {
+			'wvf_extraction': {
+				'ms_before': 1.0,
+				'ms_after': 1.0,
+				'max_spikes_per_unit': 500,
+				'filter': [100, 9000]
+			}
+		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
+		wvf_extraction_params = params.pop('wvf_extraction', {})
+		self.create_analyzer(filter_band=wvf_extraction_params['filter'], sparse=False)
+
 		units_to_remove = np.zeros(self.sorting.get_num_units(), dtype=bool)
 		reasons_for_removal = np.array([''] * self.sorting.get_num_units(), dtype=object)
 
@@ -28,7 +38,7 @@ class RemoveBadUnits(MonoSortingModule):
 				reasons_for_removal[:] += " ; all"
 				break
 
-			value = self.get_units_attribute_arr(attribute, p)
+			value = self.get_units_attribute_arr(attribute, p, **wvf_extraction_params)
 			if 'min' in p:
 				units_to_remove |= value < p['min']
 				reasons_for_removal[value < p['min']] += f" ; {attribute} < {p['min']}"
@@ -54,11 +64,12 @@ class RemoveBadUnits(MonoSortingModule):
 		if bad_sorting.get_num_units() == 0:
 			return
 
-		analyzer = self.create_analyzer(sorting=bad_sorting, sparse=False)
-		analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': 500},
-			'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
-		})
+		analyzer = self.analyzer.select_units(bad_sorting.unit_ids, format="memory")
+		if not analyzer.has_extension("fast_templates"):
+			analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': 500},
+				'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
+			})
 
 		annotations = [{'text': reason, 'x': 0.6, 'y': 1.02, 'xref': "paper", 'yref': "paper", 'xanchor': "center", 'yanchor': "bottom", 'showarrow': False} for reason in reasons_for_removal]
 		utils.plot_units(analyzer, filepath=f"{self.logs_folder}/bad_units", annotations_change=annotations)
