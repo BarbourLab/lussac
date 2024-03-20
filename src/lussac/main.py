@@ -1,6 +1,7 @@
+import argparse
 import logging
 import sys
-import argparse
+
 from lussac.core import LussacData, LussacParams, LussacPipeline, LussacSpikeSorter
 
 
