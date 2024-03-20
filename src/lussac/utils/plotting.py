@@ -126,8 +126,6 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 		Must be in the order [annot1_unit1, annot2_unit1, ... annot1_unit_2, annot2_unit2, ...]
 	"""
 	n_units = len(analyzer.unit_ids)
-	if n_units == 0:
-		return
 
 	if annotations_fix is None:
 		annotations_fix = []

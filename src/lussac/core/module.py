@@ -210,8 +210,6 @@ class MonoSortingModule(LussacModule):
 			If not none, the highpass and lowpass cutoff frequencies for Gaussian filtering (in Hz).
 		@param margin: float
 			The margin (in ms) to extract (useful for filtering).
-		@param sub_folder: str
-			The sub-folder used for the sorting analyzer.
 		@param return_analyzer: bool
 			If true, will also return the sorting analyzer and margin (in samples).
 		@return templates: np.ndarray (n_units, n_samples, n_channels)
@@ -226,9 +224,8 @@ class MonoSortingModule(LussacModule):
 
 		ms_before += margin
 		ms_after += margin
-		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{self.sorting.get_annotation('name')}/templates"
 
-		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=folder_path)
+		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="memory")
 		analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': max_spikes_per_unit},
 			'fast_templates': {'ms_before': ms_before, 'ms_after': ms_after}

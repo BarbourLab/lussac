@@ -75,8 +75,9 @@ def test_create_analyzer(mono_sorting_module: MonoSortingModule) -> None:
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	ms_before, ms_after = (2.0, 2.0)
+	# Test with return_analyzer = True
 	templates, analyzer, margin = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
-																		 filter_band=[300, 6000], return_analyzer=True)
+																	filter_band=[300, 6000], return_analyzer=True)
 	templates_ext = analyzer.get_extension("fast_templates")
 
 	n_units = mono_sorting_module.sorting.get_num_units()
@@ -86,6 +87,13 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	assert templates is not None
 	assert templates.shape == (n_units, n_samples, n_channels)
 	assert np.all(analyzer.unit_ids == mono_sorting_module.sorting.unit_ids)
+
+	# Test with return_analyzer = False
+	templates = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
+												  filter_band=[300, 6000], return_analyzer=False)
+
+	assert templates is not None
+	assert templates.shape == (n_units, n_samples, n_channels)
 
 
 def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
