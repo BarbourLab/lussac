@@ -1,11 +1,7 @@
 import logging
-import pathlib
-import platform
 import sys
 import argparse
-import json
-import jsmin
-from lussac.core import LussacData, LussacPipeline, LussacSpikeSorter
+from lussac.core import LussacData, LussacParams, LussacPipeline, LussacSpikeSorter
 
 
 def parse_arguments(args: list | None) -> str:
@@ -25,26 +21,6 @@ def parse_arguments(args: list | None) -> str:
 	return args.params_file
 
 
-def load_json(filename: str) -> dict:
-	"""
-	Loads the JSON parameters file and returns its content.
-
-	@param filename: str
-		Path to the file containing Lussac's parameters.
-	@return params: dict
-		Lussac's parameters.
-	"""
-
-	folder = pathlib.Path(filename).parent
-	with open(filename) as json_file:
-		minified = jsmin.jsmin(json_file.read())  # Parses out comments.
-		minified = minified.replace("$PARAMS_FOLDER", str(folder.absolute()))
-		if platform.system() == "Windows":  # pragma: no cover (OS specific).
-			minified = minified.replace("\\", "\\\\")
-
-		return json.loads(minified)
-
-
 def main() -> None:  # pragma: no cover
 	"""
 	The main function to execute Lussac.
@@ -52,7 +28,7 @@ def main() -> None:  # pragma: no cover
 
 	# STEP 0: Loading the parameters into the LussacData object.
 	params_file = parse_arguments(sys.argv[1:])
-	params = load_json(params_file)
+	params = LussacParams.load_from_json_file(params_file)
 	data = LussacData.create_from_params(params)
 
 	# STEP 1: Running the spike sorting.
