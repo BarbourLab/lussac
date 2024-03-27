@@ -69,11 +69,7 @@ class LussacParams:
 		if not name.endswith(".json"):
 			name = f"{name}.json"
 
-		params_folder = pathlib.Path(lussac.__file__).parent.parent.parent / "params_examples"
+		params_folder = pathlib.Path(lussac.__file__).parent / "params_examples"
 		file = params_folder / name
 
 		return LussacParams.load_from_json_file(str(file), folder)
-
-
-
-
