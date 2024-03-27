@@ -48,7 +48,7 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		self.create_analyzer(filter_band = params['wvf_extraction']['filter'], sparse=False)
+		self.create_analyzer(filter_band=params['wvf_extraction']['filter'], sparse=False)
 		"""analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}

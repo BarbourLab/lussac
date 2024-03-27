@@ -80,9 +80,10 @@ class LussacPipeline:
 		@param params: dict
 			The parameters for the module.
 		"""
+		sortings_to_run = params.pop('sortings', list(self.data.sortings.keys()))
 
 		for name, sorting in self.data.sortings.items():
-			if 'sortings' in params and name not in params['sortings']:
+			if name not in sortings_to_run:
 				continue
 
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
@@ -100,8 +101,6 @@ class LussacPipeline:
 			module_instance = module(module_name, data, category)
 			params0 = copy.deepcopy(params)
 			params0 = module_instance.update_params(params0)
-			if 'sortings' in params0:
-				del params0['sortings']
 
 			sub_sorting = module_instance.run(params0)
 			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)

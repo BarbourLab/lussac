@@ -46,11 +46,6 @@ class ExportToPhy(MonoSortingModule):
 			return self.sorting
 
 		self.create_analyzer(sparse=params['wvf_extraction']['sparse'])
-		"""analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
-		})"""
-		# TODO
 		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},

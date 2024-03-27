@@ -140,17 +140,17 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 	max_time = int(round(max_time_ms * 1e-3 * sf))
 	bin_size = int(round(bin_size_ms * 1e-3 * sf))
 
-	templates = analyzer.get_extension("fast_templates")
-	assert templates is not None, "The sorting analyzer must have the 'fast_templates' extension!"
-	xaxis = (np.arange(-templates.nbefore, templates.nafter)) / sf * 1e3
-	wvfs_unit = "µV" if templates.params['return_scaled'] else "A.U."
+	templates_ext = analyzer.get_extension("tempaltes") or analyzer.get_extension("fast_templates")
+	assert templates_ext is not None, "The sorting analyzer must have the 'templates' or 'fast_templates' extension!"
+	xaxis = (np.arange(-templates_ext.nbefore, templates_ext.nafter)) / sf * 1e3
+	wvfs_unit = "µV" if templates_ext.params['return_scaled'] else "A.U."
 
 	if n_channels > analyzer.recording.get_num_channels():
 		n_channels = analyzer.recording.get_num_channels()
 
 	if not analyzer.has_extension("spike_amplitudes"):
 		analyzer.compute("spike_amplitudes")
-	spike_amplitudes = analyzer.get_extension("spike_amplitudes")._get_data(outputs="by_unit")[0]
+	spike_amplitudes = analyzer.get_extension("spike_amplitudes").get_data(outputs="by_unit")[0]
 
 	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//4, cols=4)
 	args = []
@@ -210,8 +210,7 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 			marker_color="cornflowerblue"
 		), row=1, col=4)
 
-		# template = templates.get_unit_template(unit_id)  # TODO
-		template = templates.get_data()[analyzer.sorting.id_to_index(unit_id)]
+		template = templates_ext.get_unit_template(unit_id)
 		best_channels = np.argsort(np.max(np.abs(template), axis=0))[::-1]
 		for i in range(n_channels):
 			channel = best_channels[i]
