@@ -11,15 +11,14 @@ from spikeinterface.core.testing import check_sortings_equal
 def test_spike_sorting(data: LussacData) -> None:
 	"""
 	Tests if spike sorting can be run through Lussac without any crash.
-	Creates a shorter recording (1 shank, 5 minutes) to go faster.
+	Creates a shorter recording (1 shank, ~1 minute) to go faster.
 	We don't really care about quality here (e.g. no preprocessing)
 	because we only want to check that the spike sorting can be run.
 	"""
-	start_frame, end_frame = 9_000_000, 18_000_000
+	start_frame, end_frame = 10_000_000, 12_000_000
 	name = "test_spike_sorting"
 
-	recording = data.recording.frame_slice(start_frame, end_frame)
-	recording = recording.channel_slice(np.arange(13, 26))
+	recording = data.recording.frame_slice(start_frame, end_frame).channel_slice(np.arange(14, 26))
 	params = {
 		'sorter_name': "spykingcircus2",
 		'preprocessing': {

@@ -4,6 +4,12 @@ from lussac.modules import RemoveBadUnits
 
 
 PARAMS = {
+	'wvf_extraction': {
+		'ms_before': 1.0,
+		'ms_after': 1.0,
+		'max_spikes_per_unit': 50,
+		'filter': None
+	},
 	"firing_rate": {
 		"min": 0.5
 	},
@@ -12,30 +18,12 @@ PARAMS = {
 		"max": 0.25
 	},
 	"amplitude": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-			"max_spikes_per_unit": 10
-		},
-		"filter": [200, 5000],
 		"min": 20
 	},
 	"SNR": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-			"max_spikes_per_unit": 10
-		},
-		"filter": None,
 		"min": 1.2
 	},
 	"sd_ratio": {
-		"wvf_extraction": {
-			"ms_before": 1.0,
-			"ms_after": 1.0,
-			"max_spikes_per_unit": 10
-		},
-		"filter": None,
 		"max": 2.0
 	}
 }
@@ -49,8 +37,8 @@ def test_default_params(mono_sorting_data: MonoSortingData) -> None:
 def test_remove_bad_units(mono_sorting_data: MonoSortingData) -> None:
 	# Create a smaller data object for testing (faster).
 	data = mono_sorting_data.data.clone()
-	data.recording = data.recording.frame_slice(0, 3_000_000)
-	data.sortings = {'ms3_best': data.sortings['ms3_best'].select_units([2, 7, 11, 14, 21, 23, 24]).frame_slice(0, 3_000_000)}
+	data.recording = data.recording.frame_slice(0, 1_000_000)
+	data.sortings = {'ms3_best': data.sortings['ms3_best'].select_units([2, 7, 11, 14, 21, 23, 24]).frame_slice(0, 1_000_000)}
 	mono_sorting_data = MonoSortingData(data, data.sortings['ms3_best'])
 
 	module = RemoveBadUnits("test_rbu", mono_sorting_data, "all")
