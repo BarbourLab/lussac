@@ -82,10 +82,8 @@ class LussacPipeline:
 		"""
 		sortings_to_run = params.pop('sortings', list(self.data.sortings.keys()))
 
-		for name, sorting in self.data.sortings.items():
-			if name not in sortings_to_run:
-				continue
-
+		for name in sortings_to_run:
+			sorting = self.data.sortings[name]
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
 
 			if len(unit_ids) == 0:

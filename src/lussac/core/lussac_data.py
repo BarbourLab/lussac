@@ -16,6 +16,7 @@ import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 import spikeinterface.extractors as se
+import spikeinterface.preprocessing as spre
 
 
 class LussacData:
@@ -173,6 +174,7 @@ class LussacData:
 	def _load_recording(params: dict) -> si.BaseRecording:
 		"""
 		Loads the recording from the given parameters.
+		If specified, will apply some pre-processing steps.
 
 		@param params: dict
 			A dictionary containing Lussac's recording parameters.
@@ -181,7 +183,26 @@ class LussacData:
 		"""
 
 		recording_extractor = se.extractorlist.get_recording_extractor_from_name(params['recording_extractor'])
-		return recording_extractor(**params['extractor_params'])
+		recording = recording_extractor(**params['extractor_params'])
+
+		if 'probe_file' in params:
+			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['probe_file']).absolute()))
+
+		if 'preprocessing' in params and isinstance(params['preprocessing'], dict):
+			for preprocess_func, arguments in params['preprocessing'].items():
+				if preprocess_func == "cache":
+					continue
+				elif preprocess_func == "remove_bad_channels":
+					bad_channel_ids, channel_labels = spre.detect_bad_channels(recording, **arguments)
+					recording = recording.remove_channels(bad_channel_ids)
+				else:
+					function = getattr(spre, preprocess_func)
+					recording = function(recording, **arguments)
+
+		if 'cache' in params['preprocessing']:
+			recording = recording.save(folder=params['preprocessing']['cache'])
+
+		return recording
 
 	@staticmethod
 	def _load_sortings(sortings_path: dict[str, str]) -> dict[str, si.BaseSorting]:
@@ -301,8 +322,6 @@ class LussacData:
 		"""
 
 		recording = LussacData._load_recording(params['recording'])
-		if 'probe_file' in params['recording']:
-			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['recording']['probe_file']).absolute()))
 		sortings = LussacData._load_sortings(params['analyses'] if 'analyses' in params else {})
 
 		return LussacData(recording, sortings, params)
