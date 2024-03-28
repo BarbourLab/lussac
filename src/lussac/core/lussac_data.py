@@ -199,8 +199,8 @@ class LussacData:
 					function = getattr(spre, preprocess_func)
 					recording = function(recording, **arguments)
 
-		if 'cache' in params['preprocessing']:
-			recording = recording.save(folder=params['preprocessing']['cache'])
+			if 'cache' in params['preprocessing']:
+				recording = recording.save(folder=params['preprocessing']['cache'])
 
 		return recording
 
