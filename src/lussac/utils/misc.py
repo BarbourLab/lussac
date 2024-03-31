@@ -615,6 +615,42 @@ def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2
 	return cross_shift_matrix
 
 
+@numba.jit(nopython=True, nogil=True)
+def consensus_spike_train(merged_spike_train, window: int = 6, min_analyses: int = 2) -> npt.NDArray:
+	"""
+	Creates a consensus spike train from a merged spike train (needs to be sorted).
+	TODO: There is probably a smarter implementation than left to right.
+
+	@param merged_spike_train: array (n_spikes)
+		The sorted merged spike train
+	@param window: int
+		The window (in samples) to use for spikes to be considered matching.
+	@param min_analyses: int
+		The minimum number of coincident spikes to accept the spike.
+	@return consensus_spike_train: array
+		The computed consensus spike train
+	"""
+	consensus = numba.typed.List()
+
+	i = 0
+	while i < len(merged_spike_train) - 1:
+		spikes = [merged_spike_train[i]]
+		for j in range(i+1, len(merged_spike_train)):
+			if merged_spike_train[j] <= merged_spike_train[i] + window:
+				spikes.append(merged_spike_train[j])
+				i += 1
+			else:
+				break
+
+		i += 1
+
+		if len(spikes) >= min_analyses:
+			consensus.append(int(round(np.mean(np.asarray(spikes)))))
+
+	return np.asarray(consensus)
+
+
+
 def filter(data: np.ndarray, band: tuple[float, float] | list[float, float] | np.ndarray, axis: int = -1) -> np.ndarray:
 	"""
 	Filters the data using a Gaussian bandpass filter.
