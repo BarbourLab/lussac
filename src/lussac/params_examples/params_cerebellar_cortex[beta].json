@@ -111,7 +111,7 @@
 						"ms_before": 2.0,
 						"ms_after": 2.0,
 						"max_spikes_per_unit": 1000,
-						"filter": [450, 9000]
+						"filter_band": [450, 9000]
 					},
 					"amplitude": {
 						"min": 20.0
@@ -120,7 +120,7 @@
 			},
 			"align_units": {
 				"CS": {
-					"filter": [600, 6000],
+					"filter_band": [600, 6000],
 					"wvf_extraction": {
 						"ms_before": 1.5,
 						"ms_after": 2.5,
@@ -128,7 +128,7 @@
 					}
 				},
 				"spikes": {
-					"filter": [300, 8000],
+					"filter_band": [300, 8000],
 					"wvf_extraction": {
 						"ms_before": 1.5,
 						"ms_after": 1.5,
@@ -171,7 +171,7 @@
 						"ms_before": 1.5,
 						"ms_after": 3.5,
 						"max_spikes_per_unit": 2000,
-						"filter": [150, 3000]
+						"filter_band": [150, 3000]
 					},
 					"auto_merge_params": {
 						"minimum_spikes": 300,
@@ -191,7 +191,7 @@
 						"ms_before": 1.2,
 						"ms_after": 1.2,
 						"max_spikes_per_unit": 2000,
-						"filter": [300, 6000]
+						"filter_band": [300, 6000]
 					},
 					"auto_merge_params": {
 						"bin_ms": 0.05,

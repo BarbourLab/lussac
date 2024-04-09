@@ -26,7 +26,7 @@ class MergeUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.5,
 				'max_spikes_per_unit': 2_000,
-				'filter': [100, 9000]
+				'filter_band': [100, 9000]
 			},
 			'auto_merge_params': {
 				'bin_ms': 0.05,
@@ -48,16 +48,10 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		self.create_analyzer(filter_band=params['wvf_extraction']['filter'], sparse=False)
-		"""analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-			'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
-		})"""
-		# TODO
+		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'])
 		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
-			'templates': {'operators': ["average"]}
+			'templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
 		})
 		potential_merges, extra_outputs = scur.get_potential_auto_merge(self.analyzer, extra_outputs=True, **params['auto_merge_params'])
 
@@ -211,7 +205,7 @@ class MergeUnits(MonoSortingModule):
 
 		fig = go.Figure().set_subplots(rows=2, cols=2)
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
-		templates = analyzer.get_extension("templates")  # TODO: Fast templates
+		templates = analyzer.get_extension("templates")
 		t_axis = np.arange(-templates.nbefore, templates.nafter) / analyzer.sampling_frequency * 1e3
 		wvfs_unit = "µV" if templates.params['return_scaled'] else "A.U."
 		labels = []

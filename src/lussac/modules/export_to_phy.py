@@ -24,6 +24,7 @@ class ExportToPhy(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1_000,
+				'filter_band': None,
 				'sparse': False
 			},
 			'export_params': {
@@ -45,7 +46,7 @@ class ExportToPhy(MonoSortingModule):
 		if self.sorting.get_num_units() == 0:  # Export crashes if the sorting contains no units.
 			return self.sorting
 
-		self.create_analyzer(sparse=params['wvf_extraction']['sparse'])
+		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'], sparse=params['wvf_extraction']['sparse'])
 		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},

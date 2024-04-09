@@ -3,6 +3,7 @@ import pytest
 from typing import Any
 import numpy as np
 from lussac.core import MonoSortingData, MonoSortingModule
+import spikeinterface.core as si
 
 
 PARAMS = {
@@ -69,8 +70,8 @@ def test_create_analyzer(mono_sorting_module: MonoSortingModule) -> None:
 	mono_sorting_module.create_analyzer(sparse=False)
 	tmp_folder = mono_sorting_module.data.tmp_folder
 
-	assert mono_sorting_module.analyzer is not None
-	assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "analyzer").is_dir()
+	assert isinstance(mono_sorting_module.analyzer, si.SortingAnalyzer)
+	# assert (tmp_folder / "test_mono_sorting_module" / "all" / "ms3_best" / "analyzer").is_dir()
 
 
 def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
@@ -78,7 +79,7 @@ def test_get_templates(mono_sorting_module: MonoSortingModule) -> None:
 	# Test with return_analyzer = True
 	templates, analyzer, margin = mono_sorting_module.get_templates(max_spikes_per_unit=10, ms_before=ms_before, ms_after=ms_after,
 																	filter_band=[300, 6000], return_analyzer=True)
-	templates_ext = analyzer.get_extension("fast_templates")
+	templates_ext = analyzer.get_extension("templates")
 
 	n_units = mono_sorting_module.sorting.get_num_units()
 	n_samples = templates_ext.nbefore + templates_ext.nafter - 2*margin
@@ -105,7 +106,7 @@ def test_get_units_attribute(mono_sorting_data: MonoSortingData) -> None:
 
 	module.analyzer.compute({
 		'random_spikes': {'max_spikes_per_unit': 10},
-		'fast_templates': {'ms_before': 1.0, 'ms_after': 1.0}
+		'templates': {'ms_before': 1.0, 'ms_after': 1.0}
 	})
 
 	frequencies = module.get_units_attribute_arr("firing_rate", PARAMS['firing_rate'])

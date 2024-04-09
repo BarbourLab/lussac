@@ -244,12 +244,11 @@ def test_clean_edges(data: LussacData) -> None:
 	assert os.path.exists(f"{merge_sortings_module.logs_folder}/clean_edges_logs.txt")
 
 
-def test_separate_communities() -> None:
+def test_separate_communities(merge_sortings_module: MergeSortings) -> None:
 	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9), (10, 11)])
-	MergeSortings.separate_communities(graph)
+	merge_sortings_module.separate_communities(graph)
 
 	# Only nodes '8' and '9' need to be removed
-	print(graph.nodes)
 	assert graph.number_of_nodes() == 10
 	assert 1 in graph
 	assert 8 not in graph

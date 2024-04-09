@@ -106,15 +106,16 @@ class LussacModule(ABC):
 		"""
 		assert self.analyzer is None
 
-		folder_path = f"{self.data.tmp_folder}/{self.name}/{self.category}/{sorting.get_annotation('name')}/analyzer"
-
 		recording = self.recording
 		if filter_band is not None:
 			assert len(filter_band) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
 			recording = spre.gaussian_filter(recording, *filter_band, margin_sd=2)
 
+		if 'sparse' not in params:
+			params['sparse'] = False
+
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
-		self.analyzer = si.create_sorting_analyzer(sorting, recording, format="binary_folder", folder=folder_path, **params)
+		self.analyzer = si.create_sorting_analyzer(sorting, recording, format="memory", **params)
 
 
 @dataclass(slots=True)
@@ -225,12 +226,12 @@ class MonoSortingModule(LussacModule):
 		ms_before += margin
 		ms_after += margin
 
-		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="memory")
+		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="memory", sparse=False)
 		analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': max_spikes_per_unit},
-			'fast_templates': {'ms_before': ms_before, 'ms_after': ms_after}
+			'templates': {'ms_before': ms_before, 'ms_after': ms_after}
 		})
-		templates = analyzer.get_extension("fast_templates").get_data()
+		templates = analyzer.get_extension("templates").get_data()
 
 		if filter_band is not None:
 			templates = utils.filter(templates, filter_band, axis=1)
@@ -295,20 +296,20 @@ class MonoSortingModule(LussacModule):
 				return contamination
 
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
-				if not self.analyzer.has_extension("fast_templates"):
+				if not self.analyzer.has_extension("templates"):
 					self.analyzer.compute({
 						'random_spikes': {'max_spikes_per_unit': wvf_extraction_params['max_spikes_per_unit']},
-						'fast_templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
+						'templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
 					})
 				params = utils.filter_kwargs(params, si.template_tools.get_template_extremum_amplitude)
 				amplitudes = si.get_template_extremum_amplitude(self.analyzer, **params)
 				return amplitudes
 
 			case "SNR":  # Returns the signal-to-noise ratio of each unit on its best channel.
-				if not self.analyzer.has_extension("fast_templates"):
+				if not self.analyzer.has_extension("templates"):
 					self.analyzer.compute({
 						'random_spikes': {'max_spikes_per_unit': wvf_extraction_params['max_spikes_per_unit']},
-						'fast_templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
+						'templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
 					})
 				if not self.analyzer.has_extension("noise_levels"):
 					self.analyzer.compute("noise_levels")
@@ -317,10 +318,10 @@ class MonoSortingModule(LussacModule):
 				return SNRs
 
 			case "sd_ratio":  # Returns the standard deviation of the amplitude of spikes divided by the standard deviation on the same channel.
-				if not self.analyzer.has_extension("fast_templates"):
+				if not self.analyzer.has_extension("templates"):
 					self.analyzer.compute({
 						'random_spikes': {'max_spikes_per_unit': wvf_extraction_params['max_spikes_per_unit']},
-						'fast_templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
+						'templates': {'ms_before': wvf_extraction_params['ms_before'], 'ms_after': wvf_extraction_params['ms_after']}
 					})
 				if not self.analyzer.has_extension("spike_amplitudes"):
 					self.analyzer.compute("spike_amplitudes", **params['spike_amplitudes_kwargs'])

@@ -650,7 +650,6 @@ def consensus_spike_train(merged_spike_train, window: int = 6, min_analyses: int
 	return np.asarray(consensus)
 
 
-
 def filter(data: np.ndarray, band: tuple[float, float] | list[float, float] | np.ndarray, axis: int = -1) -> np.ndarray:
 	"""
 	Filters the data using a Gaussian bandpass filter.

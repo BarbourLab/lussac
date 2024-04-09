@@ -22,19 +22,19 @@ class AlignUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 2.0,
 				'ms_after': 2.0,
-				'max_spikes_per_unit': 1_000
+				'max_spikes_per_unit': 1_000,
+				'filter_band': [200, 5000],
 			},
-			'filter': [200, 5000],
 			'threshold': 0.5,
 			'check_next': 10
 		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		templates, analyzer, margin = self.get_templates(**params['wvf_extraction'], filter_band=params['filter'], return_analyzer=True)
+		templates, analyzer, margin = self.get_templates(**params['wvf_extraction'], return_analyzer=True)
 		best_channels = np.argmax(np.max(np.abs(templates), axis=1), axis=1)
 		templates = templates[np.arange(templates.shape[0]), :, best_channels]  # Only take the best channel for each unit.
-		templates_ext = analyzer.get_extension("fast_templates")
+		templates_ext = analyzer.get_extension("templates")
 
 		shifts = self.get_units_shift(templates, templates_ext.nbefore - margin, params['threshold'], params['check_next'])
 		self._plot_alignment(templates, templates_ext.nbefore - margin, shifts, params['threshold'])

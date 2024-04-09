@@ -54,7 +54,7 @@ def test_plot_units(data: LussacData) -> None:
 	analyzer = si.create_sorting_analyzer(sorting, data.recording, format="binary_folder", folder="tests/tmp/plotting/analyzer", sparse=False)
 	analyzer.compute({
 		'random_spikes': {'max_spikes_per_unit': 100},
-		'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
+		'templates': {'ms_before': 1.5, 'ms_after': 2.5},
 	})
 
 	utils.plot_units(analyzer, filepath=f"{folder}/plot_units", annotations_fix=[{'text': "I am a fixed annotation"}],

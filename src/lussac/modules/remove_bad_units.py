@@ -20,14 +20,15 @@ class RemoveBadUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.0,
 				'max_spikes_per_unit': 500,
-				'filter': [100, 9000]
+				'filter_band': [100, 9000]
 			}
 		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		wvf_extraction_params = params.pop('wvf_extraction', {})
-		self.create_analyzer(filter_band=wvf_extraction_params['filter'], sparse=False)
+		if self.analyzer is None:
+			self.precompute_analyzer(params)
 
 		units_to_remove = np.zeros(self.sorting.get_num_units(), dtype=bool)
 		reasons_for_removal = np.array([''] * self.sorting.get_num_units(), dtype=object)
@@ -50,25 +51,41 @@ class RemoveBadUnits(MonoSortingModule):
 		bad_sorting = self.sorting.select_units([unit_id for unit_id, bad in zip(self.sorting.unit_ids, units_to_remove) if bad])
 		reasons_for_removal = ["Reason(s) for removal: " + reason[3:] for reason in reasons_for_removal[units_to_remove]]
 
-		self._plot_bad_units(bad_sorting, reasons_for_removal)
+		self._plot_bad_units(bad_sorting.unit_ids, reasons_for_removal)
 
 		return sorting
 
-	def _plot_bad_units(self, bad_sorting: si.BaseSorting, reasons_for_removal: list[str]) -> None:
+	def precompute_analyzer(self, params: dict[str, Any]) -> None:
+		params = self.update_params(params)
+		wvf_extraction = params['wvf_extraction']
+
+		self.create_analyzer(filter_band=wvf_extraction['filter_band'])
+
+		attributes = list(params.keys())
+		if "amplitude" in attributes or "SNR" in attributes or "sd_ratio" in attributes:
+			self.analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']},
+				'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']}
+
+			})
+		if "sd_ratio" in attributes:
+			self.analyzer.compute("spike_amplitudes", peak_sign="both")
+
+	def _plot_bad_units(self, bad_unit_ids, reasons_for_removal: list[str]) -> None:
 		"""
 		Plots the units that were removed.
 
-		@param bad_sorting: si.BaseSorting
-			The sorting object containing the bad units.
+		@param bad_unit_ids:
+			The unit ids that were removed.
 		"""
-		if bad_sorting.get_num_units() == 0:
+		if len(bad_unit_ids) == 0:
 			return
 
-		analyzer = self.analyzer.select_units(bad_sorting.unit_ids, format="memory")
-		if not analyzer.has_extension("fast_templates"):
+		analyzer = self.analyzer.select_units(bad_unit_ids, format="memory")
+		if not analyzer.has_extension("templates"):
 			analyzer.compute({
 				'random_spikes': {'max_spikes_per_unit': 500},
-				'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
+				'templates': {'ms_before': 1.5, 'ms_after': 2.5},
 			})
 
 		annotations = [{'text': reason, 'x': 0.6, 'y': 1.02, 'xref': "paper", 'yref': "paper", 'xanchor': "center", 'yanchor': "bottom", 'showarrow': False} for reason in reasons_for_removal]

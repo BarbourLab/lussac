@@ -20,7 +20,8 @@ class RemoveRedundantUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 1.0,
 				'ms_after': 1.5,
-				'max_spikes_per_unit': 500
+				'max_spikes_per_unit': 500,
+				'filter_band': None
 			},
 			'arguments': {
 				'align': True,
@@ -33,12 +34,8 @@ class RemoveRedundantUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		self.create_analyzer()
-		if params['wvf_extraction'] is not None:
-			self.analyzer.compute({
-				'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-				'fast_templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
-			})
+		if self.analyzer is None:
+			self.precompute_analyzer(params)
 
 		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(self.analyzer, extra_outputs=True, **params['arguments'])
 
@@ -48,6 +45,17 @@ class RemoveRedundantUnits(MonoSortingModule):
 		self._plot_redundant_units(redundant_sorting, redundancies)
 
 		return self.sorting.select_units(new_sorting.unit_ids)  # can't use `new_sorting` because parent is SharedMemorySorting, which can't be pickled
+
+	def precompute_analyzer(self, params: dict[str, Any]) -> None:
+		params = self.update_params(params)
+		wvf_extraction = params['wvf_extraction']
+
+		self.create_analyzer(filter_band=wvf_extraction['filter_band'] if wvf_extraction is not None else None)
+		if wvf_extraction is not None:
+			self.analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+				'templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
+			})
 
 	@staticmethod
 	def _get_redundancies(redundant_unit_ids: list, redundant_unit_pairs: list[list]) -> dict:
@@ -86,7 +94,7 @@ class RemoveRedundantUnits(MonoSortingModule):
 		if not analyzer.has_extension("fast_templates"):
 			analyzer.compute({
 				'random_spikes': {'max_spikes_per_unit': 500},
-				'fast_templates': {'ms_before': 1.5, 'ms_after': 2.5},
+				'templates': {'ms_before': 1.5, 'ms_after': 2.5},
 			})
 
 		annotations = [{'text': f"Unit {unit_id} is redundant with unit(s): {' '.join(np.array(redundancies[unit_id]).astype(str))}", 'x': 0.6, 'y': 1.07,

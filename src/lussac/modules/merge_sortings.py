@@ -9,7 +9,6 @@ from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
-from spikeinterface.curation.curation_tools import find_duplicated_spikes
 import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
 
@@ -28,7 +27,6 @@ class MergeSortings(MultiSortingsModule):
 			'refractory_period': [0.2, 1.0],
 			'max_shift': 1.33,
 			'require_multiple_sortings_match': True,
-			'max_units_merge': 1,
 			'similarity': {
 				'min_similarity': 0.3,
 				'window': 0.2
@@ -43,7 +41,7 @@ class MergeSortings(MultiSortingsModule):
 					'ms_before': 1.0,
 					'ms_after': 2.0,
 					'max_spikes_per_unit': 1_000,
-					'filter': [250.0, 6_000.0]
+					'filter_band': [250.0, 6_000.0]
 				},
 				'num_channels': 5
 			},
@@ -73,7 +71,7 @@ class MergeSortings(MultiSortingsModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
-		self.data.sortings = {name: sorting.remove_empty_units() for name, sorting in self.sortings.items()}
+		self.data.sortings = {name: scur.remove_duplicated_spikes(sorting.remove_empty_units(), params['refractory_period'][0], method="keep_first_iterative") for name, sorting in self.sortings.items()}
 		self._create_analyzer(params['waveform_validation']['wvf_extraction'])
 
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
@@ -90,17 +88,17 @@ class MergeSortings(MultiSortingsModule):
 			self.separate_communities(graph)
 		self._save_graph(graph, "final_graph")
 
-		merged_sorting = self.merge_sortings(graph, params)
+		merged_sorting = self.merge_sortings(graph, cross_shifts, params)
 
 		return {'merged_sorting': merged_sorting}
 
 	def _create_analyzer(self, params: dict):
-		self.create_analyzer(filter_band=params['filter'], sparse=False)
+		self.create_analyzer(filter_band=params['filter_band'])
 
 		self.analyzer.compute({
 			'noise_levels': {},
 			'random_spikes': {'max_spikes_per_unit': params['max_spikes_per_unit']},
-			'fast_templates': {'ms_before': params['ms_before'], 'ms_after': params['ms_after']},
+			'templates': {'ms_before': params['ms_before'], 'ms_after': params['ms_after']},
 			'spike_amplitudes': {'peak_sign': 'both', 'return_scaled': self.recording.has_scaled()}
 		})
 
@@ -145,10 +143,9 @@ class MergeSortings(MultiSortingsModule):
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
 		"""
 		window = params['similarity']['window']
-		censored_period = params['refractory_period'][0]
 
 		similarity_matrices = {}
-		spike_vectors = {name: scur.remove_duplicated_spikes(sorting, censored_period).to_spike_vector() for name, sorting in self.sortings.items()}
+		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
 		n_spikes = {name: np.array(list(sorting.count_num_spikes_per_unit().values())) for name, sorting in self.sortings.items()}
 
 		for name1, sorting1 in self.sortings.items():
@@ -374,7 +371,7 @@ class MergeSortings(MultiSortingsModule):
 
 		n_channels = params['waveform_validation']['num_channels']
 		margin = params['max_shift']
-		templates = self.analyzer.get_extension("fast_templates").get_data()
+		templates_ext = self.analyzer.get_extension("templates")
 
 		for node1, node2 in graph.edges:
 			sorting1_name, unit_id1 = node1
@@ -384,11 +381,8 @@ class MergeSortings(MultiSortingsModule):
 			new_unit_id1 = self.analyzer.renamed_unit_ids[sorting1_name][unit_id1]
 			new_unit_id2 = self.analyzer.renamed_unit_ids[sorting2_name][unit_id2]
 
-			# TODO
-			# template1 = self.analyzer.get_extension("fast_templates").get_unit_template(new_unit_id1)
-			# template2 = self.analyzer.get_extension("fast_templates").get_unit_template(new_unit_id2)
-			template1 = templates[self.analyzer.sorting.id_to_index(new_unit_id1)]
-			template2 = templates[self.analyzer.sorting.id_to_index(new_unit_id2)]
+			template1 = templates_ext.get_unit_template(new_unit_id1)
+			template2 = templates_ext.get_unit_template(new_unit_id2)
 			channel_indices = np.argsort(np.max(np.abs(template1) + np.abs(template2), axis=0))[:-n_channels-1:-1]
 
 			shift = cross_shifts[sorting1_name][sorting2_name][unit_idx1, unit_idx2]
@@ -483,8 +477,7 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	@staticmethod
-	def separate_communities(graph: nx.Graph) -> None:
+	def separate_communities(self, graph: nx.Graph) -> None:
 		"""
 		Looks for all subgraphs (connected component) and uses the Louvain algorithm to check if
 		multiple communities are found. If so, the edges between communities are removed.
@@ -495,6 +488,8 @@ class MergeSortings(MultiSortingsModule):
 			The graph containing all the units and connected by their similarity.
 		"""
 
+		logs = open(f"{self.logs_folder}/separate_communities_logs.txt", 'w+')
+
 		for nodes in list(nx.connected_components(graph)):
 			subgraph = graph.subgraph(nodes)
 			communities = list(nx.community.louvain_communities(subgraph, resolution=0.85))
@@ -502,6 +497,7 @@ class MergeSortings(MultiSortingsModule):
 			if len(communities) == 1:
 				continue
 
+			logs.write("\nRemoving following edges, because linking different communities:\n")
 			# Remove edges between communities
 			for i in range(len(communities) - 1):
 				for j in range(i+1, len(communities)):
@@ -509,19 +505,26 @@ class MergeSortings(MultiSortingsModule):
 						for node2 in communities[j]:
 							if graph.has_edge(node1, node2):
 								graph.remove_edge(node1, node2)
+								logs.write(f"Removed edge between:\n\t- {graph.nodes[node1]}\n\t- {graph.nodes[node2]}\n")
 
+			logs.write("\nRemoving small communities:\n")
 			# Remove small communities
 			for community in communities:
 				if len(community) <= 2:
 					for node in community:
+						logs.write(f"\t- Removing {graph.nodes[node]}\n")
 						graph.remove_node(node)
 
-	def merge_sortings(self, graph: nx.Graph, params: dict) -> si.NpzSortingExtractor:
+		logs.close()
+
+	def merge_sortings(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict) -> si.NpzSortingExtractor:
 		"""
 		Merges the sortings based on a graph of similar units.
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param cross_shifts: dict[str, dict[str, np.ndarray]]
+			The cross-shifts between units.
 		@param params: dict
 			The parameters of the merge_sorting module.
 		@return merged_sorting: si.NpzSortingExtractor
@@ -553,24 +556,44 @@ class MergeSortings(MultiSortingsModule):
 					logs.write(f"\t- SD ratio too different from 1.0 (SD ratio = {graph.nodes[node]['sd_ratio']:.2f})\n\t--> SKIPPING\n")
 					continue
 
-			for n_units in range(1, params['max_units_merge']+1):
-				for sub_nodes in itertools.combinations(nodes, n_units):
-					spike_trains = [self.sortings[name].get_unit_spike_train(unit_id) for name, unit_id in sub_nodes]
-					spike_train = np.sort(list(itertools.chain(*spike_trains))).astype(np.int64)
-					indices_of_duplicates = find_duplicated_spikes(spike_train, t_c, method="keep_first_iterative")
-					spike_train = np.delete(spike_train, indices_of_duplicates)
+			spike_trains = []
+			ref_name, ref_unit_id = nodes[0]
+			ref_unit_ind = self.sortings[ref_name].id_to_index(ref_unit_id)
+			for node in nodes:
+				name, unit_id = node
+				unit_ind = self.sortings[name].id_to_index(unit_id)
+				spike_train = self.sortings[name].get_unit_spike_train(unit_id)
+				if name != ref_name:
+					spike_train += + cross_shifts[ref_name][name][ref_unit_ind, unit_ind]
 
-					f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
-					C = utils.estimate_contamination(spike_train, params['refractory_period'])
-					score = f * (1 - (k+1)*C)
-					logs.write(f"\t- Score = {score:.2f}\t[{sub_nodes}]\n")
+				spike_trains.append(spike_train)
 
-					if score > best_score:
-						best_score = score
-						new_spike_trains[new_unit_id] = spike_train
-						unit_label = sub_nodes
+				f = len(spike_train) * self.sampling_f / self.recording.get_num_frames()
+				C = graph.nodes[node]['contamination']
+				sd = graph.nodes[node]['sd_ratio']
+				score = f * (1 - (k+1)*C)  / (1 + abs(1 - sd))
+				logs.write(f"\t- Score = {score:.2f}\t[{node}]\n")
 
-			logs.write(f"\t--> Unit(s) chosen: {unit_label}\n")
+				if score > best_score:
+					best_score = score
+					new_spike_trains[new_unit_id] = spike_train
+					unit_label = node
+
+			# Constructing consensus spike train
+			merged_spike_train = np.sort(np.concatenate(spike_trains))
+			n_analyses = int(math.ceil(math.sqrt(len(spike_trains))))
+			consensus_spike_train = utils.consensus_spike_train(merged_spike_train, window=t_c//2, min_analyses=n_analyses)
+
+			if len(consensus_spike_train) > 0:
+				f = len(consensus_spike_train) * self.sampling_f / self.recording.get_num_frames()
+				C = utils.estimate_contamination(consensus_spike_train, params['refractory_period'])
+				score = f * (1 - (k+1)*C)
+				logs.write(f"\t- Score = {score:.2f}\t[consensus]\n")
+				if score > best_score:
+					new_spike_trains[new_unit_id] = consensus_spike_train
+					unit_label = "consensus"
+
+			logs.write(f"\t--> Unit chosen: {unit_label}\n")
 
 		logs.close()
 

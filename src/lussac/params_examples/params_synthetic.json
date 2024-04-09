@@ -34,8 +34,8 @@
 					"wvf_extraction": {
 						"ms_before": 0.5,
 						"ms_after": 1.0,
-						"max_spikes_per_unit": 500,
-						"filter": [300, 6000]
+						"max_spikes_per_unit": 1000,
+						"filter_band": [300, 6000]
 					},
 					"firing_rate": {
 						"min": 0.4
