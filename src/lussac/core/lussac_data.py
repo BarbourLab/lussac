@@ -150,9 +150,10 @@ class LussacData:
 
 			# Check that spike trains are valid.
 			spike_vector = sorting.to_spike_vector()
-			assert spike_vector['sample_index'][0] >= 0
-			assert spike_vector['sample_index'][-1] < self.recording.get_num_frames()
-			assert np.all(np.diff(spike_vector['sample_index']) >= 0)
+			if len(spike_vector) > 0:
+				assert spike_vector['sample_index'][0] >= 0
+				assert spike_vector['sample_index'][-1] < self.recording.get_num_frames()
+				assert np.all(np.diff(spike_vector['sample_index']) >= 0)
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:

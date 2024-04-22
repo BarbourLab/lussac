@@ -23,7 +23,7 @@ class AlignUnits(MonoSortingModule):
 				'ms_before': 2.0,
 				'ms_after': 2.0,
 				'max_spikes_per_unit': 1_000,
-				'filter_band': [200, 5000],
+				'filter_band': [200, 6000],
 			},
 			'threshold': 0.5,
 			'check_next': 10

@@ -20,7 +20,7 @@ class RemoveBadUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.0,
 				'max_spikes_per_unit': 500,
-				'filter_band': [100, 9000]
+				'filter_band': [150, 9000]
 			}
 		}
 

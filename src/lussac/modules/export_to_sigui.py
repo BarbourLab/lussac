@@ -31,11 +31,11 @@ class ExportToSIGUI(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		path = self._format_output_path(params['path'])
-		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=path)
+		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=path, return_scaled=params['wvf_extraction']['return_scaled'])
 
 		analyzer_params = {
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after'], 'return_scaled': params['wvf_extraction']['return_scaled']},
+			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
 			'templates': {'operators': ["average"]}
 		}
 		if isinstance(params['spike_amplitudes'], dict):

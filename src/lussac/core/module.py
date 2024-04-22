@@ -111,8 +111,7 @@ class LussacModule(ABC):
 			assert len(filter_band) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
 			recording = spre.gaussian_filter(recording, *filter_band, margin_sd=2)
 
-		if 'sparse' not in params:
-			params['sparse'] = False
+		params = dict(return_scaled=True, sparse=False) | params
 
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
 		self.analyzer = si.create_sorting_analyzer(sorting, recording, format="memory", **params)

@@ -26,7 +26,7 @@ class MergeUnits(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 1.5,
 				'max_spikes_per_unit': 2_000,
-				'filter_band': [100, 9000]
+				'filter_band': [150, 7000]
 			},
 			'auto_merge_params': {
 				'bin_ms': 0.05,
@@ -207,7 +207,7 @@ class MergeUnits(MonoSortingModule):
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
 		templates = analyzer.get_extension("templates")
 		t_axis = np.arange(-templates.nbefore, templates.nafter) / analyzer.sampling_frequency * 1e3
-		wvfs_unit = "µV" if templates.params['return_scaled'] else "A.U."
+		wvfs_unit = "µV" if analyzer.return_scaled else "A.U."
 		labels = []
 		args = []
 

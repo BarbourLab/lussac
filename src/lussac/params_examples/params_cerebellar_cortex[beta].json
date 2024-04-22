@@ -171,7 +171,7 @@
 						"ms_before": 1.5,
 						"ms_after": 3.5,
 						"max_spikes_per_unit": 2000,
-						"filter_band": [150, 3000]
+						"filter_band": [150, 4000]
 					},
 					"auto_merge_params": {
 						"minimum_spikes": 300,

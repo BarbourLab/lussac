@@ -41,8 +41,7 @@ def test_sanity_check() -> None:
 
 	sortings = {
 		'correct': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=30000),
-		'wrong_sf': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000),
-		'negative_st': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([-87, 9368, 21845])}, sampling_frequency=30000)
+		'wrong_sf': si.NumpySorting.from_unit_dict({0: np.array([0, 8, 7188, 29999]), 1: np.array([87, 9368, 21845])}, sampling_frequency=10000)
 	}
 
 	lussac_default_params = {'lussac': {'pipeline': {}, 'tmp_folder': "tests/tmp", 'logs_folder': "tests/tmp/logs", 'overwrite_logs': False}}

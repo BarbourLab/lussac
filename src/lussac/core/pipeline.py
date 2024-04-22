@@ -113,7 +113,7 @@ class LussacPipeline:
 			t2 = time.perf_counter()
 			logging.info(f" (Done in {t2-t1:.1f} s)\n")
 
-		for name in sortings_to_run:
+		for name in sub_sortings.keys():
 			logging.info(f"\t- Sorting  {name:<18}")
 			
 			t1 = time.perf_counter()

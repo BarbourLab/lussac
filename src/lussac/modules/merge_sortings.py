@@ -99,7 +99,7 @@ class MergeSortings(MultiSortingsModule):
 			'noise_levels': {},
 			'random_spikes': {'max_spikes_per_unit': params['max_spikes_per_unit']},
 			'templates': {'ms_before': params['ms_before'], 'ms_after': params['ms_after']},
-			'spike_amplitudes': {'peak_sign': 'both', 'return_scaled': self.recording.has_scaled()}
+			'spike_amplitudes': {'peak_sign': 'both'}
 		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:

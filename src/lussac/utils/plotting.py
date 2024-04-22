@@ -143,7 +143,7 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 	templates_ext = analyzer.get_extension("templates")
 	assert templates_ext is not None, "The sorting analyzer must have the 'templates' extension!"
 	xaxis = (np.arange(-templates_ext.nbefore, templates_ext.nafter)) / sf * 1e3
-	wvfs_unit = "µV" if templates_ext.params['return_scaled'] else "A.U."
+	wvfs_unit = "µV" if analyzer.return_scaled else "A.U."
 
 	if n_channels > analyzer.recording.get_num_channels():
 		n_channels = analyzer.recording.get_num_channels()
