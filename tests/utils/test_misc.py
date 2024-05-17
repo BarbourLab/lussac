@@ -66,6 +66,14 @@ def test_merge_dict() -> None:
 	assert np.all(d4_keys == ('a', 'b', 'c', 2, 1))
 
 
+def test_format_elapsed_time() -> None:
+	assert utils.format_elapsed_time(0.0022) == "2ms"
+	assert utils.format_elapsed_time(3.7) == "3s 700ms"
+	assert utils.format_elapsed_time(60.8) == "1m 0s"
+	assert utils.format_elapsed_time(3700.6) == "1h 1m 40s"
+	assert utils.format_elapsed_time(99750.9) == "1d 3h 42m 30s"
+
+
 def test_binom_sf() -> None:
 	x, n, p = 3, 30.5, 0.1
 	res = 1 - 0.635629357849

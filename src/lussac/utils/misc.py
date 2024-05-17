@@ -137,6 +137,28 @@ def merge_dict(d1: dict, d2: dict) -> dict:
 	return res
 
 
+def format_elapsed_time(t: float) -> str:
+	formatted_time = ""
+	original_t = t
+
+	if t >= 3_600 * 24:
+		formatted_time += f"{t // 86_400:.0f}d "
+		t %= 3_600 * 24
+	if original_t >= 3_600:
+		formatted_time += f"{t // 3_600:.0f}h "
+		t %= 3_600
+	if original_t >= 60:
+		formatted_time += f"{t // 60:.0f}m "
+		t %= 60
+	if original_t >= 1:
+		formatted_time += f"{int(t)}s "
+		t %= 1
+	if original_t < 10:
+		formatted_time += f"{int(1e3*t)}ms "
+
+	return formatted_time[:-1]
+
+
 def binom_sf(x: int, n: float, p: float) -> float:
 	"""
 	Computes the survival function (sf = 1 - cdf) of the binomial distribution.

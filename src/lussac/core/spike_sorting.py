@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 import logging
-import pathlib
+from pathlib import Path
+import time
+
+import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 import spikeinterface.preprocessing as spre
@@ -42,7 +45,7 @@ class LussacSpikeSorter:
 		"""
 
 		sorter_name = params['sorter_name']
-		folder = pathlib.Path(params['sorter_params']['output_folder'])
+		folder = Path(params['sorter_params']['output_folder'])
 
 		if (folder / "provenance.pkl").exists():
 			sorting = si.load_extractor(folder / "provenance.pkl")
@@ -53,11 +56,15 @@ class LussacSpikeSorter:
 		if 'preprocessing' in params:
 			self._preprocess(params['preprocessing'])
 
-		logging.info(f"Running spike-sorting for analysis '{self.name}'\n")
+		logging.info(f"Running spike-sorting for analysis '{self.name}' ")
 
+		t_start = time.perf_counter()
 		sorting = ss.run_sorter(sorter_name, self.recording, **params['sorter_params'])
 		sorting = scur.remove_excess_spikes(sorting.remove_empty_units(), self.recording)
 		sorting.annotate(name=self.name)
 		sorting.dump_to_pickle(file_path=folder / "provenance.pkl", include_properties=True)
+		t_end = time.perf_counter()
+
+		logging.info(f"(done in {utils.format_elapsed_time(t_end - t_start)})\n")
 
 		return sorting
