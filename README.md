@@ -37,7 +37,7 @@ conda create -n lussac python=3.11  # Must be >= 3.10
 conda activate lussac
 
 # Install Lussac.
-pip install -e .[dev]
+pip install -e ".[dev]"
 
 # To upgrade Lussac.
 git pull
