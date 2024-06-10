@@ -16,6 +16,7 @@ import probeinterface.io
 import spikeinterface.core as si
 import spikeinterface.curation as scur
 import spikeinterface.extractors as se
+import spikeinterface.preprocessing as spre
 
 
 class LussacData:
@@ -51,6 +52,9 @@ class LussacData:
 
 		self.recording = recording
 		self.sortings = {name: scur.remove_excess_spikes(sorting.remove_empty_units(), recording) for name, sorting in sortings.items()}
+		for name, sorting in self.sortings.items():
+			sorting.annotate(name=name)
+
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
 		self._tmp_directory = self._setup_tmp_directory(params['lussac']['tmp_folder'])
@@ -146,9 +150,10 @@ class LussacData:
 
 			# Check that spike trains are valid.
 			spike_vector = sorting.to_spike_vector()
-			assert spike_vector['sample_index'][0] >= 0
-			assert spike_vector['sample_index'][-1] < self.recording.get_num_frames()
-			assert np.all(np.diff(spike_vector['sample_index']) >= 0)
+			if len(spike_vector) > 0:
+				assert spike_vector['sample_index'][0] >= 0
+				assert spike_vector['sample_index'][-1] < self.recording.get_num_frames()
+				assert np.all(np.diff(spike_vector['sample_index']) >= 0)
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
@@ -170,6 +175,7 @@ class LussacData:
 	def _load_recording(params: dict) -> si.BaseRecording:
 		"""
 		Loads the recording from the given parameters.
+		If specified, will apply some pre-processing steps.
 
 		@param params: dict
 			A dictionary containing Lussac's recording parameters.
@@ -178,7 +184,26 @@ class LussacData:
 		"""
 
 		recording_extractor = se.extractorlist.get_recording_extractor_from_name(params['recording_extractor'])
-		return recording_extractor(**params['extractor_params'])
+		recording = recording_extractor(**params['extractor_params'])
+
+		if 'probe_file' in params:
+			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['probe_file']).absolute()))
+
+		if 'preprocessing' in params and isinstance(params['preprocessing'], dict):
+			for preprocess_func, arguments in params['preprocessing'].items():
+				if preprocess_func == "cache":
+					continue
+				elif preprocess_func == "remove_bad_channels":
+					bad_channel_ids, channel_labels = spre.detect_bad_channels(recording, **arguments)
+					recording = recording.remove_channels(bad_channel_ids)
+				else:
+					function = getattr(spre, preprocess_func)
+					recording = function(recording, **arguments)
+
+			if 'cache' in params['preprocessing']:
+				recording = recording.save(folder=params['preprocessing']['cache'])
+
+		return recording
 
 	@staticmethod
 	def _load_sortings(sortings_path: dict[str, str]) -> dict[str, si.BaseSorting]:
@@ -204,7 +229,6 @@ class LussacData:
 				sorting = si.load_extractor(path, base_folder=True)
 				assert isinstance(sorting, si.BaseSorting)
 
-			sorting.annotate(name=name)
 			sortings[name] = sorting
 
 		return sortings
@@ -299,8 +323,6 @@ class LussacData:
 		"""
 
 		recording = LussacData._load_recording(params['recording'])
-		if 'probe_file' in params['recording']:
-			recording = LussacData._setup_probe(recording, str(pathlib.Path(params['recording']['probe_file']).absolute()))
 		sortings = LussacData._load_sortings(params['analyses'] if 'analyses' in params else {})
 
 		return LussacData(recording, sortings, params)

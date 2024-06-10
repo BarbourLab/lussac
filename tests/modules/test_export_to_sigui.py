@@ -31,9 +31,9 @@ def test_export_multiple_sortings(data: LussacData) -> None:
 
 	pipeline._run_mono_sorting_module(ExportToSIGUI, "export_to_sigui", "all", params)
 
-	assert os.path.exists(f"{folder}/ks2_best/waveforms")
-	assert os.path.exists(f"{folder}/ms3_cs/waveforms")
-	assert not os.path.exists(f"{folder}/ks2_cs/waveforms")
+	assert os.path.exists(f"{folder}/ks2_best/extensions")
+	assert os.path.exists(f"{folder}/ms3_cs/extensions")
+	assert not os.path.exists(f"{folder}/ks2_cs/extensions")
 
 
 def test_format_output_path(mono_sorting_data: MonoSortingData) -> None:

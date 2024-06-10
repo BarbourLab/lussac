@@ -1,0 +1,105 @@
+{
+	"recording": {
+
+	},
+	"analyses": {
+
+	},
+	"lussac": {
+		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
+		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
+		"si_global_job_kwargs": {
+			"n_jobs": 8,
+			"chunk_duration": "2s",
+			"progress_bar": false
+		},
+		"overwrite_logs": false,
+		"pipeline": {
+			"remove_duplicated_spikes": {
+				"all": {
+					"censored_period": 0.4
+				}
+			},
+			"align_units": {
+				"all": {
+					"wvf_extraction": {
+						"ms_before": 3.5,
+						"ms_after": 3.5
+					}
+				}
+			},
+			"remove_bad_units": {
+				"all": {
+					"wvf_extraction": {
+						"ms_before": 0.5,
+						"ms_after": 1.0,
+						"max_spikes_per_unit": 1000,
+						"filter_band": [300, 6000]
+					},
+					"firing_rate": {
+						"min": 0.4
+					},
+					"SNR": {
+						"min": 1.5
+					},
+					"contamination": {
+						"refractory_period": [0.4, 1.9],
+						"max": 0.35
+					},
+					"sd_ratio": {
+						"max": 2.0
+					}
+				}
+			},
+			"remove_redundant_units": {
+				"all": {
+					"arguments": {
+						"align": false
+					}
+				}
+			},
+			"merge_sortings": {
+				"all": {
+					"refractory_period": [0.4, 1.9],
+					"similarity": {
+						"min_similarity": 0.3,
+						"window": 0.3
+					}
+				}
+			},
+			"remove_bad_units_2": {
+				"all": {
+					"contamination": {
+						"refractory_period": [0.4, 1.9],
+						"max": 0.2
+					}
+				}
+			},
+			"export_to_phy": {
+				"all": {
+					"path": "$PARAMS_FOLDER/lussac/final_output_phy",
+					"wvf_extraction": {
+						"ms_before": 1.0,
+						"ms_after": 3.0,
+						"max_spikes_per_unit": 1000
+					},
+					"export_params": {
+						"compute_pc_features": false,
+						"compute_amplitudes": true,
+						"template_mode": "average"
+					}
+				}
+			},
+			"export_to_sigui": {
+				"all": {
+					"path": "$PARAMS_FOLDER/lussac/final_output_sigui",
+					"wvf_extraction": {
+						"ms_before": 1.0,
+						"ms_after": 3.0,
+						"max_spikes_per_unit": 1000
+					}
+				}
+			}
+		}
+	}
+}

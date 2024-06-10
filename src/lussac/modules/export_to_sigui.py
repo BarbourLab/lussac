@@ -7,7 +7,7 @@ import spikeinterface.postprocessing as spost
 
 class ExportToSIGUI(MonoSortingModule):
 	"""
-	Exports the sorting data as a waveform extractor (for SpikeInterface GUI).
+	Exports the sorting data as a sorting analyzer (for SpikeInterface GUI).
 	"""
 
 	export_sortings = False
@@ -20,8 +20,7 @@ class ExportToSIGUI(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1000,
-				'return_scaled': True,
-				'allow_unfiltered': True
+				'return_scaled': True
 			},
 			'spike_amplitudes': {
 
@@ -32,12 +31,19 @@ class ExportToSIGUI(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		path = self._format_output_path(params['path'])
-		wvf_extractor = si.extract_waveforms(self.recording, self.sorting, path, **params['wvf_extraction'])
+		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=path, return_scaled=params['wvf_extraction']['return_scaled'])
 
+		analyzer_params = {
+			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
+			'templates': {'operators': ["average"]}
+		}
 		if isinstance(params['spike_amplitudes'], dict):
-			spost.compute_spike_amplitudes(wvf_extractor, **params['spike_amplitudes'])
+			analyzer_params['spike_amplitudes'] = params['spike_amplitudes']
 		if isinstance(params['principal_components'], dict):
-			spost.compute_principal_components(wvf_extractor, **params['principal_components'])
+			analyzer_params['principal_components'] = params['principal_components']
+
+		analyzer.compute(analyzer_params)
 
 		return self.sorting
 

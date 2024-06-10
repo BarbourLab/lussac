@@ -20,7 +20,8 @@ class RemoveRedundantUnits(MonoSortingModule):
 			'wvf_extraction': {
 				'ms_before': 1.0,
 				'ms_after': 1.5,
-				'max_spikes_per_unit': 500
+				'max_spikes_per_unit': 500,
+				'filter_band': None
 			},
 			'arguments': {
 				'align': True,
@@ -33,16 +34,28 @@ class RemoveRedundantUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		sorting_or_wvf_extractor = self.extract_waveforms(**params['wvf_extraction']) if params['wvf_extraction'] is not None else self.sorting
+		if self.analyzer is None:
+			self.precompute_analyzer(params)
 
-		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(sorting_or_wvf_extractor, extra_outputs=True, **params['arguments'])
+		new_sorting, redundant_unit_pairs = scur.remove_redundant_units(self.analyzer, extra_outputs=True, **params['arguments'])
 
 		redundant_unit_ids = [unit_id for unit_id in self.sorting.unit_ids if unit_id not in new_sorting.unit_ids]
 		redundant_sorting = self.sorting.select_units(redundant_unit_ids)
 		redundancies = self._get_redundancies(redundant_unit_ids, redundant_unit_pairs)
 		self._plot_redundant_units(redundant_sorting, redundancies)
 
-		return new_sorting
+		return self.sorting.select_units(new_sorting.unit_ids)  # can't use `new_sorting` because parent is SharedMemorySorting, which can't be pickled
+
+	def precompute_analyzer(self, params: dict[str, Any]) -> None:
+		params = self.update_params(params)
+		wvf_extraction = params['wvf_extraction']
+
+		self.create_analyzer(filter_band=wvf_extraction['filter_band'] if wvf_extraction is not None else None)
+		if wvf_extraction is not None:
+			self.analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+				'templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
+			})
 
 	@staticmethod
 	def _get_redundancies(redundant_unit_ids: list, redundant_unit_pairs: list[list]) -> dict:
@@ -74,8 +87,16 @@ class RemoveRedundantUnits(MonoSortingModule):
 		@param redundant_sorting: si.BaseSorting
 			The sorting object containing the redundant units.
 		"""
+		if redundant_sorting.get_num_units() == 0:
+			return
 
-		wvf_extractor = self.extract_waveforms(sorting=redundant_sorting, sub_folder="plot_redundant", ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500)
+		analyzer = self.analyzer.select_units(redundant_sorting.unit_ids, format="memory")
+		if not analyzer.has_extension("fast_templates"):
+			analyzer.compute({
+				'random_spikes': {'max_spikes_per_unit': 500},
+				'templates': {'ms_before': 1.5, 'ms_after': 2.5},
+			})
+
 		annotations = [{'text': f"Unit {unit_id} is redundant with unit(s): {' '.join(np.array(redundancies[unit_id]).astype(str))}", 'x': 0.6, 'y': 1.07,
 						'xref': "paper", 'yref': "paper", 'showarrow': False} for unit_id in redundant_sorting.unit_ids]
-		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/redundant_units", annotations_change=annotations)
+		utils.plot_units(analyzer, filepath=f"{self.logs_folder}/redundant_units", annotations_change=annotations)

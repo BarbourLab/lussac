@@ -53,6 +53,8 @@ def test_merge_empty(data: LussacData) -> None:
 		'one_good_one_bad': si.NumpySorting.from_unit_dict({0: np.array([100, 300]), 1: np.array([])}, sampling_frequency=30000)
 	}
 
+	data = data.clone()
+	data.recording = data.recording.frame_slice(0, 50_000)
 	multi_sortings_data = MultiSortingsData(data, sortings)
 	module = MergeSortings("merge_sortings_empty", multi_sortings_data, "all")
 
@@ -82,7 +84,7 @@ def test_compute_graph(data: LussacData) -> None:
 		'3': si.NumpySorting.from_unit_dict({0: np.array([500, 900]), 1: np.array([400, 700])}, sampling_frequency=30000)
 	}
 	multi_sortings_data = MultiSortingsData(data, sortings)
-	module = MergeSortings("merge_sortings", multi_sortings_data, "all")
+	module = MergeSortings("merge_sortings_graph", multi_sortings_data, "all")
 
 	similarity_matrices = {
 		'1': {
@@ -103,10 +105,11 @@ def test_compute_graph(data: LussacData) -> None:
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
 		'require_multiple_sortings_match': False,
-		'waveform_validation': {'wvf_extraction': {'filter': [150.0, 9_000.0]}}
+		'waveform_validation': {'wvf_extraction': {'filter': None}}
 	}
+	p = module.update_params(p)
 
-	module.aggregated_wvf_extractor = module.extract_waveforms(sub_folder="graph", sparse=False, **p['waveform_validation']['wvf_extraction'])
+	module._create_analyzer(p['waveform_validation']['wvf_extraction'])
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -176,7 +179,8 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params(PARAMS)
-	merge_sortings_module.aggregated_wvf_extractor = merge_sortings_module.extract_waveforms(sub_folder="compute_differences", sparse=False, **params['waveform_validation']['wvf_extraction'])
+	if merge_sortings_module.analyzer is None:
+		merge_sortings_module._create_analyzer(params['waveform_validation']['wvf_extraction'])
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
@@ -240,12 +244,11 @@ def test_clean_edges(data: LussacData) -> None:
 	assert os.path.exists(f"{merge_sortings_module.logs_folder}/clean_edges_logs.txt")
 
 
-def test_separate_communities() -> None:
+def test_separate_communities(merge_sortings_module: MergeSortings) -> None:
 	graph = nx.from_edgelist([(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (4, 5), (5, 6), (5, 7), (6, 7), (1, 8), (8, 9), (10, 11)])
-	MergeSortings.separate_communities(graph)
+	merge_sortings_module.separate_communities(graph)
 
 	# Only nodes '8' and '9' need to be removed
-	print(graph.nodes)
 	assert graph.number_of_nodes() == 10
 	assert 1 in graph
 	assert 8 not in graph
@@ -261,7 +264,7 @@ def test_merge_sortings_func() -> None:
 	pass
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def merge_sortings_module(data: LussacData) -> MergeSortings:
 	# Copy the dataset with fewer sortings and fewer units to go faster.
 	data = data.clone()

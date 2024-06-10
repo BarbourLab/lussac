@@ -13,7 +13,7 @@ This module will label units as belonging to a certain category if they meet som
 
 This module takes as a key the name of the category, and as a value a dictionary containing the criteria. Each criterion return a value for each unit, and a minimum and/or maximum can be set.
 
-For some parameters, you can specify the parameters for :code:`wvf_extraction` (parameters given to the SpikeInterface method :code:`core.extract_waveforms`) and :code:`filter` (a list :code:`[freq_min, freq_max]` for Gaussian bandpass filtering).
+You can also specify the parameters for :code:`wvf_extraction` (`max_spikes_per_unit`, `ms_before`, `ms_after`, `filter`).
 
 - :code:`firing_rate`: returns the mean firing rate of the unit (in Hz).
 - :code:`contamination`: returns the estimated contamination of the unit (between 0 and 1; 0 being pure). The :code:`refractory_period = [censored_period, refractory_period]` has to be set (in ms).
@@ -32,6 +32,12 @@ Here is an example for categorizing complex-spikes from more regular spikes (cer
 
 	"units_categorization": {
 		"all": {  // Categorize all units.
+			"wvf_extraction": {  // Parameters for the waveform extraction.
+				"ms_before": 1.0,
+				"ms_after": 1.5,
+				"max_spikes_per_unit": 500,
+				"filter": [150.0, 7000.0]  // Gaussian bandpass filter with cutoffs at 150 and 7,000 Hz.
+			},
 			"CS": {  // Criteria for complex-spikes category.
 				"firing_rate": {  // Firing rate < 5 Hz
 					"max": 5.0
@@ -52,13 +58,7 @@ Here is an example for categorizing complex-spikes from more regular spikes (cer
 				},
 				"SNR": {
 					"peak_sign": "neg",  // Example of an SI parameter.
-					"min": 2.5,
-					"wvf_extraction": {  // Specifying how to extract the waveforms for SNR computing.
-						"ms_before": 1.0,
-						"ms_after": 1.0,
-						"max_spikes_per_unit": 500
-					},
-					"filter": [150, 7_000] // Gaussian bandpass filter with cutoffs at 150 and 7,000 Hz.
+					"min": 2.5
 				}
 			}
 		}
@@ -127,6 +127,7 @@ Example of units removal
 
 	"remove_bad_units": {
 		"CS": {  // Remove complex-spike units with contamination > 35%
+			"wvf_extraction": {},  // If you want to change how the waveforms are extracted.
 			"contamination": {
 				"refractory_period": [1.5, 25.0],
 				"max": 0.35
@@ -303,7 +304,7 @@ The :code:`export_to_sigui` module
 ----------------------------------
 
 | This module will export all sortings in their current state to the SpikeInterface GUI format (if :code:`merge_sortings` was called before, will only export the merged sorting).
-| This is equivalent to just a :code:`WaveformExtractor` with some extra arguments.
+| This is equivalent to just a :code:`SortingAnalyzer` with some extra arguments.
 
 This module's parameters are:
 

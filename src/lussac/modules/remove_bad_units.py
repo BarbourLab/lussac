@@ -15,10 +15,21 @@ class RemoveBadUnits(MonoSortingModule):
 	@property
 	@override
 	def default_params(self) -> dict[str, Any]:
-		return {}
+		return {
+			'wvf_extraction': {
+				'ms_before': 1.0,
+				'ms_after': 1.0,
+				'max_spikes_per_unit': 500,
+				'filter_band': [150, 9000]
+			}
+		}
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
+		wvf_extraction_params = params.pop('wvf_extraction', {})
+		if self.analyzer is None:
+			self.precompute_analyzer(params)
+
 		units_to_remove = np.zeros(self.sorting.get_num_units(), dtype=bool)
 		reasons_for_removal = np.array([''] * self.sorting.get_num_units(), dtype=object)
 
@@ -28,7 +39,7 @@ class RemoveBadUnits(MonoSortingModule):
 				reasons_for_removal[:] += " ; all"
 				break
 
-			value = self.get_units_attribute_arr(attribute, p)
+			value = self.get_units_attribute_arr(attribute, p, **wvf_extraction_params)
 			if 'min' in p:
 				units_to_remove |= value < p['min']
 				reasons_for_removal[value < p['min']] += f" ; {attribute} < {p['min']}"
@@ -40,18 +51,32 @@ class RemoveBadUnits(MonoSortingModule):
 		bad_sorting = self.sorting.select_units([unit_id for unit_id, bad in zip(self.sorting.unit_ids, units_to_remove) if bad])
 		reasons_for_removal = ["Reason(s) for removal: " + reason[3:] for reason in reasons_for_removal[units_to_remove]]
 
-		self._plot_bad_units(bad_sorting, reasons_for_removal)
+		self._plot_bad_units(bad_sorting.unit_ids, reasons_for_removal)
 
 		return sorting
 
-	def _plot_bad_units(self, bad_sorting: si.BaseSorting, reasons_for_removal: list[str]) -> None:
+	def precompute_analyzer(self, params: dict[str, Any]) -> None:
+		params = self.update_params(params)
+		wvf_extraction = params['wvf_extraction']
+
+		self.create_analyzer(filter_band=wvf_extraction['filter_band'], cache_recording=True)
+		self.analyzer.compute({
+			'random_spikes': {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']},
+			'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']},
+			'spike_amplitudes': {'peak_sign': 'both'}
+		})
+
+	def _plot_bad_units(self, bad_unit_ids, reasons_for_removal: list[str]) -> None:
 		"""
 		Plots the units that were removed.
 
-		@param bad_sorting: si.BaseSorting
-			The sorting object containing the bad units.
+		@param bad_unit_ids:
+			The unit ids that were removed.
 		"""
+		if len(bad_unit_ids) == 0:
+			return
 
-		wvf_extractor = self.extract_waveforms(sorting=bad_sorting, ms_before=1.5, ms_after=2.5, max_spikes_per_unit=500, sparse=False)
+		analyzer = self.analyzer.select_units(bad_unit_ids, format="memory")
+
 		annotations = [{'text': reason, 'x': 0.6, 'y': 1.02, 'xref': "paper", 'yref': "paper", 'xanchor': "center", 'yanchor': "bottom", 'showarrow': False} for reason in reasons_for_removal]
-		utils.plot_units(wvf_extractor, filepath=f"{self.logs_folder}/bad_units", annotations_change=annotations)
+		utils.plot_units(analyzer, filepath=f"{self.logs_folder}/bad_units", annotations_change=annotations)

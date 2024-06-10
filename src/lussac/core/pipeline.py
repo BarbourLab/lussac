@@ -6,9 +6,11 @@ import os
 import pathlib
 import time
 from typing import Type
+
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm
+from tqdm.auto import tqdm
+
 from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
 import spikeinterface.core as si
 
@@ -78,26 +80,58 @@ class LussacPipeline:
 		@param params: dict
 			The parameters for the module.
 		"""
+		sortings_to_run = params.pop('sortings', list(self.data.sortings.keys()))
 
-		for name, sorting in self.data.sortings.items():
-			if 'sortings' in params and name not in params['sortings']:
-				continue
+		sub_sortings, other_sortings = {}, {}
 
-			logging.info(f"\t- Sorting  {name:<18}")
-			t1 = time.perf_counter()
-
+		for name in sortings_to_run:
+			sorting = self.data.sortings[name]
 			unit_ids = self.get_unit_ids_for_category(category, sorting)
-			sub_sorting, other_sorting = self.split_sorting(sorting, unit_ids)
+
+			if len(unit_ids) > 0:
+				sub_sortings[name], other_sortings[name] = self.split_sorting(sorting, unit_ids)
+
+		if len(sub_sortings) == 0:
+			logging.info(f"\t- No units found for category '{category}' in the sortings to run.\n")
+			return
+
+		# Aggregated sorting analyzer
+		analyzers = {}
+		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()))
+		data = MonoSortingData(self.data, merged_sorting)
+		module_instance = module(module_name, data, category)
+		last_unit_id = -1
+		if len(sub_sortings) > 1 and hasattr(module_instance, 'precompute_analyzer'):
+			logging.info("\t- Precomputing analyzer ")
+
+			t1 = time.perf_counter()
+			module_instance.precompute_analyzer(params)
+			aggregated_analyzer = module_instance.analyzer
+			for name in sub_sortings.keys():
+				unit_ids = np.arange(last_unit_id + 1, last_unit_id + 1 + sub_sortings[name].get_num_units())
+				last_unit_id += sub_sortings[name].get_num_units()
+				analyzers[name] = aggregated_analyzer.select_units(unit_ids)
+				analyzers[name].sorting._main_ids = sub_sortings[name].unit_ids  # Hack to get back the original unit_ids
+				analyzers[name].sorting._sorting_segments[0].unit_ids = list(sub_sortings[name].unit_ids)
+
+			t2 = time.perf_counter()
+			logging.info(f" (Done in {t2-t1:.1f} s)\n")
+
+		for name in sub_sortings.keys():
+			logging.info(f"\t- Sorting  {name:<18}")
+			
+			t1 = time.perf_counter()
+			sub_sorting, other_sorting = sub_sortings[name], other_sortings[name]
 
 			data = MonoSortingData(self.data, sub_sorting)
 			module_instance = module(module_name, data, category)
 			params0 = copy.deepcopy(params)
 			params0 = module_instance.update_params(params0)
-			if 'sortings' in params0:
-				del params0['sortings']
+
+			if name in analyzers:
+				module_instance.analyzer = analyzers[name]
 
 			sub_sorting = module_instance.run(params0)
-
 			self.data.sortings[name] = self.merge_sortings(sub_sorting, other_sorting)
 
 			t2 = time.perf_counter()

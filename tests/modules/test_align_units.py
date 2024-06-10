@@ -9,9 +9,9 @@ params = {
 	'wvf_extraction': {
 		'ms_before': 1.5,
 		'ms_after': 2.5,
-		'max_spikes_per_unit': 20
+		'max_spikes_per_unit': 20,
+		'filter_band': [150, 6000],
 	},
-	'filter': [150, 6000],
 	'threshold': 0.5,
 	'check_next': 10
 }

@@ -101,13 +101,13 @@ def plot_sliders(fig: go.Figure, traces_per_plot: int, labels: npt.ArrayLike, fi
 		export_figure(sub_fig, filename)
 
 
-def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: int = 4, max_time_ms: float = 35., bin_size_ms: float = 0.25,
+def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4, max_time_ms: float = 35., bin_size_ms: float = 0.25,
 			   firing_rate_std: float = 8., annotations_fix: list[dict] | None = None, annotations_change: list[dict] | None = None) -> None:
 	"""
 	Plots all the units in a given sorting.
 
-	@param wvf_extractor: si.WaveformExtractor
-		The waveform extractor object containing the units to plot.
+	@param analyzer: si.SortingAnalyzer
+		The sorting analyzer object containing the units to plot.
 	@param filepath: str
 		The path to the file to save the plot.
 		Needs to be without any extension!
@@ -125,9 +125,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		The annotations that change for each unit.
 		Must be in the order [annot1_unit1, annot2_unit1, ... annot1_unit_2, annot2_unit2, ...]
 	"""
-	n_units = len(wvf_extractor.unit_ids)
-	if n_units == 0:
-		return
+	n_units = len(analyzer.unit_ids)
 
 	if annotations_fix is None:
 		annotations_fix = []
@@ -136,23 +134,28 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 	assert len(annotations_change) % n_units == 0, "The number of annotations_change must be a multiple of the number of units!"
 	n_annotations_per_plot = len(annotations_change) // n_units
 
-	annotations_gt = create_gt_annotations(wvf_extractor.sorting)
+	annotations_gt = create_gt_annotations(analyzer.sorting)
 
-	sf = wvf_extractor.sampling_frequency
+	sf = analyzer.sampling_frequency
 	max_time = int(round(max_time_ms * 1e-3 * sf))
 	bin_size = int(round(bin_size_ms * 1e-3 * sf))
-	xaxis = (np.arange(wvf_extractor.nsamples) - wvf_extractor.nbefore) / sf * 1e3
-	wvfs_unit = "µV" if wvf_extractor.return_scaled else "A.U."
 
-	if n_channels > wvf_extractor.recording.get_num_channels():
-		n_channels = wvf_extractor.recording.get_num_channels()
+	templates_ext = analyzer.get_extension("templates")
+	assert templates_ext is not None, "The sorting analyzer must have the 'templates' extension!"
+	xaxis = (np.arange(-templates_ext.nbefore, templates_ext.nafter)) / sf * 1e3
+	wvfs_unit = "µV" if analyzer.return_scaled else "A.U."
 
-	spike_amplitudes = spost.compute_spike_amplitudes(wvf_extractor, load_if_exists=True, return_scaled=wvf_extractor.return_scaled, outputs="by_unit")[0]
+	if n_channels > analyzer.recording.get_num_channels():
+		n_channels = analyzer.recording.get_num_channels()
+
+	if not analyzer.has_extension("spike_amplitudes"):
+		analyzer.compute("spike_amplitudes")
+	spike_amplitudes = analyzer.get_extension("spike_amplitudes").get_data(outputs="by_unit")[0]
 
 	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//4, cols=4)
 	args = []
 
-	for i, unit_id in enumerate(wvf_extractor.unit_ids):
+	for i, unit_id in enumerate(analyzer.unit_ids):
 		annotations_slice = slice(i*n_annotations_per_plot, (i+1)*n_annotations_per_plot)
 		if i == 0:
 			for annotation in annotations_fix:
@@ -162,7 +165,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 			if len(annotations_gt) > 0:
 				fig.add_annotation(**annotations_gt[i])
 
-		spike_train = wvf_extractor.sorting.get_unit_spike_train(unit_id)
+		spike_train = analyzer.sorting.get_unit_spike_train(unit_id)
 		args.append({
 			'title.text': f"Unit {unit_id}",
 			'annotations': [*annotations_fix, *annotations_change[annotations_slice], *annotations_gt[i:i+1]]
@@ -179,7 +182,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		), row=1, col=1)
 
 		auto_corr = spost.compute_autocorrelogram_from_spiketrain(spike_train, max_time, bin_size)
-		bins, _, _ = spost.correlograms._make_bins(wvf_extractor.sorting, 2*max_time_ms, bin_size_ms)
+		bins, _, _ = spost.correlograms._make_bins(analyzer.sorting, 2*max_time_ms, bin_size_ms)
 		bin = (bins[1] - bins[0]) / 2
 		fig.add_trace(go.Bar(
 			x=bins[:-1] + bin,
@@ -189,7 +192,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 			marker_color="CornflowerBlue"
 		), row=1, col=2)
 
-		taxis = np.arange(0, wvf_extractor.recording.get_num_samples() + sf/2, sf / 2)
+		taxis = np.arange(0, analyzer.recording.get_num_samples() + sf/2, sf / 2)
 		firing_rate = utils.gaussian_histogram(spike_train, taxis, sigma=firing_rate_std * sf, margin_reflect=True) * sf
 		fig.add_trace(go.Scatter(
 			x=taxis / sf,
@@ -200,14 +203,14 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		), row=1, col=3)
 
 		fig.add_trace(go.Scattergl(
-			x=wvf_extractor.sorting.get_unit_spike_train(unit_id) / sf,
+			x=analyzer.sorting.get_unit_spike_train(unit_id) / sf,
 			y=spike_amplitudes[unit_id],
 			mode="markers",
 			name="Spike amplitudes",
 			marker_color="cornflowerblue"
 		), row=1, col=4)
 
-		template = wvf_extractor.get_template(unit_id, mode="average")
+		template = templates_ext.get_unit_template(unit_id)
 		best_channels = np.argsort(np.max(np.abs(template), axis=0))[::-1]
 		for i in range(n_channels):
 			channel = best_channels[i]
@@ -215,7 +218,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 				x=xaxis,
 				y=template[:, channel],
 				mode="lines",
-				name=f"Template channel {wvf_extractor.channel_ids[channel]}",
+				name=f"Template channel {analyzer.channel_ids[channel]}",
 				marker_color="CornflowerBlue"
 			), row=2 + i//4, col=1 + i%4)
 
@@ -231,7 +234,7 @@ def plot_units(wvf_extractor: si.WaveformExtractor, filepath: str, n_channels: i
 		fig.update_xaxes(title_text="Time (ms)", matches='x5', row=2 + i//4, col=1 + i%4)
 		fig.update_yaxes(title_text=f"Voltage ({wvfs_unit})", rangemode="tozero", matches='y5', row=2 + i//4, col=1 + i%4)
 
-	plot_sliders(fig, 4 + n_channels, labels=wvf_extractor.unit_ids, filepath=filepath, args=args)
+	plot_sliders(fig, 4 + n_channels, labels=analyzer.unit_ids, filepath=filepath, args=args)
 
 
 def create_gt_annotations(sorting: si.BaseSorting) -> list[dict[str, Any]]:

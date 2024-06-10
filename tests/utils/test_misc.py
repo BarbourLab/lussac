@@ -66,6 +66,14 @@ def test_merge_dict() -> None:
 	assert np.all(d4_keys == ('a', 'b', 'c', 2, 1))
 
 
+def test_format_elapsed_time() -> None:
+	assert utils.format_elapsed_time(0.0022) == "2ms"
+	assert utils.format_elapsed_time(3.7) == "3s 700ms"
+	assert utils.format_elapsed_time(60.8) == "1m 0s"
+	assert utils.format_elapsed_time(3700.6) == "1h 1m 40s"
+	assert utils.format_elapsed_time(99750.9) == "1d 3h 42m 30s"
+
+
 def test_binom_sf() -> None:
 	x, n, p = 3, 30.5, 0.1
 	res = 1 - 0.635629357849
@@ -222,7 +230,6 @@ def test_compute_similarity_matrix() -> None:
 	n_spikes2 = np.array(list(sorting2.count_num_spikes_per_unit().values()))
 
 	coincidence_matrix = utils.compute_coincidence_matrix_from_vector(sorting1.to_spike_vector(), sorting2.to_spike_vector(), window)
-	similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
 	corrected_similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2, window)
 	uncorrected_similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes1, n_spikes2)
 
@@ -232,6 +239,19 @@ def test_compute_similarity_matrix() -> None:
 	# Test for uncorrected similarity matrix.
 	n_expected = n_spikes**2 * (2*window + 1) / T
 	assert math.isclose(np.mean(uncorrected_similarity_matrix), n_expected / n_spikes, rel_tol=1e-3, abs_tol=1e-3)
+
+
+def test_consensus_spike_train() -> None:
+	spike_train1 = np.array([18, 164, 304, 1197])
+	spike_train2 = np.array([155, 304, 630])
+	spike_train3 = np.array([156, 304, 628])
+	merged_spike_train = np.sort(np.concatenate((spike_train1, spike_train2, spike_train3)))
+
+	spike_train_2analyses = utils.consensus_spike_train(merged_spike_train, window=6, min_analyses=2)
+	spike_train_3analyses = utils.consensus_spike_train(merged_spike_train, window=6, min_analyses=3)
+
+	assert len(spike_train_2analyses) == 3
+	assert len(spike_train_3analyses) == 1
 
 
 def generate_spike_train(firing_rate: float, t_r: float) -> npt.NDArray[np.int64]:

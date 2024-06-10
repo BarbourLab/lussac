@@ -10,19 +10,21 @@
 			"sorter_name": "kilosort2",
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_default",
+				"delete_tmp_files": ["matlab_files", "temp_wh.dat"],
 				"delete_recording_dat": true
 			}
 		},
 		"ks2_5_best": {
 			"sorter_name": "kilosort2_5",
 			"preprocessing": {
-				"filter": {"band":  [300, 6000], "filter_order": 2, "ftype": "bessel"},
+				"filter": {"band":  [280, 6000], "filter_order": 2, "ftype": "bessel"},
 				"common_reference": {"operator":  "median"}
 			},
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_5_best",
 				"projection_threshold": [8, 3],
 				"freq_min": 40,
+				"delete_tmp_files":  ["matlab_files", "temp_wh.dat"],
 				"delete_recording_dat":  true
 			}
 		},
@@ -30,30 +32,52 @@
 			"sorter_name": "kilosort3",
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks3_default",
+				"delete_tmp_files":  ["matlab_files", "temp_wh.dat"],
 				"delete_recording_dat":  true
+			}
+		},
+		"ks4_best": {
+			"sorter_name": "kilosort4",
+			"preprocessing": {
+				"gaussian_filter": {"freq_min": null, "freq_max":  6000},
+				"common_reference": {"operator":  "median"}
+			},
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/ks4_best",
+				"duplicate_spike_bins": 12,
+				"Th_universal": 7,
+				"Th_learned": 6
+			}
+		},
+		"sc2_default": {
+			"sorter_name": "spykingcircus2",
+			"sorter_params": {
+				"output_folder": "$PARAMS_FOLDER/analyses/sc2_default"
 			}
 		},
 		"ks2_cs": {
 			"sorter_name": "kilosort2",
 			"preprocessing": {
-				"filter": {"band":  [150, 2000], "filter_order": 3, "ftype": "bessel"}
+				"filter": {"band":  [150, 4000], "filter_order": 3, "ftype": "bessel"}
 			},
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks2_cs",
 				"projection_threshold": [8, 3],
 				"freq_min": 40,
+				"delete_tmp_files":  ["matlab_files", "temp_wh.dat"],
 				"delete_recording_dat":  true
 			}
 		},
 		"ks3_cs": {
 			"sorter_name": "kilosort3",
 			"preprocessing": {
-				"filter": {"band":  [150, 1000], "filter_order": 2, "ftype": "bessel"}
+				"filter": {"band":  [150, 5000], "filter_order": 2, "ftype": "bessel"}
 			},
 			"sorter_params": {
 				"output_folder": "$PARAMS_FOLDER/analyses/ks3_cs",
 				"projection_threshold": [8, 3],
 				"freq_min": 40,
+				"delete_tmp_files":  ["matlab_files", "temp_wh.dat"],
 				"delete_recording_dat":  true
 			}
 		}
@@ -62,13 +86,12 @@
 
 	},
 	"lussac": {
-		"tmp_folder": "$PARAMS_FOLDER/lussac2/tmp",
-		"logs_folder": "$PARAMS_FOLDER/lussac2/logs",
+		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
+		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
 		"si_global_job_kwargs": {
 			"n_jobs": 12,
 			"chunk_duration": "2s",
-			"progress_bar": false,
-			"verbose": false
+			"progress_bar": false
 		},
 		"overwrite_logs": false,
 		"pipeline": {
@@ -107,20 +130,23 @@
 					"all": {}
 				},
 				"spikes": {
-					"amplitude": {
-						"filter": [450, 9000],
-						"min": 20,
-						"wvf_extraction": {
-							"ms_before": 2.0,
-							"ms_after": 2.0,
-							"max_spikes_per_unit": 1000
-						}
+					"wvf_extraction": {
+						"ms_before": 2.0,
+						"ms_after": 2.0,
+						"max_spikes_per_unit": 1000,
+						"filter_band": [250, 9000]
+					},
+					"SNR": {
+						"min": 2.0
+					},
+					"sd_ratio": {
+						"max": 2.0
 					}
 				}
 			},
 			"align_units": {
 				"CS": {
-					"filter": [600, 6000],
+					"filter_band": [600, 6000],
 					"wvf_extraction": {
 						"ms_before": 1.5,
 						"ms_after": 2.5,
@@ -128,7 +154,7 @@
 					}
 				},
 				"spikes": {
-					"filter": [300, 8000],
+					"filter_band": [300, 8000],
 					"wvf_extraction": {
 						"ms_before": 1.5,
 						"ms_after": 1.5,
@@ -171,7 +197,7 @@
 						"ms_before": 1.5,
 						"ms_after": 3.5,
 						"max_spikes_per_unit": 2000,
-						"filter": [150, 3000]
+						"filter_band": [150, 4000]
 					},
 					"auto_merge_params": {
 						"minimum_spikes": 300,
@@ -191,7 +217,7 @@
 						"ms_before": 1.2,
 						"ms_after": 1.2,
 						"max_spikes_per_unit": 2000,
-						"filter": [300, 6000]
+						"filter_band": [300, 6000]
 					},
 					"auto_merge_params": {
 						"bin_ms": 0.05,
@@ -211,7 +237,7 @@
 			},
 			"export_to_phy_0": {
 				"all": {
-					"path": "$PARAMS_FOLDER/lussac2/post-processed_sortings",
+					"path": "$PARAMS_FOLDER/lussac/post-processed_sortings",
 					"export_params": {
 
 					}
@@ -220,7 +246,7 @@
 			"merge_sortings": {
 				"CS": {
 					"refractory_period": [1.5, 30.0],
-					"max_shift": 1.0,
+					"max_shift": 2.0,
 					"require_multiple_sortings_match": false,
 					"similarity": {
 						"window": 0.5,
@@ -228,8 +254,7 @@
 					},
 					"correlogram_validation": {
 						"max_time": 400,
-						"gaussian_std": 10.0,
-						"gaussian_truncate": 5.0
+						"gaussian_std": 10.0
 					}
 				},
 				"spikes": {
@@ -237,9 +262,6 @@
 					"similarity": {
 						"window": 0.14,
 						"min_similarity": 0.4
-					},
-					"correlogram_validation": {
-						"max_time": 75.0
 					}
 				}
 			},
@@ -299,7 +321,7 @@
 			},
 			"export_to_phy": {
 				"all": {
-					"path": "$PARAMS_FOLDER/lussac2/final_output",
+					"path": "$PARAMS_FOLDER/lussac/final_output",
 					"export_params": {
 
 					}

@@ -3,8 +3,7 @@ import pathlib
 import shutil
 import sys
 import pytest
-from lussac.core import LussacData, LussacPipeline, MonoSortingData, MultiSortingsData
-import lussac.main
+from lussac.core import LussacData, LussacParams, LussacPipeline, MonoSortingData, MultiSortingsData
 
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent.absolute()))  # Otherwise the tests are not found properly with 'pytest'.
@@ -13,7 +12,7 @@ params_path = pathlib.Path(__file__).parent / "datasets" / "cerebellar_cortex" /
 
 @pytest.fixture(scope="session")
 def params() -> dict:
-	return lussac.main.load_json(str(params_path.resolve()))
+	return LussacParams.load_from_json_file(str(params_path.resolve()))
 
 
 @pytest.fixture(scope="session")

@@ -77,7 +77,8 @@ There are multiple keys:
 
 - :code:`recording_extractor`: the name of the recording extractor in SpikeInterface.
 - :code:`extractor_params`: the parameters for the recording extractor.
-- :code:`probe_file`: the path to the probe file (in the `ProbeInterface <https://github.com/SpikeInterface/probeinterface>`_ format) if not already in the recording (optional).
+- :code:`probe_file`: (optional) the path to the probe file (in the `ProbeInterface <https://github.com/SpikeInterface/probeinterface>`_ format) if not already in the recording.
+- :code:`preprocessing`: (optional) a :code:`dict` mapping a function in `spikeinterface.preprocessing` to a :code:`dict` containing the arguments for that function. "remove_bad_channels" is also added (combining "detect_bad_channels" and "remove_channels")
 
 Example for a binary file:
 """"""""""""""""""""""""""
@@ -95,6 +96,8 @@ Example for a binary file:
 			"offset_to_uV": 0.0
 		},
 		"probe_file": "$PARAMS_FOLDER/probe.json"
+		// No preprocessing
+	}
 
 Example for a SpikeGLX recording:
 """""""""""""""""""""""""""""""""
@@ -106,8 +109,12 @@ Example for a SpikeGLX recording:
 		"extractor_params": {
 			"folder_path": "$PARAMS_FOLDER/recording",
 			"stream_id": "imec0.ap"
-		}
+		},
 		// Probe is already loaded with the SpikeGLXRecordingExtractor.
+		"preprocessing": {
+			"phase_shift": {},
+			"remove_bad_channels": {}
+		}
 	}
 
 Creating the probe file for geometry:

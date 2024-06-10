@@ -24,6 +24,7 @@ class ExportToPhy(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1_000,
+				'filter_band': None,
 				'sparse': False
 			},
 			'export_params': {
@@ -45,13 +46,19 @@ class ExportToPhy(MonoSortingModule):
 		if self.sorting.get_num_units() == 0:  # Export crashes if the sorting contains no units.
 			return self.sorting
 
-		wvf_extractor = self.extract_waveforms(**params['wvf_extraction'])
+		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'], sparse=params['wvf_extraction']['sparse'])
+		self.analyzer.compute({
+			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
+			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
+			'templates': {'operators': [params['export_params']['template_mode']]}
+		})
+
 		output_folder = pathlib.Path(self._format_output_path(params['path']))
 
 		if 'sparsity' in params['export_params'] and params['export_params']['sparsity'] is not None:
-			params['export_params']['sparsity'] = si.compute_sparsity(wvf_extractor, **params['export_params']['sparsity'])
+			params['export_params']['sparsity'] = si.compute_sparsity(self.analyzer, **params['export_params']['sparsity'])
 
-		export_to_phy(wvf_extractor, output_folder, **params['export_params'])
+		export_to_phy(self.analyzer, output_folder, **params['export_params'])
 		new_unit_ids = pd.read_csv(output_folder / "cluster_si_unit_ids.tsv", delimiter='\t')
 
 		for property_name in self.sorting.get_property_keys():
@@ -98,8 +105,11 @@ class ExportToPhy(MonoSortingModule):
 
 		for category, refractory_period in refractory_periods.items():
 			unit_ids = LussacPipeline.get_unit_ids_for_category(category, self.sorting)
-			wvf_extractor = si.WaveformExtractor(self.recording, self.sorting.select_units(unit_ids), allow_unfiltered=True)
-			cont, _ = sqm.compute_refrac_period_violations(wvf_extractor, refractory_period[1], refractory_period[0])
+			if len(unit_ids) == 0:
+				continue
+
+			analyzer = si.SortingAnalyzer.create(self.sorting.select_units(unit_ids), self.recording)
+			cont, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period[1], refractory_period[0])
 			estimated_contamination.update(cont)
 
 		return estimated_contamination

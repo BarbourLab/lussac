@@ -34,6 +34,7 @@ def test_inner_merge(mono_sorting_data: MonoSortingData) -> None:
 
 def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	data = mono_sorting_data.data.clone()
+	data.recording = data.recording.select_channels([4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 24, 25])
 	data.sortings = {'ms3_best': data.sortings['ms3_best'].select_units([18, 20, 22, 29, 31, 53, 55, 59, 67, 68, 69, 70, 71, 78, 81])}
 	mono_sorting_data = MonoSortingData(data, data.sortings['ms3_best'])
 
