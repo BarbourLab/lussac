@@ -45,7 +45,7 @@ class LussacSpikeSorter:
 		"""
 
 		sorter_name = params['sorter_name']
-		folder = Path(params['sorter_params']['output_folder'])
+		folder = Path(params['sorter_params']['folder'])
 
 		if (folder / "provenance.pkl").exists():
 			sorting = si.load_extractor(folder / "provenance.pkl")
