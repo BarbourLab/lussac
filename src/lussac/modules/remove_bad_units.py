@@ -77,11 +77,6 @@ class RemoveBadUnits(MonoSortingModule):
 			return
 
 		analyzer = self.analyzer.select_units(bad_unit_ids, format="memory")
-		if not analyzer.has_extension("templates"):
-			analyzer.compute({
-				'random_spikes': {'max_spikes_per_unit': 500},
-				'templates': {'ms_before': 1.5, 'ms_after': 2.5},
-			})
 
 		annotations = [{'text': reason, 'x': 0.6, 'y': 1.02, 'xref': "paper", 'yref': "paper", 'xanchor': "center", 'yanchor': "bottom", 'showarrow': False} for reason in reasons_for_removal]
 		utils.plot_units(analyzer, filepath=f"{self.logs_folder}/bad_units", annotations_change=annotations)
