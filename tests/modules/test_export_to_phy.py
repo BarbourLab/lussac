@@ -52,6 +52,7 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	spike_vector2 = sorting_saved.to_spike_vector()
 	print(spike_vector1.shape)
 	print(spike_vector2.shape)
+	print(np.sum(spike_vector1 == spike_vector2))
 	print(spike_vector1)
 	print(spike_vector2)
 	assert np.all(spike_vector1 == spike_vector2)
