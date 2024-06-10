@@ -18,7 +18,7 @@ def test_spike_sorting(data: LussacData) -> None:
 	start_frame, end_frame = 10_000_000, 12_000_000
 	name = "test_spike_sorting"
 
-	recording = data.recording.frame_slice(start_frame, end_frame).channel_slice(np.arange(14, 26))
+	recording = data.recording.frame_slice(start_frame, end_frame).select_channels(np.arange(14, 26))
 	params = {
 		'sorter_name': "spykingcircus2",
 		'preprocessing': {

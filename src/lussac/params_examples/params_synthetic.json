@@ -11,8 +11,7 @@
 		"si_global_job_kwargs": {
 			"n_jobs": 8,
 			"chunk_duration": "2s",
-			"progress_bar": false,
-			"verbose": false
+			"progress_bar": false
 		},
 		"overwrite_logs": false,
 		"pipeline": {
