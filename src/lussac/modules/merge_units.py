@@ -48,11 +48,9 @@ class MergeUnits(MonoSortingModule):
 
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
-		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'])
-		self.analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
-			'templates': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']}
-		})
+		if self.analyzer is None:
+			self.precompute_analyzer(params)
+
 		potential_merges, extra_outputs = scur.get_potential_auto_merge(self.analyzer, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
@@ -60,6 +58,16 @@ class MergeUnits(MonoSortingModule):
 		self.plot_merging(potential_merges, self.analyzer, extra_outputs, params['auto_merge_params'])
 
 		return sorting
+
+	def precompute_analyzer(self, params: dict[str, Any]) -> None:
+		params = self.update_params(params)
+		wvf_extraction = params['wvf_extraction']
+
+		self.create_analyzer(filter_band=wvf_extraction['filter_band'], cache_recording=True)
+		self.analyzer.compute({
+			'random_spikes': {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']},
+			'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']}
+		})
 
 	def _remove_splits(self, sorting: si.BaseSorting, extra_outputs: dict, params: dict[str, Any]) -> si.BaseSorting:
 		"""

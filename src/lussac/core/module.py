@@ -4,7 +4,10 @@ from dataclasses import dataclass
 import pathlib
 import shutil
 from typing import Any
+
 import numpy as np
+import psutil
+
 from lussac.core import MonoSortingData, MultiSortingsData
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -91,7 +94,7 @@ class LussacModule(ABC):
 
 		return utils.merge_dict(params, self.default_params)
 
-	def create_analyzer(self, sorting: si.BaseSorting, filter_band: list[float, float] | None = None, **params) -> None:
+	def create_analyzer(self, sorting: si.BaseSorting, filter_band: list[float, float] | None = None, cache_recording: bool = False, **params) -> None:
 		"""
 		Creates the SortingAnalyzer object and sets it to LussacModule.analyzer.
 
@@ -101,6 +104,9 @@ class LussacModule(ABC):
 			The parameters for the sorting analyzer.
 		@param filter_band: list[float, float] | None
 			The cutoff frequencies for the Gaussian bandpass filter to apply to the recording.
+		@param cache_recording: bool
+			Whether to cache the recording in memory.
+			Will not cache even if True, if there is not enough memory.
 		@return analyzer: SortingAnalyzer
 			The sorting analyzer object.
 		"""
@@ -110,6 +116,12 @@ class LussacModule(ABC):
 		if filter_band is not None:
 			assert len(filter_band) == 2, "The filter must be a list of 2 elements [min_cutoff, max_cutoff] (in Hz)."
 			recording = spre.gaussian_filter(recording, *filter_band, margin_sd=2)
+
+		if cache_recording:
+			memory_left = psutil.virtual_memory().available  # in bytes
+			recording_size = recording.get_total_memory_size()  # in bytes.
+			if memory_left > 2 * recording_size:
+				recording = recording.save_to_memory(format="memory", shared=True)
 
 		params = dict(return_scaled=True, sparse=False) | params
 

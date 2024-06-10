@@ -93,7 +93,7 @@ class MergeSortings(MultiSortingsModule):
 		return {'merged_sorting': merged_sorting}
 
 	def _create_analyzer(self, params: dict):
-		self.create_analyzer(filter_band=params['filter_band'])
+		self.create_analyzer(filter_band=params['filter_band'], cache_recording=True)
 
 		self.analyzer.compute({
 			'noise_levels': {},

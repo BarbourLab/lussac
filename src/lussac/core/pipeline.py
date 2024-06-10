@@ -91,6 +91,10 @@ class LussacPipeline:
 			if len(unit_ids) > 0:
 				sub_sortings[name], other_sortings[name] = self.split_sorting(sorting, unit_ids)
 
+		if len(sub_sortings) == 0:
+			logging.info(f"\t- No units found for category '{category}' in the sortings to run.\n")
+			return
+
 		# Aggregated sorting analyzer
 		analyzers = {}
 		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()))
