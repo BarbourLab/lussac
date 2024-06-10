@@ -258,7 +258,7 @@ def _gaussian_kernel(events, t_axis, sigma, truncate) -> npt.NDArray[np.float32]
 	return histogram / (sigma * np.sqrt(2*np.pi))
 
 
-@numba.jit((numba.int64[:], numba.int64[:]), nopython=True, nogil=True, cache=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def spike_vector_to_spike_trains(sample_indices, unit_indices) -> list[np.ndarray[np.int64]]:
 	"""
 	Converts a spike vector to a list of spike trains in a really fast manner.
@@ -308,7 +308,7 @@ def estimate_contamination(spike_train: np.ndarray, refractory_period: tuple[flo
 
 	t_c = refractory_period[0] * 1e-3 * Utils.sampling_frequency
 	t_r = refractory_period[1] * 1e-3 * Utils.sampling_frequency
-	n_v = compute_nb_violations(spike_train.astype(np.int64), t_r)
+	n_v = compute_nb_violations(spike_train, t_r)
 
 	N = len(spike_train)
 	D = 1 - n_v * (Utils.t_max - 2*N*t_c) / (N**2 * (t_r - t_c))
@@ -335,8 +335,8 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 			estimated_cross_cont: float if limit is None
 		Returns the estimation of cross-contamination, as well as the p-value of the statistical test if the limit is given.
 	"""
-	spike_train1 = spike_train1.astype(np.int64, copy=False)
-	spike_train2 = spike_train2.astype(np.int64, copy=False)
+	spike_train1 = spike_train1
+	spike_train2 = spike_train2
 
 	N1 = len(spike_train1)
 	N2 = len(spike_train2)
@@ -360,7 +360,7 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	return estimation, p_value
 
 
-@numba.jit((numba.float32, ), nopython=True, nogil=True, cache=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def _get_border_probabilities(max_time) -> tuple[int, int, float, float]:
 	"""
 	Computes the integer borders, and the probability of 2 spikes distant by this border to be closer than max_time.
@@ -382,7 +382,7 @@ def _get_border_probabilities(max_time) -> tuple[int, int, float, float]:
 	return border_low, border_high, p_low, p_high
 
 
-@numba.jit((numba.int64[:], numba.float32), nopython=True, nogil=True, cache=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def compute_nb_violations(spike_train, max_time) -> float:
 	"""
 	Computes the number of refractory period violations in a spike train.
@@ -419,7 +419,7 @@ def compute_nb_violations(spike_train, max_time) -> float:
 	return n_violations + p_high*n_violations_high + p_low*n_violations_low
 
 
-@numba.jit((numba.int64[:], numba.int64[:], numba.float32), nopython=True, nogil=True, cache=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def compute_nb_coincidence(spike_train1, spike_train2, max_time) -> float:
 	"""
 	Computes the number of coincident spikes between two spike trains.
@@ -486,15 +486,11 @@ def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vect
 		The coincidence matrix containing the number of coincident spikes between each pair of units.
 	"""
 
-	if cross_shifts is not None:
-		cross_shifts = cross_shifts.astype(np.int32)
-
 	return compute_coincidence_matrix(spike_vector1['sample_index'], spike_vector1['unit_index'],
-									  spike_vector2['sample_index'], spike_vector2['unit_index'], window, cross_shifts)
+									  spike_vector2['sample_index'], spike_vector2['unit_index'], window, cross_shifts.astype(np.int32, copy=False) if cross_shifts is not None else None)
 
 
-@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.optional(numba.int32[:, :])),
-		   nopython=True, nogil=True, cache=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time, cross_shifts=None) -> npt.NDArray[np.int64]:
 	"""
 	Computes the number of coincident spikes between all units in two sortings.
@@ -510,7 +506,7 @@ def compute_coincidence_matrix(spike_times1, spike_labels1, spike_times2, spike_
 	@param max_time: int32
 		The maximum time difference between two spikes to be considered coincident.
 		Two spikes spaced by exactly max_time are considered coincident.
-	@param cross_shifts: None | array[int32] (n_units1, n_units2)
+	@param cross_shifts: None | array[int] (n_units1, n_units2)
 		If not None, the cross_shifts[i, j] is the shift between the spike times of the i-th unit of the first sorting
 		and the j-th unit of the second sorting.
 	@return coincidence_matrix: array[int64] (n_units1, n_units2)
@@ -582,12 +578,11 @@ def compute_cross_shift_from_vector(spike_vector1: np.ndarray, spike_vector2: np
 		The cross-shift matrix containing the shift between each pair of units.
 	"""
 
-	return compute_cross_shift(spike_vector1['sample_index'].astype(np.int64, copy=False), spike_vector1['unit_index'].astype(np.int64, copy=False),
-							   spike_vector2['sample_index'].astype(np.int64, copy=False), spike_vector2['unit_index'].astype(np.int64, copy=False), max_shift, gaussian_std)
+	return compute_cross_shift(spike_vector1['sample_index'], spike_vector1['unit_index'],
+							   spike_vector2['sample_index'], spike_vector2['unit_index'], max_shift, gaussian_std)
 
 
-@numba.jit((numba.int64[:], numba.int64[:], numba.int64[:], numba.int64[:], numba.int32, numba.float32),
-		   nopython=True, nogil=True, cache=True, parallel=True)
+@numba.jit(nopython=True, nogil=True, cache=True, parallel=True)
 def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2, max_shift, gaussian_std) -> npt.NDArray[np.int32]:
 	"""
 	Computes the shift between units pairwise between 2 sortings.
