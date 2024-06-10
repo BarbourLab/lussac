@@ -46,19 +46,9 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	assert os.path.exists(f"{folder}/ms3_cs/spike_times.npy")
 	assert not os.path.exists(f"{folder}/ks2_cs/spike_times.npy")
 
-	sorting_saved = se.PhySortingExtractor(f"{folder}/ks2_best")
-	sorting = pipeline.data.sortings['ks2_best']
-	spike_vector1 = sorting.to_spike_vector()
-	spike_vector2 = sorting_saved.to_spike_vector()
-	print(spike_vector1.shape)
-	print(spike_vector2.shape)
-	print(spike_vector1)
-	print(spike_vector2)
-	print("lol")
-	idx = np.argmax(spike_vector1 != spike_vector2)
-	print(spike_vector1[idx - 2:idx + 5])
-	print(spike_vector2[idx - 2:idx + 5])
-	assert np.all(spike_vector1 == spike_vector2)
+	sorting_saved = se.PhySortingExtractor(f"{folder}/ms3_cs")
+	sorting = pipeline.data.sortings['ms3_cs']
+	assert np.all(sorting.to_spike_vector() == sorting_saved.to_spike_vector())
 
 
 def test_empty_sorting(data: LussacData) -> None:

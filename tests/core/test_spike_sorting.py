@@ -28,7 +28,7 @@ def test_spike_sorting(data: LussacData) -> None:
 		'sorter_params': {
 			'detection': {'peak_sign': "neg", "detect_threshold": 7},
 			'apply_preprocessing': False,
-			'output_folder': f"{data.tmp_folder}/sc2_ss_test"
+			'folder': f"{data.tmp_folder}/sc2_ss_test"
 		}
 	}
 
