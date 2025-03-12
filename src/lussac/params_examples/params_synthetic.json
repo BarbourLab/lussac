@@ -9,7 +9,7 @@
 		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
 		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
 		"si_global_job_kwargs": {
-			"n_jobs": 8,
+			"n_jobs": 0.4,
 			"chunk_duration": "2s",
 			"progress_bar": false
 		},

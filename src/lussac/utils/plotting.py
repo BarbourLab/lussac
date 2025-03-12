@@ -152,6 +152,10 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 		analyzer.compute("spike_amplitudes")
 	spike_amplitudes = analyzer.get_extension("spike_amplitudes").get_data(outputs="by_unit")[0]
 
+	if not analyzer.has_extension("correlograms"):
+		analyzer.compute("correlograms", window_ms=2*max_time_ms, bin_ms=bin_size_ms)
+	correlograms, corr_bins = analyzer.get_extension("correlograms").get_data()
+
 	fig = go.Figure().set_subplots(rows=2+(n_channels-1)//4, cols=4)
 	args = []
 
@@ -181,11 +185,10 @@ def plot_units(analyzer: si.SortingAnalyzer, filepath: str, n_channels: int = 4,
 			marker_color="CornflowerBlue"
 		), row=1, col=1)
 
-		auto_corr = spost.compute_autocorrelogram_from_spiketrain(spike_train, max_time, bin_size)
-		bins, _, _ = spost.correlograms._make_bins(analyzer.sorting, 2*max_time_ms, bin_size_ms)
-		bin = (bins[1] - bins[0]) / 2
+		auto_corr = correlograms[i, i]
+		bin = (corr_bins[1] - corr_bins[0]) / 2
 		fig.add_trace(go.Bar(
-			x=bins[:-1] + bin,
+			x=corr_bins[:-1] + bin,
 			y=auto_corr,
 			width=bin_size_ms,
 			name="Auto-correlogram",

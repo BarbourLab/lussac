@@ -68,8 +68,9 @@ class ExportToPhy(MonoSortingModule):
 
 		if 'estimate_contamination' in params:
 			estimated_cont = self._estimate_units_contamination(params['estimate_contamination'])
+			print(f"Estimated contamination: {estimated_cont}")
 			unit_ids = np.array(list(estimated_cont.keys()))
-			unit_ids = new_unit_ids['si_unit_id'][np.argmax(new_unit_ids['cluster_id'].values == unit_ids[:, None], axis=1)].values
+			unit_ids = new_unit_ids['cluster_id'][np.argmax(new_unit_ids['si_unit_id'].values == unit_ids[:, None], axis=1)].values
 			self.write_tsv_file(output_folder / "lussac_contamination.tsv", "lussac_cont (%)", unit_ids, 100 * np.array(list(estimated_cont.values())))
 
 		return self.sorting
@@ -128,6 +129,8 @@ class ExportToPhy(MonoSortingModule):
 		@param values: Sequence
 			The values to write.
 		"""
+		print(f"keys: {keys}")
+		print(f"values: {values}")
 		assert len(keys) == len(values)
 		assert path.suffix == ".tsv"
 

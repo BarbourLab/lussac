@@ -8,7 +8,6 @@ import numpy as np
 import numpy.typing as npt
 from .variables import Utils
 from spikeinterface.curation.auto_merge import get_unit_adaptive_window, normalize_correlogram
-from spikeinterface.postprocessing.correlograms import _compute_crosscorr_numba
 
 
 T = TypeVar("T", bound=npt.ArrayLike)
@@ -346,7 +345,7 @@ def estimate_cross_contamination(spike_train1: np.ndarray, spike_train2: np.ndar
 	t_r = refractory_period[1] * 1e-3 * Utils.sampling_frequency
 	n_violations = compute_nb_coincidence(spike_train1, spike_train2, t_r) - compute_nb_coincidence(spike_train1, spike_train2, t_c)
 
-	estimation = 1 - ((n_violations * Utils.t_max) / (2*N1*N2 * t_r) - 1) / (C1 - 1) if C1 != 1.0 else -np.inf
+	estimation = ((n_violations * Utils.t_max) / (2*N1*N2 * t_r) - C1) / (1 - C1) if C1 != 1.0 else -np.inf
 	if limit is None:
 		return estimation
 
@@ -466,6 +465,36 @@ def compute_nb_coincidence(spike_train1, spike_train2, max_time) -> float:
 				n_coincident += 1
 
 	return n_coincident + p_high*n_coincident_high + p_low*n_coincident_low
+
+
+@numba.jit(nopython=True, nogil=True, cache=True)
+def compute_cross_sortings_correlograms(spike_times1, spike_labels1, spike_times2, spike_labels2, max_time, bin_size):
+	"""
+
+	"""
+
+	n_units1 = (np.max(spike_labels1) + 1) if len(spike_labels1) > 0 else 0
+	n_units2 = (np.max(spike_labels2) + 1) if len(spike_labels2) > 0 else 0
+	num_half_bins = max_time // bin_size
+	correlograms = np.zeros((n_units1, n_units2, 2*num_half_bins), dtype=np.int32)
+
+	start_j = 0
+	for i in range(spike_times1.size):
+		for j in range(start_j, spike_times2.size):
+			diff = spike_times1[i] - spike_times2[j]
+
+			if diff == max_time:
+				continue
+			if diff > max_time:
+				start_j += 1
+				continue
+			if diff < -max_time:
+				break
+
+			bin = diff // bin_size
+			correlograms[spike_labels1[i], spike_labels2[j], num_half_bins+bin] += 1
+
+	return correlograms
 
 
 def compute_coincidence_matrix_from_vector(spike_vector1: np.ndarray, spike_vector2: np.ndarray, window: int, cross_shifts: np.ndarray | None = None) -> npt.NDArray[np.int64]:
@@ -611,23 +640,25 @@ def compute_cross_shift(spike_times1, spike_labels1, spike_times2, spike_labels2
 	N = math.ceil(5 * gaussian_std)
 	gaussian = np.exp(-np.arange(-N, N+1)**2 / (2 * gaussian_std**2)) / (gaussian_std * math.sqrt(2*math.pi))
 
-	spike_trains1 = spike_vector_to_spike_trains(spike_times1, spike_labels1)
-	spike_trains2 = spike_vector_to_spike_trains(spike_times2, spike_labels2)
+	correlograms = compute_cross_sortings_correlograms(spike_times1, spike_labels1, spike_times2, spike_labels2, max_shift, 1)
+
+	n_spikes1 = np.zeros(n_units1, dtype=np.int32)
+	for label in spike_labels1:
+		n_spikes1[label] += 1
+	n_spikes2 = np.zeros(n_units2, dtype=np.int32)
+	for label in spike_labels2:
+		n_spikes2[label] += 1
 
 	for unit1 in numba.prange(n_units1):
 		for unit2 in range(n_units2):
-			spike_train1 = spike_trains1[unit1]
-			spike_train2 = spike_trains2[unit2]
-			threshold = 0.1 * min(len(spike_train1), len(spike_train2))
+			threshold = 0.05 * min(n_spikes1[unit1], n_spikes2[unit2])
 
-			cross_corr = _compute_crosscorr_numba(spike_train1, spike_train2, max_shift, 1)
-			cross_corr = np.convolve(cross_corr, gaussian)
+			cross_corr = correlograms[unit1, unit2]
+			cross_corr = np.convolve(cross_corr, gaussian, mode="same")
 			idx = np.argmax(cross_corr)
 
-			if np.sum(cross_corr[idx-1:idx+2]) < threshold:  # TODO: Better way than idx-1 : idx+2
-				continue
-
-			cross_shift_matrix[unit1, unit2] = idx - len(cross_corr) // 2
+			if cross_corr[idx] >= threshold:
+				cross_shift_matrix[unit1, unit2] = idx - len(cross_corr) // 2
 
 	return cross_shift_matrix
 
@@ -747,10 +778,36 @@ def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarra
 	w1 = get_unit_adaptive_window(auto_corr1, 0.5)
 	w2 = get_unit_adaptive_window(auto_corr2, 0.5)
 	w = int(round((w1*n1 + w2*n2) / (n1 + n2)))
+	print(w1, w2, w)
 	window = slice(middle - w, middle + w + 1)
 
 	diff1 = np.sum(np.abs(cross_corr[window] - auto_corr1[window])) / (window.stop - window.start)
 	diff2 = np.sum(np.abs(cross_corr[window] - auto_corr2[window])) / (window.stop - window.start)
 	weighted_diff = (n1*diff1 + n2*diff2) / (n1+n2)
+	print(f"{diff1:.1%}\t{diff2:.1%}\t{weighted_diff:.1%}")
+
+	import plotly.graph_objects as go
+	fig = go.Figure()
+
+	fig.add_trace(go.Scatter(
+		y=auto_corr1,
+		mode="lines",
+		name="auto corr 1",
+		marker_color="CornflowerBlue"
+	))
+	fig.add_trace(go.Scatter(
+		y=auto_corr2,
+		mode="lines",
+		name="auto corr 2",
+		marker_color="LightSeaGreen"
+	))
+	fig.add_trace(go.Scatter(
+		y=cross_corr,
+		mode="lines",
+		name="cross corr",
+		marker_color="Crimson"
+	))
+
+	# fig.show()
 
 	return weighted_diff

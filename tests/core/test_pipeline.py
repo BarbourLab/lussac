@@ -8,6 +8,7 @@ from lussac.core import LussacData, LussacPipeline, MonoSortingModule, MultiSort
 import spikeinterface.core as si
 from spikeinterface.core.testing import check_sortings_equal
 from spikeinterface.curation import CurationSorting
+import spikeinterface.extractors as se
 
 
 def test_launch(pipeline: LussacPipeline) -> None:
@@ -68,6 +69,50 @@ def test_launch(pipeline: LussacPipeline) -> None:
 					'wvf_extraction': {
 						'max_spikes_per_unit': 200
 					}
+				}
+			}
+		},
+		'units_categorization_2': {
+			'all': {'CS': {
+				'firing_rate': {
+					'min': 0.3,
+					'max': 3.0
+				},
+				'ISI_portion': {
+					'range': [5.0, 30.0],
+					'max': 0.025
+				}
+			}, 'SS': {
+				'firing_rate': {
+					'min': 42.0,
+					'max': 250.0
+				},
+				'contamination': {
+					'refractory_period': [0.4, 2.0],
+					'max': 0.08
+				}
+			}, 'spikes': {
+				'firing_rate': {
+					'min': 5.0,
+					'max': 250.0
+				},
+				'contamination': {
+					'refractory_period': [0.4, 0.9],
+					'max': 0.35
+				}
+			}}
+		},
+		'remove_bad_units_3': {
+			'SS': {'contamination': {'refractory_period': [0.5, 2.0], 'max': 0.05}}  # Remove a simple spike to see if removing a unit create an id/index issue.
+		},
+		'export_to_phy': {
+			'all': {
+				'path':f"{light_pipeline.data.logs_folder}/pipeline_phy_output",
+				'estimate_contamination': {
+					'CS': [1.0, 25.0],
+					'SS': [0.4, 2.0],
+					'spikes': [0.3, 0.9],
+					'rest': [0.3, 0.9]
 				}
 			}
 		}
