@@ -279,7 +279,7 @@ class MonoSortingModule(LussacModule):
 			},
 			'SNR': {
 				'peak_sign': "both",
-				'mode': "extremum",
+				'peak_mode': "peak_to_peak",
 			},
 			'sd_ratio': {
 				'spike_amplitudes_kwargs': {'peak_sign': "both"},
@@ -422,7 +422,8 @@ class MultiSortingsModule(LussacModule):
 		where the first key is the analysis name, and the second one is the 'old' unit_id.
 		"""
 
-		aggregated_sortings = si.aggregate_units(list(self.sortings.values()))
+		total_num_units = sum([sorting.get_num_units() for sorting in self.sortings.values()])
+		aggregated_sortings = si.aggregate_units(list(self.sortings.values()), renamed_unit_ids=np.arange(total_num_units))
 		aggregated_sortings.annotate(name="aggregated_sortings")
 		super(MultiSortingsModule, self).create_analyzer(aggregated_sortings, filter_band, **params)
 

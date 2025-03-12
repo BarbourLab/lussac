@@ -6,6 +6,7 @@ from lussac.core import LussacData, LussacPipeline, MonoSortingData
 from lussac.modules import ExportToPhy
 import spikeinterface.core as si
 import spikeinterface.extractors as se
+import spikeinterface.qualitymetrics as sqm
 
 
 def test_default_params(mono_sorting_data: MonoSortingData) -> None:
@@ -50,6 +51,13 @@ def test_export_multiple_sortings(pipeline: LussacPipeline) -> None:
 	sorting = pipeline.data.sortings['ms3_cs']
 	assert np.all(sorting.to_spike_vector() == sorting_saved.to_spike_vector())
 
+	analyzer = si.create_sorting_analyzer(sorting, pipeline.data.recording)
+	contamination = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=0.9, censored_period_ms=0.3)[0]
+	saved_contamination = dict(zip(sorting_saved.unit_ids, sorting_saved.get_property("lussac_cont (%)")))
+	assert np.all(list(contamination.keys()) == list(saved_contamination.keys()))
+	for unit_id in sorting.unit_ids:
+		assert np.isclose(contamination[unit_id], 0.01*saved_contamination[unit_id], atol=1e-5)
+
 
 def test_empty_sorting(data: LussacData) -> None:
 	mono_sorting_data = MonoSortingData(data, si.NumpySorting.from_unit_dict({}, sampling_frequency=30000))
@@ -74,8 +82,6 @@ def test_estimate_units_contamination(mono_sorting_data: MonoSortingData) -> Non
 	assert len(estimated_contamination) == 0
 	estimated_contamination = module._estimate_units_contamination({'all': (0.3, 0.9)})
 	assert len(estimated_contamination) == mono_sorting_data.sorting.get_num_units()
-
-	# TODO: Test with categories + test output
 
 
 def test_write_tsv_file(mono_sorting_data: MonoSortingData) -> None:

@@ -183,7 +183,7 @@ class LussacData:
 			The recording object.
 		"""
 
-		recording_extractor = se.extractorlist.get_recording_extractor_from_name(params['recording_extractor'])
+		recording_extractor = se.extractorlist.recording_extractor_full_dict[params['recording_extractor']]
 		recording = recording_extractor(**params['extractor_params'])
 
 		if 'probe_file' in params:
@@ -226,7 +226,7 @@ class LussacData:
 			elif path.is_dir() and (path / "spike_times.npy").exists():
 				sorting = se.PhySortingExtractor(path)
 			else:
-				sorting = si.load_extractor(path, base_folder=True)
+				sorting = si.load(path, base_folder=True)
 				assert isinstance(sorting, si.BaseSorting)
 
 			sortings[name] = sorting

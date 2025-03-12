@@ -97,7 +97,8 @@ class LussacPipeline:
 
 		# Aggregated sorting analyzer
 		analyzers = {}
-		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()))
+		total_num_units = sum([sorting.get_num_units() for sorting in sub_sortings.values()])
+		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()), renamed_unit_ids=np.arange(total_num_units))
 		data = MonoSortingData(self.data, merged_sorting)
 		module_instance = module(module_name, data, category)
 		last_unit_id = -1
@@ -108,8 +109,11 @@ class LussacPipeline:
 			module_instance.precompute_analyzer(params)
 			aggregated_analyzer = module_instance.analyzer
 			for name in sub_sortings.keys():
-				unit_ids = np.arange(last_unit_id + 1, last_unit_id + 1 + sub_sortings[name].get_num_units())
-				last_unit_id += sub_sortings[name].get_num_units()
+				num_units = sub_sortings[name].get_num_units()
+				unit_ids = np.arange(last_unit_id + 1, last_unit_id + 1 + num_units)
+				print(f"unit_ids = {unit_ids}")
+				print(f"aggregated analyzer = {aggregated_analyzer.unit_ids}")
+				last_unit_id += num_units
 				analyzers[name] = aggregated_analyzer.select_units(unit_ids)
 				analyzers[name].sorting._main_ids = sub_sortings[name].unit_ids  # Hack to get back the original unit_ids
 				analyzers[name].sorting._sorting_segments[0].unit_ids = list(sub_sortings[name].unit_ids)
@@ -206,8 +210,8 @@ class LussacPipeline:
 
 		logging.info("Loading sortings from previous run...\n")
 		sortings_path = glob.glob(f"{self.data.logs_folder}/{module_name}/sorting/*.pkl")
-		# sortings = {pathlib.Path(path).stem: si.load_extractor(path, base_folder=self.data.logs_folder) for path in tqdm(sortings_path)}
-		sortings = {pathlib.Path(path).stem: si.load_extractor(path) for path in tqdm(sortings_path)}
+		# sortings = {pathlib.Path(path).stem: si.load(path, base_folder=self.data.logs_folder) for path in tqdm(sortings_path)}
+		sortings = {pathlib.Path(path).stem: si.load(path) for path in tqdm(sortings_path)}
 
 		return sortings
 

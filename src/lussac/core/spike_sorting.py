@@ -48,7 +48,7 @@ class LussacSpikeSorter:
 		folder = Path(params['sorter_params']['folder'])
 
 		if (folder / "provenance.pkl").exists():
-			sorting = si.load_extractor(folder / "provenance.pkl")
+			sorting = si.load(folder / "provenance.pkl")
 			logging.info(f"Loading analysis '{self.name}'\n")
 			assert isinstance(sorting, si.BaseSorting)
 			return sorting

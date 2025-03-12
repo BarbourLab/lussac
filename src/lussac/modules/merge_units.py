@@ -28,12 +28,22 @@ class MergeUnits(MonoSortingModule):
 				'max_spikes_per_unit': 2_000,
 				'filter_band': [150, 7000]
 			},
-			'auto_merge_params': {
-				'bin_ms': 0.05,
+			'correlograms': {
 				'window_ms': 150,
-				'corr_diff_thresh': 0.16,
-				'template_diff_thresh': 0.25,
-				'firing_contamination_balance': 2.5
+				'bin_ms': 0.04
+			},
+			'auto_merge_params': {
+				'steps_params': {
+					'correlogram': {
+						'corr_diff_thresh': 0.16,
+						'censor_correlograms_ms': 0.2,
+						'sigma_smooth_ms': 0.6,
+						'adaptive_window_thresh': 0.5
+					},
+					'template_similarity': {'template_diff_thresh': 0.25}
+				},
+				'firing_contamination_balance': 2.5,
+				'resolve_graph': False
 			}
 		}
 
@@ -51,7 +61,8 @@ class MergeUnits(MonoSortingModule):
 		if self.analyzer is None:
 			self.precompute_analyzer(params)
 
-		potential_merges, extra_outputs = scur.get_potential_auto_merge(self.analyzer, extra_outputs=True, **params['auto_merge_params'])
+		print(params['auto_merge_params']['steps_params'])
+		potential_merges, extra_outputs = scur.compute_merge_unit_groups(self.analyzer, extra_outputs=True, **params['auto_merge_params'])
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
 		sorting = self._merge(sorting, potential_merges, params)
@@ -66,7 +77,10 @@ class MergeUnits(MonoSortingModule):
 		self.create_analyzer(filter_band=wvf_extraction['filter_band'], cache_recording=True)
 		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']},
-			'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']}
+			'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']},
+			'correlograms': params['correlograms'],
+			'unit_locations': {},
+			'template_similarity': {'method': "l1", 'max_lag_ms': 0.3}  # TODO: This is computed on all channels!! not the 5 best channels anymore
 		})
 
 	def _remove_splits(self, sorting: si.BaseSorting, extra_outputs: dict, params: dict[str, Any]) -> si.BaseSorting:
@@ -209,7 +223,7 @@ class MergeUnits(MonoSortingModule):
 		correlogram_diff = extra_outputs['correlogram_diff']
 		templates_diff = extra_outputs['templates_diff']
 		window_sizes = extra_outputs['win_sizes']
-		corr_diff_threshold = params['corr_diff_thresh']
+		corr_diff_threshold = params['steps_params']['correlogram']['corr_diff_thresh']
 
 		fig = go.Figure().set_subplots(rows=2, cols=2)
 		bins = bins[:-1] + (bins[1] - bins[0]) / 2
@@ -358,8 +372,8 @@ class MergeUnits(MonoSortingModule):
 
 		fig.add_shape(
 			type="rect",
-			x0=0, x1=params['corr_diff_thresh'],
-			y0=0, y1=params['template_diff_thresh'],
+			x0=0, x1=params['steps_params']['correlogram']['corr_diff_thresh'],
+			y0=0, y1=params['steps_params']['template_similarity']['template_diff_thresh'],
 			line={'color': "Crimson", 'dash': "dash"}
 		)
 

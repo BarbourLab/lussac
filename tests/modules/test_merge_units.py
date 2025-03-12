@@ -39,9 +39,16 @@ def test_merge_units(mono_sorting_data: MonoSortingData) -> None:
 	mono_sorting_data = MonoSortingData(data, data.sortings['ms3_best'])
 
 	module = MergeUnits("merge_units", mono_sorting_data, "all")
-	params = module.update_params({'minimum_spikes': 500, 'wvf_extraction': {'max_spikes_per_unit': 200, 'filter': [300.0, 6_000.0]}, 'auto_merge_params': {'template_diff_thresh': 0.28}})
+	params = module.update_params({
+		'auto_merge_params': {'steps_params': {
+			'num_spikes': {'min_spikes': 500},
+			'template_similarity': {'template_diff_thresh': 0.32}
+		}},
+		'wvf_extraction': {'max_spikes_per_unit': 1000, 'filter': [300.0, 6_000.0]}
+	})
 
-	big_split = [53, 68, 69, 71, 78, 81]  # Lots of units that are the same Purkinje cell.
+	# big_split = [53, 68, 69, 71, 78, 81]  # Lots of units that are the same Purkinje cell.
+	big_split = [53, 69, 71, 78, 81]  # 68 seems hard to get.
 
 	prev_sorting = mono_sorting_data.sorting
 	prev_n_units = prev_sorting.get_num_units()

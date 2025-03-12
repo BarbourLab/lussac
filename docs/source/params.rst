@@ -75,7 +75,7 @@ This section contains the information for Lussac to read the electrophysiologica
 
 There are multiple keys:
 
-- :code:`recording_extractor`: the name of the recording extractor in SpikeInterface.
+- :code:`recording_extractor`: the name of the recording extractor in SpikeInterface (all lowercase, excluding "recording" and "extractor").
 - :code:`extractor_params`: the parameters for the recording extractor.
 - :code:`probe_file`: (optional) the path to the probe file (in the `ProbeInterface <https://github.com/SpikeInterface/probeinterface>`_ format) if not already in the recording.
 - :code:`preprocessing`: (optional) a :code:`dict` mapping a function in `spikeinterface.preprocessing` to a :code:`dict` containing the arguments for that function. "remove_bad_channels" is also added (combining "detect_bad_channels" and "remove_channels")
@@ -86,7 +86,7 @@ Example for a binary file:
 .. code-block:: json
 
 	"recording": {
-		"recording_extractor": "BinaryRecordingExtractor",
+		"recording_extractor": "binary",
 		"extractor_params": {
 			"file_paths": "$PARAMS_FOLDER/recording.dat",
 			"num_channels": 64,

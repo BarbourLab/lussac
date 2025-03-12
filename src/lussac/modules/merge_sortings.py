@@ -18,7 +18,7 @@ class MergeSortings(MultiSortingsModule):
 	Merges the sortings into a single one.
 	"""
 
-	aggregated_analyzer: si.SortingAnalyzer  # Sorting analyzer for all analyses.
+	analyzer: si.SortingAnalyzer  # Aggregated sorting analyzer for all analyses.
 
 	@property
 	@override
@@ -66,13 +66,14 @@ class MergeSortings(MultiSortingsModule):
 		params['waveform_validation']['wvf_extraction']['ms_before'] += params['max_shift']
 		params['waveform_validation']['wvf_extraction']['ms_after']  += params['max_shift']
 		params['max_shift'] = int(round(params['max_shift'] * 1e-3 * self.sampling_f))
+		params['correlogram_validation']['max_shift'] = params['max_shift']
 
 		return params
 
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		self.data.sortings = {name: scur.remove_duplicated_spikes(sorting.remove_empty_units(), params['refractory_period'][0], method="keep_first_iterative") for name, sorting in self.sortings.items()}
-		self._create_analyzer(params['waveform_validation']['wvf_extraction'])
+		self._create_analyzer(params['waveform_validation']['wvf_extraction'], params['correlogram_validation']['max_time'])
 
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
@@ -92,14 +93,15 @@ class MergeSortings(MultiSortingsModule):
 
 		return {'merged_sorting': merged_sorting}
 
-	def _create_analyzer(self, params: dict):
-		self.create_analyzer(filter_band=params['filter_band'], cache_recording=True)
+	def _create_analyzer(self, wvf_params: dict, corr_max_time: float):
+		self.create_analyzer(filter_band=wvf_params['filter_band'], cache_recording=True)
 
 		self.analyzer.compute({
 			'noise_levels': {},
-			'random_spikes': {'max_spikes_per_unit': params['max_spikes_per_unit']},
-			'templates': {'ms_before': params['ms_before'], 'ms_after': params['ms_after']},
-			'spike_amplitudes': {'peak_sign': 'both'}
+			'random_spikes': {'max_spikes_per_unit': wvf_params['max_spikes_per_unit']},
+			'templates': {'ms_before': wvf_params['ms_before'], 'ms_after': wvf_params['ms_after']},
+			'spike_amplitudes': {'peak_sign': 'both'},
+			'correlograms': {'window_ms': 2*corr_max_time, 'bin_ms': 1e3/self.analyzer.sampling_frequency}
 		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
@@ -324,6 +326,12 @@ class MergeSortings(MultiSortingsModule):
 
 		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'])
 		gaussian = utils.gaussian_pdf(np.arange(-N, N+1), 0.0, params['gaussian_std'])
+		correlograms, _ = self.analyzer.get_extension("correlograms").get_data()
+		max_shift = params['max_shift'] + 1
+		n_spikes = self.analyzer.sorting.count_num_spikes_per_unit(outputs="array")
+
+		import spikeinterface.qualitymetrics as sqm
+		C, _ = sqm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=0.9, censored_period_ms=0.4)
 
 		for nodes in nx.connected_components(graph):  # For each community.
 			nodes = list(nodes)
@@ -335,26 +343,26 @@ class MergeSortings(MultiSortingsModule):
 			auto_correlograms = {}
 			for node in nodes:
 				sorting_name, unit_id = node
-				spike_train = self.sortings[sorting_name].get_unit_spike_train(unit_id)
-				auto_corr = spost.compute_autocorrelogram_from_spiketrain(spike_train, window_size=params['max_time'], bin_size=1)
-				auto_correlograms[node] = np.convolve(auto_corr, gaussian, mode="same")
+				new_unit_id = self.analyzer.renamed_unit_ids[sorting_name][unit_id]
+				auto_corr = correlograms[new_unit_id, new_unit_id]
+				auto_correlograms[node] = np.convolve(auto_corr, gaussian, mode="same")[max_shift:-max_shift]
 
 			for node1, node2 in subgraph.edges:
 				sorting1_name, unit_id1 = node1
 				sorting2_name, unit_id2 = node2
 				unit_ind1 = self.sortings[sorting1_name].id_to_index(unit_id1)
 				unit_ind2 = self.sortings[sorting2_name].id_to_index(unit_id2)
+				new_unit_id1 = self.analyzer.renamed_unit_ids[sorting1_name][unit_id1]
+				new_unit_id2 = self.analyzer.renamed_unit_ids[sorting2_name][unit_id2]
 
 				shift = cross_shifts[sorting1_name][sorting2_name][unit_ind1, unit_ind2]
-				spike_train1 = self.sortings[sorting1_name].get_unit_spike_train(unit_id1)
-				spike_train2 = self.sortings[sorting2_name].get_unit_spike_train(unit_id2) + shift
-				cross_corr = spost.compute_crosscorrelogram_from_spiketrain(spike_train1, spike_train2, window_size=params['max_time'], bin_size=1)
+				cross_corr = correlograms[new_unit_id1][new_unit_id2]
 
 				middle = len(cross_corr) // 2
 				cross_corr[middle-params['censored_period']:middle+params['censored_period']] = 0  # Remove duplicates before filtering.
-				cross_corr = np.convolve(cross_corr, gaussian, mode="same")
+				cross_corr = np.convolve(cross_corr, gaussian, mode="same")[max_shift-shift:-max_shift-shift]
 
-				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, len(spike_train1), len(spike_train2))
+				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, n_spikes[new_unit_id1], n_spikes[new_unit_id2])
 				graph[node1][node2]['corr_diff'] = corr_diff
 
 	def compute_waveform_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> None:
@@ -492,7 +500,7 @@ class MergeSortings(MultiSortingsModule):
 
 		for nodes in list(nx.connected_components(graph)):
 			subgraph = graph.subgraph(nodes)
-			communities = list(nx.community.louvain_communities(subgraph, resolution=0.85))
+			communities = list(nx.community.louvain_communities(subgraph, resolution=0.85))  # TODO: look at `weight="similarity"`
 
 			if len(communities) == 1:
 				continue
@@ -580,18 +588,19 @@ class MergeSortings(MultiSortingsModule):
 					unit_label = node
 
 			# Constructing consensus spike train
-			merged_spike_train = np.sort(np.concatenate(spike_trains))
-			n_analyses = int(math.ceil(math.sqrt(len(spike_trains))))
-			consensus_spike_train = utils.consensus_spike_train(merged_spike_train, window=t_c//2, min_analyses=n_analyses)
+			if len(nodes) > 1:
+				merged_spike_train = np.sort(np.concatenate(spike_trains))
+				n_analyses = int(math.ceil(math.sqrt(len(spike_trains))))
+				consensus_spike_train = utils.consensus_spike_train(merged_spike_train, window=t_c//2, min_analyses=n_analyses)
 
-			if len(consensus_spike_train) > 0:
-				f = len(consensus_spike_train) * self.sampling_f / self.recording.get_num_frames()
-				C = utils.estimate_contamination(consensus_spike_train, params['refractory_period'])
-				score = f * (1 - (k+1)*C)
-				logs.write(f"\t- Score = {score:.2f}\t[consensus]\n")
-				if score > best_score:
-					new_spike_trains[new_unit_id] = consensus_spike_train
-					unit_label = "consensus"
+				if len(consensus_spike_train) > 0:
+					f = len(consensus_spike_train) * self.sampling_f / self.recording.get_num_frames()
+					C = utils.estimate_contamination(consensus_spike_train, params['refractory_period'])
+					score = f * (1 - (k+1)*C)
+					logs.write(f"\t- Score = {score:.2f}\t[consensus]\n")
+					if score > best_score:
+						new_spike_trains[new_unit_id] = consensus_spike_train
+						unit_label = "consensus"
 
 			logs.write(f"\t--> Unit chosen: {unit_label}\n")
 

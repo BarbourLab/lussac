@@ -217,7 +217,8 @@ This modules parameters are:
 
 - :code:`refractory_period = [censored_period, refractory_period]`: in ms. By default: :code:`[0.2, 1.0]`.
 - :code:`wvf_extraction`: to construct the templates.
-- :code:`auto_merge_params`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.curation.auto_merge.get_potential_auto_merge`.
+- :code:`correlograms`: to construct the correlograms.
+- :code:`auto_merge_params`: a :code:`dict` containing the parameters to give to :code:`spikeinterface.curation.auto_merge.compute_merge_unit_groups`.
 
 
 The :code:`merge_sortings` module
