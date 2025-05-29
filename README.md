@@ -7,7 +7,9 @@
 
 You can use the version 1 with `git checkout v1`
 
-Lussac is an **automated** and **configurable** analysis pipeline for post-processing and/or merging multiple spike-sorting analyses. The goal is to improve the **yield** and **quality** of data from multielectrode extracellular recordings by comparing the outputs of different spike-sorting algorithms and/or multiple runs with different parameters. For more information, check out our [preprint](https://www.biorxiv.org/content/10.1101/2022.02.08.479192v1) (new version to come soon!).
+Lussac is an **automated** and **configurable** analysis pipeline for post-processing and/or merging multiple spike-sorting analyses.
+The goal is to improve the **yield** and **quality** of data from multielectrode extracellular recordings by comparing the outputs of different spike-sorting algorithms and/or multiple runs with different parameters.
+For more information, check out our [preprint](https://www.biorxiv.org/content/10.1101/2022.02.08.479192v2).
 
 
 ## Installation
@@ -16,7 +18,7 @@ You can install the latest release version of Lussac:
 
 ```bash
 # OPTIONAL: Use a conda environment.
-conda create -n lussac python=3.11  # Must be >= 3.10
+conda create -n lussac python=3.12  # Must be >= 3.10
 conda activate lussac
 
 pip install lussac
@@ -31,7 +33,7 @@ git clone https://github.com/BarbourLab/lussac.git --branch dev
 cd lussac
 
 # OPTIONAL: Use a conda environment.
-conda create -n lussac python=3.11  # Must be >= 3.10
+conda create -n lussac python=3.12  # Must be >= 3.10
 conda activate lussac
 
 # Install Lussac.
