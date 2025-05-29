@@ -15,6 +15,9 @@ PARAMS = {
 		'min_similarity': 0.4,
 		'window': 0.2
 	},
+	'correlogram_validation': {
+		'bin_ms': 0.1
+	},
 	'waveform_validation': {
 		'wvf_extraction': {
 			'max_spikes_per_unit': 200
@@ -109,7 +112,7 @@ def test_compute_graph(data: LussacData) -> None:
 	}
 	p = module.update_params(p)
 
-	module._create_analyzer(p['waveform_validation']['wvf_extraction'], p['correlogram_validation']['max_time'])
+	module._create_analyzer(p)
 
 	graph = module._compute_graph(similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
@@ -180,7 +183,7 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params(PARAMS)
 	if merge_sortings_module.analyzer is None:
-		merge_sortings_module._create_analyzer(params['waveform_validation']['wvf_extraction'], params['correlogram_validation']['max_time'])
+		merge_sortings_module._create_analyzer(params)
 
 	# Test with empty graph
 	merge_sortings_module.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])

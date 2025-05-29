@@ -9,7 +9,6 @@ from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
-import spikeinterface.postprocessing as spost
 import spikeinterface.qualitymetrics as sqm
 
 
@@ -59,6 +58,9 @@ class MergeSortings(MultiSortingsModule):
 	def update_params(self, params: dict[str, Any]) -> dict[str, Any]:
 		params = super().update_params(params)
 
+		if 'bin_ms' not in params['correlogram_validation']:
+			params['correlogram_validation']['bin_ms'] = 1e3/self.sampling_f * (1 + params['correlogram_validation']['max_time']//100)
+
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
 		params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 		params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
@@ -73,7 +75,7 @@ class MergeSortings(MultiSortingsModule):
 	@override
 	def run(self, params: dict[str, Any]) -> dict[str, si.BaseSorting]:
 		self.data.sortings = {name: scur.remove_duplicated_spikes(sorting.remove_empty_units(), params['refractory_period'][0], method="keep_first_iterative") for name, sorting in self.sortings.items()}
-		self._create_analyzer(params['waveform_validation']['wvf_extraction'], params['correlogram_validation']['max_time'])
+		self._create_analyzer(params)
 
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
@@ -93,7 +95,9 @@ class MergeSortings(MultiSortingsModule):
 
 		return {'merged_sorting': merged_sorting}
 
-	def _create_analyzer(self, wvf_params: dict, corr_max_time: float):
+	def _create_analyzer(self, params: dict):
+		wvf_params = params['waveform_validation']['wvf_extraction']
+		corr_params = params['correlogram_validation']
 		self.create_analyzer(filter_band=wvf_params['filter_band'], cache_recording=True)
 
 		self.analyzer.compute({
@@ -101,7 +105,7 @@ class MergeSortings(MultiSortingsModule):
 			'random_spikes': {'max_spikes_per_unit': wvf_params['max_spikes_per_unit']},
 			'templates': {'ms_before': wvf_params['ms_before'], 'ms_after': wvf_params['ms_after']},
 			'spike_amplitudes': {'peak_sign': 'both'},
-			'correlograms': {'window_ms': 2*corr_max_time, 'bin_ms': 1e3/self.analyzer.sampling_frequency}
+			'correlograms': {'window_ms': 2*corr_params['max_time'], 'bin_ms': corr_params['bin_ms']}
 		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
@@ -324,13 +328,13 @@ class MergeSortings(MultiSortingsModule):
 			The parameters for the correlogram difference.
 		"""
 
-		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'])
-		gaussian = utils.gaussian_pdf(np.arange(-N, N+1), 0.0, params['gaussian_std'])
+		bin_size = int(round(params['bin_ms'] * 1e-3 * self.sampling_f))
+		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'] / bin_size)
+		gaussian = utils.gaussian_pdf(np.arange(-N, N+1, bin_size), 0.0, params['gaussian_std'])
 		correlograms, _ = self.analyzer.get_extension("correlograms").get_data()
 		max_shift = params['max_shift'] + 1
 		n_spikes = self.analyzer.sorting.count_num_spikes_per_unit(outputs="array")
 
-		import spikeinterface.qualitymetrics as sqm
 		C, _ = sqm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=0.9, censored_period_ms=0.4)
 
 		for nodes in nx.connected_components(graph):  # For each community.
