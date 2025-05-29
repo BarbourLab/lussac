@@ -182,9 +182,6 @@ def test_compute_difference(merge_sortings_module: MergeSortings) -> None:
 	cross_shifts = {name1: {name2: np.zeros((sorting1.get_num_units(), sorting2.get_num_units()), dtype=np.int64)
 					for name2, sorting2 in sortings.items()} for name1, sorting1 in sortings.items()}
 	params = merge_sortings_module.update_params(PARAMS)
-	print(params)
-	print(params['correlogram_validation'])
-	print(1e3/merge_sortings_module.sampling_f)
 	if merge_sortings_module.analyzer is None:
 		merge_sortings_module._create_analyzer(params)
 
