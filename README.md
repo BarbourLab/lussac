@@ -1,4 +1,4 @@
-[![Python version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
+[![Python version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://img.shields.io/badge/python-3.10-blue.svg)
 [![Documentation Status](https://readthedocs.org/projects/lussac/badge/?version=latest)](http://lussac.readthedocs.io/)
 [![Build status](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests-linux.yml/badge.svg)](https://github.com/BarbourLab/lussac/actions/workflows/unit-tests.yml)
 [![Coverage report](https://codecov.io/gh/barbourlab/lussac/graphs/badge.svg)](https://app.codecov.io/github/barbourlab/lussac)
