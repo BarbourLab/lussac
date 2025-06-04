@@ -35,22 +35,22 @@ Curly brackets in JSON are translated to a :code:`dict` in Python. Hence, the tw
 
 .. code-block:: json
 
-	{
-		"key1": {
-			"foo": "bar",
-			"index": 4
-		}
-		"key2": true,
-		"key3": 3.141592653589793
-	}
+    {
+        "key1": {
+            "foo": "bar",
+            "index": 4
+        }
+        "key2": true,
+        "key3": 3.141592653589793
+    }
 
 .. code-block:: python
 
-	dict(
-		key1=dict(foo="bar", index=4),
-		key2=True,
-		key3=3.141592653589793
-	)
+    dict(
+        key1=dict(foo="bar", index=4),
+        key2=True,
+        key3=3.141592653589793
+    )
 
 - You can type in :code:`$PARAMS_FOLDER` anywhere, and it will be replaced with the path to the folder containing the :code:`params.json` file (useful to copy paste the json config file to another folder).
 - You can add comments in C style (using :code:`//` for inline comment, and :code:`/* */` for multiline comments). This is **not** in the JSON language by default, but has been added here because it can be useful.
@@ -62,10 +62,10 @@ Unlike Python, JSON will crash in case of an extra comma, for example:
 
 .. code-block:: json
 
-	{
-		"key1": "value1",
-		"key2": "value2", // This comma will crash JSON!
-	}
+    {
+        "key1": "value1",
+        "key2": "value2", // This comma will crash JSON!
+    }
 
 
 The :code:`recording` section
@@ -85,37 +85,37 @@ Example for a binary file:
 
 .. code-block:: json
 
-	"recording": {
-		"recording_extractor": "binary",
-		"extractor_params": {
-			"file_paths": "$PARAMS_FOLDER/recording.dat",
-			"num_channels": 64,
-			"sampling_frequency": 30000,
-			"dtype": "int16",
-			"gain_to_uV": 0.195,
-			"offset_to_uV": 0.0
-		},
-		"probe_file": "$PARAMS_FOLDER/probe.json"
-		// No preprocessing
-	}
+    "recording": {
+        "recording_extractor": "binary",
+        "extractor_params": {
+            "file_paths": "$PARAMS_FOLDER/recording.dat",
+            "num_channels": 64,
+            "sampling_frequency": 30000,
+            "dtype": "int16",
+            "gain_to_uV": 0.195,
+            "offset_to_uV": 0.0
+        },
+        "probe_file": "$PARAMS_FOLDER/probe.json"
+        // No preprocessing
+    }
 
 Example for a SpikeGLX recording:
 """""""""""""""""""""""""""""""""
 
 .. code-block:: json
 
-	"recording": {
-		"recording_extractor": "SpikeGLXRecordingExtractor",
-		"extractor_params": {
-			"folder_path": "$PARAMS_FOLDER/recording",
-			"stream_id": "imec0.ap"
-		},
-		// Probe is already loaded with the SpikeGLXRecordingExtractor.
-		"preprocessing": {
-			"phase_shift": {},
-			"remove_bad_channels": {}
-		}
-	}
+    "recording": {
+        "recording_extractor": "SpikeGLXRecordingExtractor",
+        "extractor_params": {
+            "folder_path": "$PARAMS_FOLDER/recording",
+            "stream_id": "imec0.ap"
+        },
+        // Probe is already loaded with the SpikeGLXRecordingExtractor.
+        "preprocessing": {
+            "phase_shift": {},
+            "remove_bad_channels": {}
+        }
+    }
 
 Creating the probe file for geometry:
 """""""""""""""""""""""""""""""""""""
@@ -140,9 +140,9 @@ This section contains the information for Lussac to run the spike sorting algori
 To run sorters, the :code:`spike_sorting` section is made like this:
 
 - A :code:`dict` mapping the run name to another :code:`dict`, containing:
-	- :code:`sorter_name`: the name of the sorter in SpikeInterface.
-	- :code:`preprocessing`: (optional) a :code:`dict` mapping a function in `spikeinterface.preprocessing` to a :code:`dict` containing the arguments for that function.
-	- :code:`sorter_params`: the parameters for the sorter.
+    - :code:`sorter_name`: the name of the sorter in SpikeInterface.
+    - :code:`preprocessing`: (optional) a :code:`dict` mapping a function in `spikeinterface.preprocessing` to a :code:`dict` containing the arguments for that function.
+    - :code:`sorter_params`: the parameters for the sorter.
 
 Example for running 2 spike sorters
 """""""""""""""""""""""""""""""""""
@@ -151,28 +151,28 @@ The following code will run kilosort 3 (with singularity) and SpykingCircus (ins
 
 .. code-block:: json
 
-	"spike_sorting": {
-		"ks3_sing": {  // Kilosort 3 analysis using singularity and some custom parameters.
-			"sorter_name": "kilosort3",
-			"preprocessing": {
-				"filter": {"band": [300., 6000.], "filter_order": 2, "ftype": "bessel"},  // Custom bessel filter
-				"common_reference": {"operator": "median"}  // Common median reference.
-			},
-			"sorter_params": {
-				"output_folder": "$PARAMS_FOLDER/analyses/ks3_sing",
-				"singularity_image": true,
-				"projection_threshold": [8, 8],  // Lower Kilosort's threshold.
-				"freq_min": 40,  // Filter already applied in preprocessing.
-				"delete_recording_dat": true  // Delete unnecessary heavy temp file.
-			}
-		},
-		"sc_default": {  // Spyking Circus analysis using the default parameters.
-			"sorter_name": "spykingcircus",
-			"sorter_params": {
-				"output_folder": "$PARAMS_FOLDER/analyses/sc_default"
-			}
-		}
-	}
+    "spike_sorting": {
+        "ks3_sing": {  // Kilosort 3 analysis using singularity and some custom parameters.
+            "sorter_name": "kilosort3",
+            "preprocessing": {
+                "filter": {"band": [300., 6000.], "filter_order": 2, "ftype": "bessel"},  // Custom bessel filter
+                "common_reference": {"operator": "median"}  // Common median reference.
+            },
+            "sorter_params": {
+                "output_folder": "$PARAMS_FOLDER/analyses/ks3_sing",
+                "singularity_image": true,
+                "projection_threshold": [8, 8],  // Lower Kilosort's threshold.
+                "freq_min": 40,  // Filter already applied in preprocessing.
+                "delete_recording_dat": true  // Delete unnecessary heavy temp file.
+            }
+        },
+        "sc_default": {  // Spyking Circus analysis using the default parameters.
+            "sorter_name": "spykingcircus",
+            "sorter_params": {
+                "output_folder": "$PARAMS_FOLDER/analyses/sc_default"
+            }
+        }
+    }
 
 Note that if you re-run lussac, it will automatically detect the successfully run analyses and load them (rather than re-running the spike-sorting algorithm).
 
@@ -189,10 +189,10 @@ This :code:`dict` maps the analysis name to its location. For example:
 
 .. code-block:: json
 
-	"analyses": {
-		"ks2_default": "path/to/ks2_analysis",  // Phy format
-		"tdc_default": "path/to/tridesclous_analysis.json"  // SpikeInterface format
-	}
+    "analyses": {
+        "ks2_default": "path/to/ks2_analysis",  // Phy format
+        "tdc_default": "path/to/tridesclous_analysis.json"  // SpikeInterface format
+    }
 
 
 The :code:`lussac` section
@@ -212,22 +212,22 @@ Typical structure for the :code:`lussac` section
 
 .. code-block:: json
 
-	"lussac": {
-		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
-		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
-		"si_global_job_kwargs": {
-			"n_jobs": 6,  // Number of threads to use on the CPU. Can be increased or decreased depending on your computer.
-			"chunk_duration": "2s",
-			"progress_bar": false,
-			"verbose": false
-		},
-		"pipeline": {
-			/** "first_module_name": {"category_name": {module_1_params}},
-				"second_module_name: {"category_name": {module_2_params}},
-			   ...
-			*/
-		}
-	}
+    "lussac": {
+        "logs_folder": "$PARAMS_FOLDER/lussac/logs",
+        "tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
+        "si_global_job_kwargs": {
+            "n_jobs": 6,  // Number of threads to use on the CPU. Can be increased or decreased depending on your computer.
+            "chunk_duration": "2s",
+            "progress_bar": false,
+            "verbose": false
+        },
+        "pipeline": {
+            /** "first_module_name": {"category_name": {module_1_params}},
+                "second_module_name: {"category_name": {module_2_params}},
+               ...
+            */
+        }
+    }
 
 
 Lussac module system
@@ -241,14 +241,14 @@ The structure for running a module is always the same:
 
 .. code-block:: json
 
-	"module_name": {
-		"category1": {
-			// Parameters.
-		},
-		"category2": {
-			// Parameters.
-		}
-	}
+    "module_name": {
+        "category1": {
+            // Parameters.
+        },
+        "category2": {
+            // Parameters.
+        }
+    }
 
 The explanation about each module and their parameters are explained <TODO>.
 
