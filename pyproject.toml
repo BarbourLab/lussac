@@ -3,7 +3,7 @@ requires = ["pip>=21.3", "setuptools>=65.6.3"]
 
 [project]
 name = "lussac"
-version = "2.0.0rc2"
+version = "2.0.0rc3"
 authors = [
 	{name="Aurélien Wyngaard", email="aurelien.wyngaard@gmail.com"}
 ]
