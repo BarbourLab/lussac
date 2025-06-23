@@ -62,7 +62,6 @@ class MergeSortings(MultiSortingsModule):
 			params['correlogram_validation']['bin_ms'] = 1e3/self.sampling_f * (1 + params['correlogram_validation']['max_time']//100)
 
 		params['similarity']['window'] = int(round(params['similarity']['window'] * 1e-3 * self.sampling_f))
-		params['correlogram_validation']['max_time'] = int(round(params['correlogram_validation']['max_time'] * 1e-3 * self.sampling_f))
 		params['correlogram_validation']['gaussian_std'] = params['correlogram_validation']['gaussian_std'] * 1e-3 * self.sampling_f
 		params['correlogram_validation']['censored_period'] = params['similarity']['window']
 		params['waveform_validation']['wvf_extraction']['ms_before'] += params['max_shift']
