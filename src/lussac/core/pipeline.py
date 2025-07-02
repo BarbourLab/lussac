@@ -111,8 +111,6 @@ class LussacPipeline:
 			for name in sub_sortings.keys():
 				num_units = sub_sortings[name].get_num_units()
 				unit_ids = np.arange(last_unit_id + 1, last_unit_id + 1 + num_units)
-				print(f"unit_ids = {unit_ids}")
-				print(f"aggregated analyzer = {aggregated_analyzer.unit_ids}")
 				last_unit_id += num_units
 				analyzers[name] = aggregated_analyzer.select_units(unit_ids)
 				analyzers[name].sorting._main_ids = sub_sortings[name].unit_ids  # Hack to get back the original unit_ids

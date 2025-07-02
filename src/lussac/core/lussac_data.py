@@ -51,9 +51,9 @@ class LussacData:
 		"""
 
 		self.recording = recording
-		self.sortings = {name: scur.remove_excess_spikes(sorting.remove_empty_units(), recording) for name, sorting in sortings.items()}
-		for name, sorting in self.sortings.items():
-			sorting.annotate(name=name)
+		self.sortings = {}
+		for name, sorting in sortings.items():
+			self.add_sorting(sorting, name)
 
 		params['lussac']['pipeline'] = self._format_params(params['lussac']['pipeline'])
 		self.params = params
@@ -154,6 +154,24 @@ class LussacData:
 				assert spike_vector['sample_index'][0] >= 0
 				assert spike_vector['sample_index'][-1] < self.recording.get_num_frames()
 				assert np.all(np.diff(spike_vector['sample_index']) >= 0)
+
+	def add_sorting(self, sorting: si.BaseSorting, name: str = None) -> None:
+		"""
+		Adds a new sorting to the LussacData object.
+
+		@param sorting: BaseSorting
+			The sorting object to add.
+		@param name: str
+			The name of the sorting. If None, will use the sorting's annotation "name".
+		"""
+
+		if name is None:
+			name = sorting.get_annotation("name")
+			if name is None:
+				raise ValueError("You must provide a name for the sorting.")
+
+		sorting.annotate(name=name)
+		self.sortings[name] = scur.remove_excess_spikes(sorting.remove_empty_units(), self.recording)
 
 	@staticmethod
 	def _setup_probe(recording: si.BaseRecording, filename: str) -> si.BaseRecording:
