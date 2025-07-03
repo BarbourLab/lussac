@@ -1,6 +1,7 @@
 import copy
 import datetime
 import logging
+import math
 import os
 import pathlib
 import shutil
@@ -164,6 +165,9 @@ class LussacData:
 		@param name: str
 			The name of the sorting. If None, will use the sorting's annotation "name".
 		"""
+
+		assert math.isclose(self.recording.sampling_frequency, sorting.sampling_frequency, abs_tol=1e-2)
+		sorting._sampling_frequency = self.recording.sampling_frequency  # Make sure there aren't any slight variations.
 
 		if name is None:
 			name = sorting.get_annotation("name")
