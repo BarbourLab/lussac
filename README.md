@@ -14,7 +14,7 @@ For more information, check out our [preprint](https://www.biorxiv.org/content/1
 
 ## Installation
 
-You can install the latest release version of Lussac:
+You can install the latest release version of Lussac in under a minute:
 
 ```bash
 # OPTIONAL: Use a conda environment.
@@ -42,7 +42,7 @@ pip install -e ".[dev]"
 # To upgrade Lussac.
 git pull
 
-# If you want to check whether the installation was successful (optional)
+# If you want to check whether the installation was successful (optional, will take about 10 minutes)
 pytest
 ```
 

@@ -37,7 +37,8 @@ def main() -> None:  # pragma: no cover
 		logging.info("Running spike-sorting algorithms:\n")
 		for name, params0 in params['spike_sorting'].items():
 			spike_sorter = LussacSpikeSorter(data.recording, name)
-			data.sortings[name] = spike_sorter.launch(params0)
+			sorting = spike_sorter.launch(params0)
+			data.add_sorting(sorting, name)
 
 	# STEP 2: Running the pipeline.
 	pipeline = LussacPipeline(data)
