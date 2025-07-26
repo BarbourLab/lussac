@@ -205,7 +205,7 @@ class LussacData:
 			The recording object.
 		"""
 
-		recording_extractor = se.extractorlist.recording_extractor_full_dict[params['recording_extractor']]
+		recording_extractor = se.extractor_classes.recording_extractor_full_dict[params['recording_extractor']]
 		recording = recording_extractor(**params['extractor_params'])
 
 		if 'probe_file' in params:
