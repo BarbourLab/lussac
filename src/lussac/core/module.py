@@ -423,7 +423,7 @@ class MultiSortingsModule(LussacModule):
 		"""
 
 		total_num_units = sum([sorting.get_num_units() for sorting in self.sortings.values()])
-		aggregated_sortings = si.aggregate_units(list(self.sortings.values()), renamed_unit_ids=np.arange(total_num_units))
+		aggregated_sortings = si.aggregate_units(list(self.sortings.values()), renamed_unit_ids=np.arange(total_num_units), sampling_frequency_max_diff=0.01)
 		aggregated_sortings.annotate(name="aggregated_sortings")
 		super(MultiSortingsModule, self).create_analyzer(aggregated_sortings, filter_band, **params)
 
