@@ -123,7 +123,7 @@ class LussacModule(ABC):
 			if memory_left > 2 * recording_size:
 				recording = recording.save_to_memory(format="memory", shared=True)
 
-		params = dict(return_scaled=True, sparse=False) | params
+		params = dict(return_in_uV=True, sparse=False) | params
 
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
 		self.analyzer = si.create_sorting_analyzer(sorting, recording, format="memory", **params)

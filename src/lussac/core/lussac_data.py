@@ -63,7 +63,8 @@ class LussacData:
 
 		if 'si_global_job_kwargs' in params['lussac']:
 			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
-			numba.set_num_threads(si.get_global_job_kwargs()['n_jobs'])
+			# numba.set_num_threads(si.get_global_job_kwargs()['n_jobs'])
+			numba.set_num_threads(2)  # TODO: must be in integer
 
 		targets = logging.StreamHandler(sys.stdout), logging.FileHandler(self.logs_folder / "lussac.logs")
 		targets[0].terminator = ''

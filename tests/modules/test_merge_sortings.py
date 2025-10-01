@@ -10,7 +10,7 @@ import spikeinterface.core as si
 
 PARAMS = {
 	'refractory_period': (0.2, 1.0),
-	'require_multiple_sortings_match': False,
+	'min_num_sortings': 1,
 	'similarity': {
 		'min_similarity': 0.4,
 		'window': 0.2
@@ -73,7 +73,7 @@ def test_compute_similarity_matrices(merge_sortings_module: MergeSortings) -> No
 	cross_shifts = {name1: {name2: None for name2 in merge_sortings_module.sortings.keys()} for name1 in merge_sortings_module.sortings.keys()}
 
 	params = merge_sortings_module.update_params(PARAMS)
-	similarity_matrices = merge_sortings_module._compute_similarity_matrices(cross_shifts, params)
+	agreement_matrices, similarity_matrices = merge_sortings_module._compute_similarity_matrices(cross_shifts, params)
 
 	assert 'ks2_low_thresh' in similarity_matrices
 	assert 'ms4_cs' in similarity_matrices['ms3_best']
@@ -107,14 +107,14 @@ def test_compute_graph(data: LussacData) -> None:
 	p = {
 		'refractory_period': (0.2, 1.0),
 		'similarity': {'min_similarity': 0.4},
-		'require_multiple_sortings_match': False,
+		'min_num_sortings': 1,
 		'waveform_validation': {'wvf_extraction': {'filter': None}}
 	}
 	p = module.update_params(p)
 
 	module._create_analyzer(p)
 
-	graph = module._compute_graph(similarity_matrices, p)
+	graph = module._compute_graph(similarity_matrices, similarity_matrices, p)
 	assert graph.number_of_nodes() == 8
 	assert graph.number_of_edges() == 6
 	assert graph.has_edge(('1', 0), ('2', 0))
@@ -126,8 +126,8 @@ def test_compute_graph(data: LussacData) -> None:
 		graph_loaded = pickle.load(file)
 		assert nx.is_isomorphic(graph, graph_loaded)
 
-	p['require_multiple_sortings_match'] = True
-	graph = module._compute_graph(similarity_matrices, p)
+	p['min_num_sortings'] = 2
+	graph = module._compute_graph(similarity_matrices, similarity_matrices, p)
 	assert graph.number_of_nodes() == 6  # Nodes not connected are removed.
 	assert graph.number_of_edges() == 6
 
