@@ -225,10 +225,10 @@ def test_clean_edges(data: LussacData) -> None:
 	graph.add_node(('ms3_best', 71), contamination=0.000, SNR=6.35, sd_ratio=0.89)  # Same SSpk (but spikes missing).
 	graph.add_node(('ms3_best', 14), contamination=0.001, SNR=4.35, sd_ratio=1.16)  # Same mossy fiber.
 
-	graph.add_edge(('ks2_best', 41), ('ms3_best', 71), similarity=0.998, corr_diff=0.008, temp_diff=0.051)  # Linking SSpk together.
-	graph.add_edge(('ks2_best', 13), ('ms3_best', 14), similarity=0.964, corr_diff=0.081, temp_diff=0.074)  # Linking MF together.
-	graph.add_edge(('ks2_best', 41), ('ms3_best', 14), similarity=0.052, corr_diff=0.723, temp_diff=0.947)  # Erroneous link: edge should be removed but not the nodes.
-	graph.add_edge(('ks2_best', 22), ('ms3_best', 71), similarity=0.030, corr_diff=0.733, temp_diff=0.969)  # node1 is bad --> should get removed
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 71), agreement=0.998, similarity=0.998, corr_diff=0.008, temp_diff=0.051)  # Linking SSpk together.
+	graph.add_edge(('ks2_best', 13), ('ms3_best', 14), agreement=0.964, similarity=0.964, corr_diff=0.081, temp_diff=0.074)  # Linking MF together.
+	graph.add_edge(('ks2_best', 41), ('ms3_best', 14), agreement=0.052, similarity=0.052, corr_diff=0.723, temp_diff=0.947)  # Erroneous link: edge should be removed but not the nodes.
+	graph.add_edge(('ks2_best', 22), ('ms3_best', 71), agreement=0.030, similarity=0.030, corr_diff=0.733, temp_diff=0.969)  # node1 is bad --> should get removed
 
 	# Running "clean_edges"
 	cross_shifts = merge_sortings_module.compute_cross_shifts(30)
