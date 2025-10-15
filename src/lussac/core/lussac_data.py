@@ -76,6 +76,7 @@ class LussacData:
 
 		Utils.sampling_frequency = recording.sampling_frequency
 		Utils.t_max = recording.get_num_frames()
+		Utils.logs_level = params['lussac'].get('logs_level', 2)
 
 	def clone(self) -> 'LussacData':
 		"""

@@ -5,6 +5,7 @@ from typing import Any
 from overrides import override
 import networkx as nx
 import numpy as np
+
 from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -103,8 +104,7 @@ class MergeSortings(MultiSortingsModule):
 			'noise_levels': {},
 			'random_spikes': {'max_spikes_per_unit': wvf_params['max_spikes_per_unit']},
 			'templates': {'ms_before': wvf_params['ms_before'], 'ms_after': wvf_params['ms_after']},
-			'spike_amplitudes': {'peak_sign': 'both'},
-			# 'correlograms': {'window_ms': 2*corr_params['max_time'], 'bin_ms': corr_params['bin_ms']}
+			'spike_amplitudes': {'peak_sign': 'both'}
 		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
@@ -240,6 +240,9 @@ class MergeSortings(MultiSortingsModule):
 		@param name: str
 			The name of the file (without the .pkl extension)
 		"""
+
+		if utils.Utils.logs_level < 2:
+			return
 
 		with open(f"{self.logs_folder}/{name}.pkl", 'wb+') as file:
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)

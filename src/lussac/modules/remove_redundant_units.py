@@ -1,6 +1,7 @@
 from typing import Any
 import numpy as np
 from overrides import override
+
 from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -42,7 +43,9 @@ class RemoveRedundantUnits(MonoSortingModule):
 		redundant_unit_ids = [unit_id for unit_id in self.sorting.unit_ids if unit_id not in new_sorting.unit_ids]
 		redundant_sorting = self.sorting.select_units(redundant_unit_ids)
 		redundancies = self._get_redundancies(redundant_unit_ids, redundant_unit_pairs)
-		self._plot_redundant_units(redundant_sorting, redundancies)
+
+		if utils.Utils.logs_level >= 3:
+			self._plot_redundant_units(redundant_sorting, redundancies)
 
 		return self.sorting.select_units(new_sorting.unit_ids)  # can't use `new_sorting` because parent is SharedMemorySorting, which can't be pickled
 

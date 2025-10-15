@@ -1,6 +1,7 @@
 from typing import Any
 from overrides import override
 import numpy as np
+
 from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -51,7 +52,8 @@ class RemoveBadUnits(MonoSortingModule):
 		bad_sorting = self.sorting.select_units([unit_id for unit_id, bad in zip(self.sorting.unit_ids, units_to_remove) if bad])
 		reasons_for_removal = ["Reason(s) for removal: " + reason[3:] for reason in reasons_for_removal[units_to_remove]]
 
-		self._plot_bad_units(bad_sorting.unit_ids, reasons_for_removal)
+		if utils.Utils.logs_level >= 3:
+			self._plot_bad_units(bad_sorting.unit_ids, reasons_for_removal)
 
 		return sorting
 
@@ -59,12 +61,15 @@ class RemoveBadUnits(MonoSortingModule):
 		params = self.update_params(params)
 		wvf_extraction = params['wvf_extraction']
 
+		analyzer_config = {}
+		if 'amplitude' in params or 'SNR' in params or 'sd_ratio' in params or utils.Utils.logs_level >= 3:
+			analyzer_config['random_spikes'] = {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']}
+			analyzer_config['templates'] = {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']}
+		if 'sd_ratio' in params or utils.Utils.logs_level >= 3:
+			analyzer_config['spike_amplitudes'] = {'peak_sign': 'both'}
+
 		self.create_analyzer(filter_band=wvf_extraction['filter_band'], cache_recording=True)
-		self.analyzer.compute({
-			'random_spikes': {'max_spikes_per_unit': wvf_extraction['max_spikes_per_unit']},
-			'templates': {'ms_before': wvf_extraction['ms_before'], 'ms_after': wvf_extraction['ms_after']},
-			'spike_amplitudes': {'peak_sign': 'both'}
-		})
+		self.analyzer.compute(analyzer_config)
 
 	def _plot_bad_units(self, bad_unit_ids, reasons_for_removal: list[str]) -> None:
 		"""

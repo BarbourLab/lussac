@@ -12,6 +12,7 @@ import numpy.typing as npt
 from tqdm.auto import tqdm
 
 from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
+from lussac.utils import Utils
 import spikeinterface.core as si
 
 
@@ -191,10 +192,13 @@ class LussacPipeline:
 		"""
 
 		for name, sorting in self.data.sortings.items():
-			path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
-			# sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder)
-			sorting.dump_to_pickle(file_path=path, include_properties=True)
-			# TODO: Make relative paths work with pickle in SI.
+			if Utils.logs_level >= 1:
+				path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
+				# sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder)
+				sorting.dump_to_pickle(file_path=path, include_properties=True)
+				# TODO: Make relative paths work with pickle in SI.
+
+			self.data.sortings[name] = si.NumpySorting.from_sorting(sorting, with_metadata=True)  # To save memory and facilitate computation.
 
 	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
 		"""

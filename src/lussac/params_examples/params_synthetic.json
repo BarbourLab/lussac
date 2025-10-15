@@ -8,6 +8,7 @@
 	"lussac": {
 		"tmp_folder": "$PARAMS_FOLDER/lussac/tmp",
 		"logs_folder": "$PARAMS_FOLDER/lussac/logs",
+		"logs_level": 2,  // 0: no logs, 1: sortings at each step, 2: light files, 3: plots
 		"si_global_job_kwargs": {
 			"n_jobs": 0.4,
 			"chunk_duration": "2s",

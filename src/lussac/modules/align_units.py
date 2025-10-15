@@ -3,6 +3,7 @@ from overrides import override
 import numpy as np
 import plotly.graph_objects as go
 import scipy.signal
+
 from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -37,7 +38,8 @@ class AlignUnits(MonoSortingModule):
 		templates_ext = analyzer.get_extension("templates")
 
 		shifts = self.get_units_shift(templates, templates_ext.nbefore - margin, params['threshold'], params['check_next'])
-		self._plot_alignment(templates, templates_ext.nbefore - margin, shifts, params['threshold'])
+		if utils.Utils.logs_level >= 2:
+			self._plot_alignment(templates, templates_ext.nbefore - margin, shifts, params['threshold'])
 
 		return self.shift_sorting(self.recording, self.sorting, {self.sorting.unit_ids[i]: -shifts[i] for i in range(len(shifts))})
 
