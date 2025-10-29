@@ -92,6 +92,7 @@ class MergeSortings(MultiSortingsModule):
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, cross_shifts, params)
+		merged_sorting = self.remove_redundant(merged_sorting, params)
 
 		return {'merged_sorting': merged_sorting}
 
@@ -639,3 +640,74 @@ class MergeSortings(MultiSortingsModule):
 		merged_sorting.annotate(name="merged_sorting")
 
 		return merged_sorting
+
+	def remove_redundant(self, sorting: si.BaseSorting, params: dict) -> si.BaseSorting:
+		"""
+		Removes units that are redundant or too similar.
+
+		@param sorting: si.BaseSorting
+			The sorting to clean.
+		@param params: dict
+			The parameters for the merge_sortings module.
+		@return cleaned_sorting: si.BaseSorting
+			The cleaned sorting.
+		"""
+
+		k = 2.5
+
+		analyzer = si.create_sorting_analyzer(sorting, self.recording, format="memory", sparse=False)
+		contamination = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=params['refractory_period'][1], censored_period_ms=params['refractory_period'][0])[0]
+
+		num_spikes = sorting.count_num_spikes_per_unit()
+		N = np.array(list(num_spikes.values()))
+
+		graph = nx.Graph()
+		graph.add_nodes_from(sorting.unit_ids)
+
+		spike_vector = sorting.to_spike_vector()
+		coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vector, spike_vector, params['similarity']['window'])
+		# TODO: remove expected coincidence matrix.
+
+		agreement_matrix = coincidence_matrix / (N[:, None] + N[None, :] - coincidence_matrix)
+		similarity_matrix = coincidence_matrix / np.minimum(N[:, None], N[None, :])
+		agreement_matrix = np.tril(agreement_matrix, k=-1)
+		similarity_matrix = np.tril(similarity_matrix, k=-1)
+
+		# STEP 1: Remove redundant units.
+		pairs = np.argwhere(agreement_matrix > 0.5)
+		for pair in pairs:
+			unit_id1 = sorting.unit_ids[pair[0]]
+			unit_id2 = sorting.unit_ids[pair[1]]
+
+			score1 = num_spikes[unit_id1] * (1 - (k+1)*contamination[unit_id1])
+			score2 = num_spikes[unit_id2] * (1 - (k+1)*contamination[unit_id2])
+
+			if score1 > score2:
+				graph.remove_node(unit_id2)
+			else:
+				graph.remove_node(unit_id1)
+
+		# STEP 2: Remove units that are too similar (most likely splits).
+		pairs = np.argwhere(similarity_matrix > 0.75)
+		for pair in pairs:
+			unit_id1 = sorting.unit_ids[pair[0]]
+			unit_id2 = sorting.unit_ids[pair[1]]
+
+			if not graph.has_node(unit_id1) or not graph.has_node(unit_id2):
+				continue
+			graph.add_edge(unit_id1, unit_id2, agreement=agreement_matrix[pair], similarity=similarity_matrix[pair])
+
+		for community in list(nx.connected_components(graph)):
+			if len(community) == 1:
+				continue
+
+			unit_ids = list(community)
+			scores = [num_spikes[unit_id] * (1 - (k+1)*contamination[unit_id]) for unit_id in unit_ids]
+			idx = np.argmax(scores)
+
+			for i, unit_id in enumerate(unit_ids):
+				if i != idx:
+					graph.remove_node(unit_id)
+
+		unit_ids = np.sort(list(graph.nodes))
+		return sorting.select_units(unit_ids)
