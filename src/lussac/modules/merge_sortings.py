@@ -88,7 +88,7 @@ class MergeSortings(MultiSortingsModule):
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
 		self.clean_edges(graph, cross_shifts, params)
 		if len(self.sortings) >= 4:
-			self.separate_communities(graph)
+			self.separate_communities(graph, params['min_num_sortings'])
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, cross_shifts, params)
@@ -515,7 +515,7 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	def separate_communities(self, graph: nx.Graph) -> None:
+	def separate_communities(self, graph: nx.Graph, num_min_sortings: int) -> None:
 		"""
 		Looks for all subgraphs (connected component) and uses the Louvain algorithm to check if
 		multiple communities are found. If so, the edges between communities are removed.
@@ -524,6 +524,9 @@ class MergeSortings(MultiSortingsModule):
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param num_min_sortings: int
+			The minimum number of sortings required for a unit to be kept.
+			If a community is split, then it is kept is there are stricly more than this number.
 		"""
 
 		logs = open(f"{self.logs_folder}/separate_communities_logs.txt", 'w+')
@@ -548,7 +551,7 @@ class MergeSortings(MultiSortingsModule):
 			logs.write("\nRemoving small communities:\n")
 			# Remove small communities
 			for community in communities:
-				if len(community) <= 2:  # TODO: num_min_sortings
+				if len(community) <= num_min_sortings:
 					for node in community:
 						logs.write(f"\t- Removing {graph.nodes[node]}\n")
 						graph.remove_node(node)
