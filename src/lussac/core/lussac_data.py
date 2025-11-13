@@ -69,7 +69,7 @@ class LussacData:
 		targets = logging.StreamHandler(sys.stdout), logging.FileHandler(self.logs_folder / "lussac.logs")
 		targets[0].terminator = ''
 		targets[1].terminator = ''
-		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets)
+		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets, force=True)  # 'force' needed to work with Jupyter notebooks.
 		logging.info(f"\nRunning Lussac!\n{datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
 		self._sanity_check()
