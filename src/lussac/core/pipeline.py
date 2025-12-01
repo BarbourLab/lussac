@@ -12,6 +12,7 @@ import numpy.typing as npt
 from tqdm.auto import tqdm
 
 from lussac.core import LussacData, MonoSortingData, MultiSortingsData, MonoSortingModule, MultiSortingsModule, ModuleFactory
+from lussac.utils import Utils
 import spikeinterface.core as si
 
 
@@ -98,7 +99,7 @@ class LussacPipeline:
 		# Aggregated sorting analyzer
 		analyzers = {}
 		total_num_units = sum([sorting.get_num_units() for sorting in sub_sortings.values()])
-		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()), renamed_unit_ids=np.arange(total_num_units))
+		merged_sorting = si.UnitsAggregationSorting(list(sub_sortings.values()), renamed_unit_ids=np.arange(total_num_units), sampling_frequency_max_diff=0.01)
 		data = MonoSortingData(self.data, merged_sorting)
 		module_instance = module(module_name, data, category)
 		last_unit_id = -1
@@ -175,7 +176,7 @@ class LussacPipeline:
 				if name not in new_sortings:
 					new_sortings[name] = sub_sorting
 				else:
-					new_sortings[name] = si.UnitsAggregationSorting([new_sortings[name], sub_sorting])
+					new_sortings[name] = si.UnitsAggregationSorting([new_sortings[name], sub_sorting], sampling_frequency_max_diff=0.01)
 
 			t2 = time.perf_counter()
 			logging.info(f"\tDone in {t2-t1:.1f} s\n")
@@ -191,10 +192,13 @@ class LussacPipeline:
 		"""
 
 		for name, sorting in self.data.sortings.items():
-			path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
-			# sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder)
-			sorting.dump_to_pickle(file_path=path, include_properties=True)
-			# TODO: Make relative paths work with pickle in SI.
+			if Utils.logs_level >= 1:
+				path = f"{self.data.logs_folder}/{module_name}/sorting/{name}.pkl"
+				# sorting.dump_to_pickle(file_path=path, include_properties=True, relative_to=self.data.logs_folder)
+				sorting.dump_to_pickle(file_path=path, include_properties=True)
+				# TODO: Make relative paths work with pickle in SI.
+
+			self.data.sortings[name] = si.NumpySorting.from_sorting(sorting, with_metadata=True)  # To save memory and facilitate computation.
 
 	def _load_sortings(self, module_name: str) -> dict[str, si.BaseSorting]:
 		"""
@@ -310,4 +314,4 @@ class LussacPipeline:
 		if renamed:
 			sorting2 = sorting2.select_units(list(rename_units.keys()), list(rename_units.values()))
 
-		return si.UnitsAggregationSorting([sorting1, sorting2], renamed_unit_ids=[*sorting1.unit_ids, *sorting2.unit_ids])
+		return si.UnitsAggregationSorting([sorting1, sorting2], renamed_unit_ids=[*sorting1.unit_ids, *sorting2.unit_ids], sampling_frequency_max_diff=0.01)

@@ -778,36 +778,10 @@ def compute_correlogram_difference(auto_corr1: np.ndarray, auto_corr2: np.ndarra
 	w1 = get_unit_adaptive_window(auto_corr1, 0.5)
 	w2 = get_unit_adaptive_window(auto_corr2, 0.5)
 	w = int(round((w1*n1 + w2*n2) / (n1 + n2)))
-	print(w1, w2, w)
 	window = slice(middle - w, middle + w + 1)
 
 	diff1 = np.sum(np.abs(cross_corr[window] - auto_corr1[window])) / (window.stop - window.start)
 	diff2 = np.sum(np.abs(cross_corr[window] - auto_corr2[window])) / (window.stop - window.start)
 	weighted_diff = (n1*diff1 + n2*diff2) / (n1+n2)
-	print(f"{diff1:.1%}\t{diff2:.1%}\t{weighted_diff:.1%}")
-
-	import plotly.graph_objects as go
-	fig = go.Figure()
-
-	fig.add_trace(go.Scatter(
-		y=auto_corr1,
-		mode="lines",
-		name="auto corr 1",
-		marker_color="CornflowerBlue"
-	))
-	fig.add_trace(go.Scatter(
-		y=auto_corr2,
-		mode="lines",
-		name="auto corr 2",
-		marker_color="LightSeaGreen"
-	))
-	fig.add_trace(go.Scatter(
-		y=cross_corr,
-		mode="lines",
-		name="cross corr",
-		marker_color="Crimson"
-	))
-
-	# fig.show()
 
 	return weighted_diff

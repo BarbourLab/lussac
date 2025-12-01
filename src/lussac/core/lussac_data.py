@@ -63,18 +63,20 @@ class LussacData:
 
 		if 'si_global_job_kwargs' in params['lussac']:
 			si.set_global_job_kwargs(**params['lussac']['si_global_job_kwargs'])
-			numba.set_num_threads(si.get_global_job_kwargs()['n_jobs'])
+			# numba.set_num_threads(si.get_global_job_kwargs()['n_jobs'])
+			numba.set_num_threads(2)  # TODO: must be in integer
 
 		targets = logging.StreamHandler(sys.stdout), logging.FileHandler(self.logs_folder / "lussac.logs")
 		targets[0].terminator = ''
 		targets[1].terminator = ''
-		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets)
+		logging.basicConfig(format="%(message)s", level=logging.INFO, handlers=targets, force=True)  # 'force' needed to work with Jupyter notebooks.
 		logging.info(f"\nRunning Lussac!\n{datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
 		self._sanity_check()
 
 		Utils.sampling_frequency = recording.sampling_frequency
 		Utils.t_max = recording.get_num_frames()
+		Utils.logs_level = params['lussac'].get('logs_level', 2)
 
 	def clone(self) -> 'LussacData':
 		"""
@@ -205,7 +207,7 @@ class LussacData:
 			The recording object.
 		"""
 
-		recording_extractor = se.extractorlist.recording_extractor_full_dict[params['recording_extractor']]
+		recording_extractor = se.extractor_classes.recording_extractor_full_dict[params['recording_extractor']]
 		recording = recording_extractor(**params['extractor_params'])
 
 		if 'probe_file' in params:

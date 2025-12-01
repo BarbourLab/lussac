@@ -5,6 +5,7 @@ from typing import Any
 from overrides import override
 import networkx as nx
 import numpy as np
+
 from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -25,7 +26,7 @@ class MergeSortings(MultiSortingsModule):
 		return {
 			'refractory_period': [0.2, 1.0],
 			'max_shift': 1.33,
-			'require_multiple_sortings_match': True,
+			'min_num_sortings': 2,
 			'similarity': {
 				'min_similarity': 0.3,
 				'window': 0.2
@@ -78,8 +79,8 @@ class MergeSortings(MultiSortingsModule):
 
 		cross_shifts = self.compute_cross_shifts(params['max_shift'])
 
-		similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
-		graph = self._compute_graph(similarity_matrices, params)
+		agreement_matrices, similarity_matrices = self._compute_similarity_matrices(cross_shifts, params)
+		graph = self._compute_graph(agreement_matrices, similarity_matrices, params)
 		self.compute_correlogram_difference(graph, cross_shifts, params['correlogram_validation'])
 		self.compute_waveform_difference(graph, cross_shifts, params)
 
@@ -87,10 +88,11 @@ class MergeSortings(MultiSortingsModule):
 			self.remove_merged_units(graph, cross_shifts, params['refractory_period'], params['merge_check'])
 		self.clean_edges(graph, cross_shifts, params)
 		if len(self.sortings) >= 4:
-			self.separate_communities(graph)
+			self.separate_communities(graph, params['min_num_sortings'])
 		self._save_graph(graph, "final_graph")
 
 		merged_sorting = self.merge_sortings(graph, cross_shifts, params)
+		merged_sorting = self.remove_redundant(merged_sorting, params)
 
 		return {'merged_sorting': merged_sorting}
 
@@ -103,8 +105,7 @@ class MergeSortings(MultiSortingsModule):
 			'noise_levels': {},
 			'random_spikes': {'max_spikes_per_unit': wvf_params['max_spikes_per_unit']},
 			'templates': {'ms_before': wvf_params['ms_before'], 'ms_after': wvf_params['ms_after']},
-			'spike_amplitudes': {'peak_sign': 'both'},
-			'correlograms': {'window_ms': 2*corr_params['max_time'], 'bin_ms': corr_params['bin_ms']}
+			'spike_amplitudes': {'peak_sign': 'both'}
 		})
 
 	def compute_cross_shifts(self, max_shift: int) -> dict[str, dict[str, np.ndarray]]:
@@ -135,9 +136,9 @@ class MergeSortings(MultiSortingsModule):
 
 		return cross_shifts
 
-	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray | None]], params: dict[str, Any]) -> dict[str, dict[str, np.ndarray]]:
+	def _compute_similarity_matrices(self, cross_shifts: dict[str, dict[str, np.ndarray | None]], params: dict[str, Any]) -> tuple[dict[str, dict[str, np.ndarray]], dict[str, dict[str, np.ndarray]]]:
 		"""
-		Computes the similarity matrix between all sortings.
+		Computes the similarity and agreement matrix between all sortings.
 
 		@param cross_shifts: dict[str, dict[str, np.ndarray | None]]
 			The cross-shifts between units.
@@ -149,31 +150,41 @@ class MergeSortings(MultiSortingsModule):
 		"""
 		window = params['similarity']['window']
 
+		agreement_matrices = {}
 		similarity_matrices = {}
 		spike_vectors = {name: sorting.to_spike_vector() for name, sorting in self.sortings.items()}
 		n_spikes = {name: np.array(list(sorting.count_num_spikes_per_unit().values())) for name, sorting in self.sortings.items()}
 
 		for name1, sorting1 in self.sortings.items():
+			agreement_matrices[name1] = {}
 			similarity_matrices[name1] = {}
+
 			for name2, sorting2 in self.sortings.items():
 				if name1 == name2 or name2 in similarity_matrices[name1]:
 					continue
 				if name2 not in similarity_matrices:
+					agreement_matrices[name2] = {}
 					similarity_matrices[name2] = {}
 
 				coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vectors[name1], spike_vectors[name2], window, cross_shifts[name1][name2])
+
+				agreement_matrix = coincidence_matrix / (n_spikes[name1][:, None] + n_spikes[name2][None, :] - coincidence_matrix)
+				agreement_matrices[name1][name2] = agreement_matrix
+				agreement_matrices[name2][name1] = agreement_matrix.T
 
 				similarity_matrix = utils.compute_similarity_matrix(coincidence_matrix, n_spikes[name1], n_spikes[name2], window)
 				similarity_matrices[name1][name2] = similarity_matrix
 				similarity_matrices[name2][name1] = similarity_matrix.T
 
-		return similarity_matrices
+		return agreement_matrices, similarity_matrices
 
-	def _compute_graph(self, similarity_matrices: dict[str, dict[str, np.ndarray]], params: dict) -> nx.Graph:
+	def _compute_graph(self, agreement_matrices: dict[str, dict[str, np.ndarray]], similarity_matrices: dict[str, dict[str, np.ndarray]], params: dict) -> nx.Graph:
 		"""
 		Creates a graph containing all the units from all the sortings,
 		and edges between units that are similar.
 
+		@param agreement_matrices: dict[str, dict[str, np.ndarray]]
+			The agreement matrices [sorting1, sorting2, agreement_matrix].
 		@param similarity_matrices: dict[str, dict[str, np.ndarray]]
 			The similarity matrices [sorting1, sorting2, similarity_matrix].
 		@param params: dict
@@ -208,12 +219,14 @@ class MergeSortings(MultiSortingsModule):
 
 				for unit_ind1, unit_id1 in enumerate(sorting1.unit_ids):
 					for unit_ind2, unit_id2 in enumerate(sorting2.unit_ids):
-						if (similarity := similarity_matrices[name1][name2][unit_ind1, unit_ind2]) >= params['similarity']['min_similarity']:
-							graph.add_edge((name1, unit_id1), (name2, unit_id2), similarity=similarity)
+						if (agreement := agreement_matrices[name1][name2][unit_ind1, unit_ind2]) >= params['similarity']['min_similarity']:
+							graph.add_edge((name1, unit_id1), (name2, unit_id2), agreement=agreement, similarity=similarity_matrices[name1][name2][unit_ind1, unit_ind2])
 
-		if params['require_multiple_sortings_match']:
-			for node in dict(graph.nodes):
-				if len(graph.edges(node)) == 0:
+		# Removing small communities (i.e. not found by at least 'min_num_sortings' sortings)
+		for nodes in list(nx.connected_components(graph)):
+			sorting_names = {node[0] for node in nodes}
+			if len(sorting_names) < params['min_num_sortings']:
+				for node in nodes:
 					graph.remove_node(node)
 
 		self._save_graph(graph, "similarity_graph")
@@ -228,6 +241,9 @@ class MergeSortings(MultiSortingsModule):
 		@param name: str
 			The name of the file (without the .pkl extension)
 		"""
+
+		if utils.Utils.logs_level < 2:
+			return
 
 		with open(f"{self.logs_folder}/{name}.pkl", 'wb+') as file:
 			pickle.dump(graph, file, protocol=pickle.HIGHEST_PROTOCOL)
@@ -330,7 +346,7 @@ class MergeSortings(MultiSortingsModule):
 		bin_size = int(round(params['bin_ms'] * 1e-3 * self.sampling_f))
 		N = math.ceil(params['gaussian_std'] * params['gaussian_truncate'] / bin_size)
 		gaussian = utils.gaussian_pdf(np.arange(-N, N+1, bin_size), 0.0, params['gaussian_std'])
-		correlograms, _ = self.analyzer.get_extension("correlograms").get_data()
+		# correlograms, _ = self.analyzer.get_extension("correlograms").get_data()
 		max_shift = params['max_shift'] + 1
 		n_spikes = self.analyzer.sorting.count_num_spikes_per_unit(outputs="array")
 
@@ -343,11 +359,16 @@ class MergeSortings(MultiSortingsModule):
 
 			subgraph = graph.subgraph(nodes)
 
+			sub_unit_ids = [self.analyzer.renamed_unit_ids[node[0]][node[1]] for node in nodes]
+			sub_analyzer = self.analyzer.select_units(sub_unit_ids)
+			sub_analyzer.compute({'correlograms': {'window_ms': 2*params['max_time'], 'bin_ms': params['bin_ms']}})
+			correlograms, _ = sub_analyzer.get_extension("correlograms").get_data()
+
 			auto_correlograms = {}
 			for node in nodes:
 				sorting_name, unit_id = node
-				new_unit_id = self.analyzer.renamed_unit_ids[sorting_name][unit_id]
-				auto_corr = correlograms[new_unit_id, new_unit_id]
+				new_unit_index = sub_unit_ids.index(self.analyzer.renamed_unit_ids[sorting_name][unit_id])
+				auto_corr = correlograms[new_unit_index, new_unit_index]
 				auto_correlograms[node] = np.convolve(auto_corr, gaussian, mode="same")[max_shift:-max_shift]
 
 			for node1, node2 in subgraph.edges:
@@ -355,17 +376,17 @@ class MergeSortings(MultiSortingsModule):
 				sorting2_name, unit_id2 = node2
 				unit_ind1 = self.sortings[sorting1_name].id_to_index(unit_id1)
 				unit_ind2 = self.sortings[sorting2_name].id_to_index(unit_id2)
-				new_unit_id1 = self.analyzer.renamed_unit_ids[sorting1_name][unit_id1]
-				new_unit_id2 = self.analyzer.renamed_unit_ids[sorting2_name][unit_id2]
+				new_unit_index1 = sub_unit_ids.index(self.analyzer.renamed_unit_ids[sorting1_name][unit_id1])
+				new_unit_index2 = sub_unit_ids.index(self.analyzer.renamed_unit_ids[sorting2_name][unit_id2])
 
 				shift = cross_shifts[sorting1_name][sorting2_name][unit_ind1, unit_ind2]
-				cross_corr = correlograms[new_unit_id1][new_unit_id2]
+				cross_corr = correlograms[new_unit_index1][new_unit_index2]
 
 				middle = len(cross_corr) // 2
 				cross_corr[middle-params['censored_period']:middle+params['censored_period']] = 0  # Remove duplicates before filtering.
 				cross_corr = np.convolve(cross_corr, gaussian, mode="same")[max_shift-shift:-max_shift-shift]
 
-				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, n_spikes[new_unit_id1], n_spikes[new_unit_id2])
+				corr_diff = utils.compute_correlogram_difference(auto_correlograms[node1], auto_correlograms[node2], cross_corr, n_spikes[self.analyzer.renamed_unit_ids[sorting1_name][unit_id1]], n_spikes[self.analyzer.renamed_unit_ids[sorting2_name][unit_id2]])
 				graph[node1][node2]['corr_diff'] = corr_diff
 
 	def compute_waveform_difference(self, graph: nx.Graph, cross_shifts: dict[str, dict[str, np.ndarray]], params: dict[str, Any]) -> None:
@@ -447,9 +468,16 @@ class MergeSortings(MultiSortingsModule):
 
 			cross_cont, p_value = utils.estimate_cross_contamination(spike_train1, spike_train2, refractory_period, limit=params['cross_cont_threshold'])
 
+			if data['agreement'] < 0.5:
+				if graph.nodes[node1]['contamination'] > 0.15:
+					nodes_to_remove.append(node1)
+				if graph.nodes[node2]['contamination'] > 0.15:
+					nodes_to_remove.append(node2)
+
 			problem_cases = [
 				p_value < 5e-3 and data['temp_diff'] > params['template_diff_threshold'] and data['corr_diff'] > params['corr_diff_threshold'],
-				p_value < 0.80 and data['similarity'] < 0.60 and data['temp_diff'] > 0.05 and data['corr_diff'] > 0.05
+				p_value < 0.80 and data['similarity'] < 0.60 and data['temp_diff'] > 0.05 and data['corr_diff'] > 0.05,
+				data['temp_diff'] > 0.25
 			]
 
 			if not np.any(problem_cases):
@@ -488,7 +516,7 @@ class MergeSortings(MultiSortingsModule):
 
 		logs.close()
 
-	def separate_communities(self, graph: nx.Graph) -> None:
+	def separate_communities(self, graph: nx.Graph, num_min_sortings: int) -> None:
 		"""
 		Looks for all subgraphs (connected component) and uses the Louvain algorithm to check if
 		multiple communities are found. If so, the edges between communities are removed.
@@ -497,13 +525,16 @@ class MergeSortings(MultiSortingsModule):
 
 		@param graph: nx.Graph
 			The graph containing all the units and connected by their similarity.
+		@param num_min_sortings: int
+			The minimum number of sortings required for a unit to be kept.
+			If a community is split, then it is kept is there are stricly more than this number.
 		"""
 
 		logs = open(f"{self.logs_folder}/separate_communities_logs.txt", 'w+')
 
 		for nodes in list(nx.connected_components(graph)):
 			subgraph = graph.subgraph(nodes)
-			communities = list(nx.community.louvain_communities(subgraph, resolution=0.85))  # TODO: look at `weight="similarity"`
+			communities = list(nx.community.louvain_communities(subgraph, resolution=0.95, weight="agreement"))
 
 			if len(communities) == 1:
 				continue
@@ -521,7 +552,7 @@ class MergeSortings(MultiSortingsModule):
 			logs.write("\nRemoving small communities:\n")
 			# Remove small communities
 			for community in communities:
-				if len(community) <= 2:
+				if len(community) <= num_min_sortings:
 					for node in community:
 						logs.write(f"\t- Removing {graph.nodes[node]}\n")
 						graph.remove_node(node)
@@ -555,17 +586,9 @@ class MergeSortings(MultiSortingsModule):
 			unit_label = ""
 			logs.write(f"\nMaking unit {new_unit_id} from {nodes}\n")
 
-			if len(nodes) == 1 and params['require_multiple_sortings_match']:  # Be more strict about nodes that end up being alone.
-				node = nodes[0]
-				if graph.nodes[node]['contamination'] > 0.10:
-					logs.write(f"\t- Contamination too high (C = {graph.nodes[node]['contamination']:.1%})\n\t--> SKIPPING\n")
-					continue
-				if graph.nodes[node]['SNR'] < 3.0:
-					logs.write(f"\t- SNR too low (SNR = {graph.nodes[node]['SNR']:.2f})\n\t--> SKIPPING\n")
-					continue
-				if abs(graph.nodes[node]['sd_ratio'] - 1) > 0.2:
-					logs.write(f"\t- SD ratio too different from 1.0 (SD ratio = {graph.nodes[node]['sd_ratio']:.2f})\n\t--> SKIPPING\n")
-					continue
+			if len(nodes) < params['min_num_sortings']:
+				logs.write(f"\t- Not enough sortings ({len(nodes)} < {params['min_num_sortings']})\n\t--> SKIPPING\n")
+				continue
 
 			spike_trains = []
 			ref_name, ref_unit_id = nodes[0]
@@ -617,3 +640,74 @@ class MergeSortings(MultiSortingsModule):
 		merged_sorting.annotate(name="merged_sorting")
 
 		return merged_sorting
+
+	def remove_redundant(self, sorting: si.BaseSorting, params: dict) -> si.BaseSorting:
+		"""
+		Removes units that are redundant or too similar.
+
+		@param sorting: si.BaseSorting
+			The sorting to clean.
+		@param params: dict
+			The parameters for the merge_sortings module.
+		@return cleaned_sorting: si.BaseSorting
+			The cleaned sorting.
+		"""
+
+		k = 2.5
+
+		analyzer = si.create_sorting_analyzer(sorting, self.recording, format="memory", sparse=False)
+		contamination = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=params['refractory_period'][1], censored_period_ms=params['refractory_period'][0])[0]
+
+		num_spikes = sorting.count_num_spikes_per_unit()
+		N = np.array(list(num_spikes.values()))
+
+		graph = nx.Graph()
+		graph.add_nodes_from(sorting.unit_ids)
+
+		spike_vector = sorting.to_spike_vector()
+		coincidence_matrix = utils.compute_coincidence_matrix_from_vector(spike_vector, spike_vector, params['similarity']['window'])
+		# TODO: remove expected coincidence matrix.
+
+		agreement_matrix = coincidence_matrix / (N[:, None] + N[None, :] - coincidence_matrix)
+		similarity_matrix = coincidence_matrix / np.minimum(N[:, None], N[None, :])
+		agreement_matrix = np.tril(agreement_matrix, k=-1)
+		similarity_matrix = np.tril(similarity_matrix, k=-1)
+
+		# STEP 1: Remove redundant units.
+		pairs = np.argwhere(agreement_matrix > 0.5)
+		for pair in pairs:
+			unit_id1 = sorting.unit_ids[pair[0]]
+			unit_id2 = sorting.unit_ids[pair[1]]
+
+			score1 = num_spikes[unit_id1] * (1 - (k+1)*contamination[unit_id1])
+			score2 = num_spikes[unit_id2] * (1 - (k+1)*contamination[unit_id2])
+
+			if score1 > score2:
+				graph.remove_node(unit_id2)
+			else:
+				graph.remove_node(unit_id1)
+
+		# STEP 2: Remove units that are too similar (most likely splits).
+		pairs = np.argwhere(similarity_matrix > 0.75)
+		for pair in pairs:
+			unit_id1 = sorting.unit_ids[pair[0]]
+			unit_id2 = sorting.unit_ids[pair[1]]
+
+			if not graph.has_node(unit_id1) or not graph.has_node(unit_id2):
+				continue
+			graph.add_edge(unit_id1, unit_id2, agreement=agreement_matrix[pair], similarity=similarity_matrix[pair])
+
+		for community in list(nx.connected_components(graph)):
+			if len(community) == 1:
+				continue
+
+			unit_ids = list(community)
+			scores = [num_spikes[unit_id] * (1 - (k+1)*contamination[unit_id]) for unit_id in unit_ids]
+			idx = np.argmax(scores)
+
+			for i, unit_id in enumerate(unit_ids):
+				if i != idx:
+					graph.remove_node(unit_id)
+
+		unit_ids = np.sort(list(graph.nodes))
+		return sorting.select_units(unit_ids)

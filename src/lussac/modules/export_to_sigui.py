@@ -20,7 +20,7 @@ class ExportToSIGUI(MonoSortingModule):
 				'ms_before': 1.0,
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1000,
-				'return_scaled': True
+				'return_in_uV': True
 			},
 			'spike_amplitudes': {
 
@@ -31,7 +31,7 @@ class ExportToSIGUI(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		path = self._format_output_path(params['path'])
-		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=path, return_scaled=params['wvf_extraction']['return_scaled'])
+		analyzer = si.create_sorting_analyzer(self.sorting, self.recording, format="binary_folder", folder=path, return_in_uV=params['wvf_extraction']['return_in_uV'])
 
 		analyzer_params = {
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},

@@ -123,7 +123,7 @@ class LussacModule(ABC):
 			if memory_left > 2 * recording_size:
 				recording = recording.save_to_memory(format="memory", shared=True)
 
-		params = dict(return_scaled=True, sparse=False) | params
+		params = dict(return_in_uV=True, sparse=False) | params
 
 		sorting = sorting.to_numpy_sorting()  # Convert sorting for faster extraction.
 		self.analyzer = si.create_sorting_analyzer(sorting, recording, format="memory", **params)
@@ -423,7 +423,7 @@ class MultiSortingsModule(LussacModule):
 		"""
 
 		total_num_units = sum([sorting.get_num_units() for sorting in self.sortings.values()])
-		aggregated_sortings = si.aggregate_units(list(self.sortings.values()), renamed_unit_ids=np.arange(total_num_units))
+		aggregated_sortings = si.aggregate_units(list(self.sortings.values()), renamed_unit_ids=np.arange(total_num_units), sampling_frequency_max_diff=0.01)
 		aggregated_sortings.annotate(name="aggregated_sortings")
 		super(MultiSortingsModule, self).create_analyzer(aggregated_sortings, filter_band, **params)
 

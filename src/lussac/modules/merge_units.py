@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 from overrides import override
 import plotly.graph_objects as go
+
 from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
@@ -66,7 +67,8 @@ class MergeUnits(MonoSortingModule):
 
 		sorting = self._remove_splits(self.sorting, extra_outputs, params)
 		sorting = self._merge(sorting, potential_merges, params)
-		self.plot_merging(potential_merges, self.analyzer, extra_outputs, params['auto_merge_params'])
+		if utils.Utils.logs_level >= 3:
+			self.plot_merging(potential_merges, self.analyzer, extra_outputs, params['auto_merge_params'])
 
 		return sorting
 
