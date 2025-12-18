@@ -28,7 +28,7 @@ class ExportToPhy(MonoSortingModule):
 				'sparse': False
 			},
 			'export_params': {
-				'compute_amplitudes': True,
+				'compute_amplitudes': False,
 				'compute_pc_features': False,
 				'copy_binary': False,
 				'template_mode': "average",
