@@ -678,6 +678,8 @@ class MergeSortings(MultiSortingsModule):
 		for pair in pairs:
 			unit_id1 = sorting.unit_ids[pair[0]]
 			unit_id2 = sorting.unit_ids[pair[1]]
+			if not graph.has_node(unit_id1) or not graph.has_node(unit_id2):
+				continue
 
 			score1 = num_spikes[unit_id1] * (1 - (k+1)*contamination[unit_id1])
 			score2 = num_spikes[unit_id2] * (1 - (k+1)*contamination[unit_id2])
@@ -707,7 +709,8 @@ class MergeSortings(MultiSortingsModule):
 
 			for i, unit_id in enumerate(unit_ids):
 				if i != idx:
-					graph.remove_node(unit_id)
+					if graph.has_node(unit_id):
+						graph.remove_node(unit_id)
 
 		unit_ids = np.sort(list(graph.nodes))
 		return sorting.select_units(unit_ids)
