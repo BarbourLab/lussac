@@ -13,7 +13,7 @@ requires-python = ">=3.10"
 dependencies = [
 	"networkx >= 3.0",
 	"numpy >= 1.23",
-	"pandas >= 2.0",
+	"pandas >= 2.0, < 3.0",  # SpikeInterface v0.104.8 does not support pandas 3 yet
 	"scikit-learn >= 1.1.0",
 	"scipy >= 1.9",
 	"plotly >= 5.8.2",
