@@ -10,7 +10,7 @@ from lussac.core import MultiSortingsModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 
 
 class MergeSortings(MultiSortingsModule):
@@ -197,9 +197,9 @@ class MergeSortings(MultiSortingsModule):
 
 		# Populating the graph with all the nodes (i.e. all the units) with properties.
 		graph = nx.Graph()
-		contamination, _ = sqm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
-		sd_ratio = sqm.compute_sd_ratio(self.analyzer)
-		snrs = sqm.compute_snrs(self.analyzer, peak_sign="both", peak_mode="extremum")
+		contamination, _ = sm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
+		sd_ratio = sm.compute_sd_ratio(self.analyzer)
+		snrs = sm.compute_snrs(self.analyzer, peak_sign="both", peak_mode="extremum")
 
 		for (name, sorting) in self.sortings.items():
 			for unit_id in sorting.unit_ids:
@@ -350,7 +350,7 @@ class MergeSortings(MultiSortingsModule):
 		max_shift = params['max_shift'] + 1
 		n_spikes = self.analyzer.sorting.count_num_spikes_per_unit(outputs="array")
 
-		C, _ = sqm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=0.9, censored_period_ms=0.4)
+		C, _ = sm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=0.9, censored_period_ms=0.4)
 
 		for nodes in nx.connected_components(graph):  # For each community.
 			nodes = list(nodes)
@@ -656,7 +656,7 @@ class MergeSortings(MultiSortingsModule):
 		k = 2.5
 
 		analyzer = si.create_sorting_analyzer(sorting, self.recording, format="memory", sparse=False)
-		contamination = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=params['refractory_period'][1], censored_period_ms=params['refractory_period'][0])[0]
+		contamination = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=params['refractory_period'][1], censored_period_ms=params['refractory_period'][0])[0]
 
 		num_spikes = sorting.count_num_spikes_per_unit()
 		N = np.array(list(num_spikes.values()))

@@ -6,7 +6,7 @@ from overrides import override
 from lussac.core import LussacPipeline, MonoSortingModule
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 
 
 class ExportToPhy(MonoSortingModule):
@@ -111,7 +111,7 @@ class ExportToPhy(MonoSortingModule):
 				continue
 
 			analyzer = si.SortingAnalyzer.create(self.sorting.select_units(unit_ids), self.recording)
-			cont, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period[1], refractory_period[0])
+			cont, _ = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=refractory_period[1], censored_period_ms=refractory_period[0])
 			estimated_contamination.update(cont)
 
 		return estimated_contamination
