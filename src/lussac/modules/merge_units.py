@@ -8,7 +8,7 @@ from lussac.core import MonoSortingModule
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.curation as scur
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 from spikeinterface.curation.auto_merge import normalize_correlogram
 
 
@@ -107,7 +107,7 @@ class MergeUnits(MonoSortingModule):
 
 		units_to_remove = []
 		analyzer = si.SortingAnalyzer.create(sorting, self.recording, format="memory")
-		contamination, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
+		contamination, _ = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
 
 		for pair in extra_outputs['pairs_decreased_score']:
 			unit1, unit2 = pair
@@ -141,7 +141,7 @@ class MergeUnits(MonoSortingModule):
 		k = params['auto_merge_params']['firing_contamination_balance']
 
 		analyzer = si.SortingAnalyzer.create(sorting, self.recording, format="memory")
-		contamination, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
+		contamination, _ = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)
 		sorting = scur.CurationSorting(sorting, properties_policy="keep")
 
 		graph = nx.Graph()
@@ -168,7 +168,7 @@ class MergeUnits(MonoSortingModule):
 				for unit1, unit2 in subgraph.edges:
 					sorting_merged = scur.MergeUnitsSorting(sorting.sorting, [[unit1, unit2]], new_unit_ids=[unit1], delta_time_ms=t_c).select_units([unit1])
 					analyzer = si.SortingAnalyzer.create(sorting_merged, self.recording, format="memory")
-					C = sqm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)[0][unit1]
+					C = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=t_r, censored_period_ms=t_c)[0][unit1]
 					score = len(sorting_merged.get_unit_spike_train(unit1)) * (1 - (k+1) * C)
 
 					if score > highest_score:

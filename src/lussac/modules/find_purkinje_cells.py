@@ -4,7 +4,7 @@ from overrides import override
 from lussac.core import MonoSortingModule
 import spikeinterface.core as si
 import spikeinterface.postprocessing as spost
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 
 
 class FindPurkinjeCells(MonoSortingModule):
@@ -43,7 +43,7 @@ class FindPurkinjeCells(MonoSortingModule):
 	@override
 	def run(self, params: dict[str, Any]) -> si.BaseSorting:
 		analyzer = si.SortingAnalyzer.create(self.sorting, self.recording)
-		firing_rates = sqm.compute_firing_rates(analyzer)
+		firing_rates = sm.compute_firing_rates(analyzer)
 
 		putative_ss_units = [unit_id for unit_id, mean_fr in firing_rates.items() if mean_fr >= params['ss_min_fr']]
 		putative_cs_units = [unit_id for unit_id, mean_fr in firing_rates.items() if params['cs_min_fr'] <= mean_fr <= params['cs_max_fr']]

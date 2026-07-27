@@ -12,7 +12,7 @@ from lussac.core import MonoSortingData, MultiSortingsData
 import lussac.utils as utils
 import spikeinterface.core as si
 import spikeinterface.preprocessing as spre
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 
 
 @dataclass(slots=True)
@@ -303,7 +303,7 @@ class MonoSortingModule(LussacModule):
 
 			case "contamination":  # Returns the estimated contamination of each unit.
 				censored_period, refractory_period = params['refractory_period']
-				contamination, _ = sqm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
+				contamination, _ = sm.compute_refrac_period_violations(self.analyzer, refractory_period_ms=refractory_period, censored_period_ms=censored_period)
 				return contamination
 
 			case "amplitude":  # Returns the amplitude of each unit on its best channel (unit depends on the wvf extractor 'return_scaled' parameter).
@@ -324,8 +324,8 @@ class MonoSortingModule(LussacModule):
 					})
 				if not self.analyzer.has_extension("noise_levels"):
 					self.analyzer.compute("noise_levels")
-				params = utils.filter_kwargs(params, sqm.compute_snrs)
-				SNRs = sqm.compute_snrs(self.analyzer, **params)
+				params = utils.filter_kwargs(params, sm.compute_snrs)
+				SNRs = sm.compute_snrs(self.analyzer, **params)
 				return SNRs
 
 			case "sd_ratio":  # Returns the standard deviation of the amplitude of spikes divided by the standard deviation on the same channel.
@@ -336,7 +336,7 @@ class MonoSortingModule(LussacModule):
 					})
 				if not self.analyzer.has_extension("spike_amplitudes"):
 					self.analyzer.compute("spike_amplitudes", **params['spike_amplitudes_kwargs'])
-				sd_ratio = sqm.compute_sd_ratio(self.analyzer, **params['sd_ratio_kwargs'])
+				sd_ratio = sm.compute_sd_ratio(self.analyzer, **params['sd_ratio_kwargs'])
 				return sd_ratio
 
 			case "ISI_portion":  # Returns the portion of consecutive spikes that are between a certain range (in ms).

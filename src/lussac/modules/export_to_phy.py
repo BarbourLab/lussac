@@ -6,7 +6,7 @@ from overrides import override
 from lussac.core import LussacPipeline, MonoSortingModule
 import spikeinterface.core as si
 from spikeinterface.exporters import export_to_phy
-import spikeinterface.qualitymetrics as sqm
+import spikeinterface.metrics as sm
 
 
 class ExportToPhy(MonoSortingModule):
@@ -25,18 +25,19 @@ class ExportToPhy(MonoSortingModule):
 				'ms_after': 3.0,
 				'max_spikes_per_unit': 1_000,
 				'filter_band': None,
-				'sparse': False
-			},
-			'export_params': {
-				'compute_amplitudes': True,
-				'compute_pc_features': False,
-				'copy_binary': False,
-				'template_mode': "average",
+				'sparse': True,
 				'sparsity': {
 					'method': "radius",
 					'num_channels': 16,
-					'radius_um': 75.0
-				},
+					'radius_um': 75,
+					'peak_sign': "both"
+				}
+			},
+			'export_params': {
+				'compute_amplitudes': False,
+				'compute_pc_features': False,
+				'copy_binary': False,
+				'template_mode': "average",
 				'verbose': False
 			}
 		}
@@ -46,7 +47,7 @@ class ExportToPhy(MonoSortingModule):
 		if self.sorting.get_num_units() == 0:  # Export crashes if the sorting contains no units.
 			return self.sorting
 
-		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'], sparse=params['wvf_extraction']['sparse'])
+		self.create_analyzer(filter_band=params['wvf_extraction']['filter_band'], sparse=params['wvf_extraction']['sparse'], **params['wvf_extraction']['sparsity'])
 		self.analyzer.compute({
 			'random_spikes': {'max_spikes_per_unit': params['wvf_extraction']['max_spikes_per_unit']},
 			'waveforms': {'ms_before': params['wvf_extraction']['ms_before'], 'ms_after': params['wvf_extraction']['ms_after']},
@@ -110,7 +111,7 @@ class ExportToPhy(MonoSortingModule):
 				continue
 
 			analyzer = si.SortingAnalyzer.create(self.sorting.select_units(unit_ids), self.recording)
-			cont, _ = sqm.compute_refrac_period_violations(analyzer, refractory_period[1], refractory_period[0])
+			cont, _ = sm.compute_refrac_period_violations(analyzer, refractory_period_ms=refractory_period[1], censored_period_ms=refractory_period[0])
 			estimated_contamination.update(cont)
 
 		return estimated_contamination
